@@ -1,0 +1,28 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID Tagy</title>
+</head>
+<body>
+    <h1>Načtené RFID Tagy</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Tag ID</th>
+            <th>Čas</th>
+        </tr>
+        {% for tag in tags %}
+        <tr>
+            <td>{{ tag.id }}</td>
+            <td>{{ tag.tag_id }}</td>
+            <td>{{ tag.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('read_tag') }}">Načíst nový tag</a>
+</body>
+</html>
