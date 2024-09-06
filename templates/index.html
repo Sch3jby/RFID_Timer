@@ -10,29 +10,69 @@
 <body>
     <div class="container">
         <h1>Welcome to the App!</h1>
-        <button id="connect-btn">Připojit reader</button>
+
+        <!-- Button to connect/disconnect -->
+        <button id="connect-btn">Connect</button>
+
+        <!-- Message area for errors and statuses -->
         <div id="message"></div>
+
+        <!-- Tag container for displaying tags -->
+        <div id="tag-container"></div>
     </div>
 
     <script>
         $(document).ready(function() {
+            let isConnected = false;
+
+            // Event listener for the connect/disconnect button
             $('#connect-btn').click(function() {
+                $('#message').text('Attempting to connect...');  // Provide feedback immediately
+                $('#connect-btn').prop('disabled', true);  // Disable button while connecting
+
                 $.post('/connect', function(response) {
-                    if (response.status === 'success') {
+                    if (response.status === 'connected') {
+                        $('#connect-btn').text('Disconnect');
+                        $('#message').text('Connected to RFID reader.');
+                        isConnected = true;
                         fetchTaglist();
+                    } else if (response.status === 'disconnected') {
+                        $('#connect-btn').text('Connect');
+                        $('#message').text('Disconnected from RFID reader.');
+                        isConnected = false;
+                        $('#tag-container').empty();  // Clear tags when disconnected
                     } else {
                         $('#message').text('Error: ' + response.message);
                     }
+                }).fail(function() {
+                    $('#message').text('Error: Could not connect to RFID reader.');
+                }).always(function() {
+                    $('#connect-btn').prop('disabled', false);  // Re-enable button after attempt
                 });
             });
 
+            // Function to fetch taglist from server
             function fetchTaglist() {
-                $.get('/fetch_taglist', function(response) {
-                    if (response.status === 'error') {
-                        $('#message').text('Error: ' + response.message);
-                    } else {
-                        $('#message').text(response.taglist);
-                        setTimeout(fetchTaglist, 1000); // Fetch taglist every second
+                if (isConnected) {
+                    $.get('/fetch_taglist', function(response) {
+                        if (response.status === 'error') {
+                            $('#message').text('Error: ' + response.message);
+                        } else {
+                            displayTags(response.taglist);
+                            setTimeout(fetchTaglist, 1000); // Fetch tags every second
+                        }
+                    });
+                }
+            }
+
+            // Function to display tags in tag-container
+            function displayTags(taglist) {
+                const tagContainer = $('#tag-container');
+                tagContainer.empty();  // Clear previous tags
+                const tags = taglist.split('\n');  // Split the taglist into individual tags
+                tags.forEach(tag => {
+                    if (tag.trim() !== '') {
+                        tagContainer.append(`<div class="tag-box">${tag}</div>`);
                     }
                 });
             }
