@@ -1,7 +1,16 @@
 from flask import Flask, render_template, request, jsonify
 import telnetlib
+import configparser
 
 app = Flask(__name__)
+
+# Load configuration from config.ini
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+# Get the RFID configuration
+hostname = config.get('alien_rfid', 'hostname')
+port = config.getint('alien_rfid', 'port')
 
 class AlienRFID:
     def __init__(self, hostname, port):
@@ -25,8 +34,8 @@ class AlienRFID:
         response = self.terminal.read_until(b'>', timeout=5)
         return response.decode('ascii')
 
-# Instantiate the RFID object
-alien = AlienRFID("192.168.0.103", 23)
+# Instantiate the RFID object with configuration values
+alien = AlienRFID(hostname, port)
 
 @app.route('/')
 def index():
