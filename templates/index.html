@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Message App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the App!</h1>
+        <button id="connect-btn">Připojit reader</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#connect-btn').click(function() {
+                $.post('/connect', function(response) {
+                    if (response.status === 'success') {
+                        fetchTaglist();
+                    } else {
+                        $('#message').text('Error: ' + response.message);
+                    }
+                });
+            });
+
+            function fetchTaglist() {
+                $.get('/fetch_taglist', function(response) {
+                    if (response.status === 'error') {
+                        $('#message').text('Error: ' + response.message);
+                    } else {
+                        $('#message').text(response.taglist);
+                        setTimeout(fetchTaglist, 1000); // Fetch taglist every second
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
