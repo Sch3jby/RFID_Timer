@@ -1,3 +1,4 @@
+/* General body styling */
 body {
     font-family: Arial, sans-serif;
     display: flex;
@@ -5,13 +6,25 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f4f4f4;
+    background-image: url('/static/pictures/background.jpg'); /* Path to your background image */
+    background-size: cover; /* Cover the entire viewport */
+    background-position: center; /* Center the background image */
+    background-repeat: no-repeat; /* Prevent repeating the image */
 }
 
+/* Main container for the app */
 .container {
     text-align: center;
+    max-width: 600px; /* Set a max width for the container */
+    width: 100%; /* Ensure the container does not exceed the max-width */
+    margin: 0 auto;
+    padding: 20px; /* Add padding around the container */
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent background for readability */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow for depth */
 }
 
+/* Styling for buttons */
 button {
     background-color: #007bff;
     color: white;
@@ -19,13 +32,52 @@ button {
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
+    border-radius: 5px; /* Rounded corners for button */
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
 }
 
+/* Button hover effect */
 button:hover {
     background-color: #0056b3;
 }
 
+/* Message area styling */
 #message {
     margin-top: 20px;
     font-size: 18px;
+    color: #333; /* Dark text color for better readability */
+}
+
+/* Tag container styling */
+#tag-container {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px; /* Space between tags */
+    height: 300px; /* Fixed height for the container */
+    width: 100%; /* Full width within the container */
+    max-width: 100%; /* Ensure it does not exceed the container width */
+    overflow-y: auto; /* Vertical scrollbar when needed */
+    border: 1px solid #ddd; /* Border around the container */
+    padding: 10px; /* Padding inside the container */
+    background-color: #fff; /* Background color for the tag container */
+    box-sizing: border-box; /* Include padding and border in width and height */
+}
+
+/* Styling for individual tag boxes */
+.tag-box {
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    color: #333;
+    transition: box-shadow 0.3s ease; /* Smooth transition for hover effect */
+}
+
+/* Hover effect for tag boxes */
+.tag-box:hover {
+    box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
 }
