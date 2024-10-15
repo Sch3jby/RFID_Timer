@@ -1,9 +1,12 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 import telnetlib
 import configparser
 import time
 
+# Initialize Flask application
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app)
 
@@ -14,6 +17,10 @@ config.read('config.ini')
 # Get the RFID configuration
 hostname = config.get('alien_rfid', 'hostname')
 port = config.getint('alien_rfid', 'port')
+
+# Database configuration
+DATABASE_URL = config.get('database', 'DATABASE_URL')
+engine = create_engine(DATABASE_URL)
 
 class AlienRFID:
     def __init__(self, hostname, port):
@@ -26,11 +33,11 @@ class AlienRFID:
         for attempt in range(retries):
             try:
                 self.terminal = telnetlib.Telnet(self.hostname, self.port)
-                initial_header = self.terminal.read_until(b'Username>', timeout=5)
-                self.terminal.write(b'alien\n')
-                password_prompt = self.terminal.read_until(b'Password>', timeout=5)
-                self.terminal.write(b'password\n')
-                login_response = self.terminal.read_until(b'>', timeout=5)
+                self.terminal.read_until(b'Username>', timeout=5)
+                self.terminal.write(b'alien\n')  # Replace with actual username
+                self.terminal.read_until(b'Password>', timeout=5)
+                self.terminal.write(b'password\n')  # Replace with actual password
+                self.terminal.read_until(b'>', timeout=5)
                 self.connected = True
                 return
             except Exception as e:
@@ -54,10 +61,10 @@ alien = AlienRFID(hostname, port)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return "Welcome to the RFID Reader API!"
 
 @app.route('/connect', methods=['POST'])
-def connect():
+def connect_reader():
     try:
         if alien.connected:
             alien.disconnect()
@@ -78,5 +85,6 @@ def fetch_taglist():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

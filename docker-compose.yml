@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: janschejbal/raceapp:backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://admin:password@db:5432/race
+      - PYTHONPATH=/app
+      - FLASK_ENV=development
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+    image: janschejbal/raceapp:frontend
+    ports:
+      - "3000:3000"
+
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: race
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    ports:
+      - "50000:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  sql-client:
+    image: adminer
+    restart: always
+    ports:
+      - "10000:8080"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+networks:
+  internal:
+    driver: bridge
