@@ -1,7 +1,19 @@
-import React, { useState, useEffect } from "react";
+// App.js
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
 import './styles.css';
+
+// Role Selection Component
+function RoleSelection({ setRole }) {
+  return (
+    <div className="container">
+      <h1>Vyberte roli</h1>
+      <button onClick={() => setRole("spravce")}>Správce</button>
+      <button onClick={() => setRole("zavodnik")}>Závodník</button>
+    </div>
+  );
+}
 
 // RFID Reader Component
 function RFIDReader() {
@@ -29,25 +41,19 @@ function RFIDReader() {
       });
   };
 
-  useEffect(() => {
-    if (isConnected) {
-      const interval = setInterval(() => {
-        axios.get("http://localhost:5000/fetch_taglist")
-          .then((response) => {
-            if (response.data.status === "success") {
-              setTags(response.data.taglist);
-            } else {
-              setMessage("Error: " + response.data.message);
-            }
-          })
-          .catch((error) => {
-            setMessage("Error: " + error.message);
-          });
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isConnected]);
+  const fetchTags = () => {
+    axios.get("http://localhost:5000/fetch_taglist")
+      .then((response) => {
+        if (response.data.status === "success") {
+          setTags(response.data.taglist);
+        } else {
+          setMessage("Error: " + response.data.message);
+        }
+      })
+      .catch((error) => {
+        setMessage("Error: " + error.message);
+      });
+  };
 
   return (
     <div className="container">
@@ -55,6 +61,7 @@ function RFIDReader() {
       <button onClick={handleConnect}>
         {isConnected ? "Disconnect" : "Connect"}
       </button>
+      <button onClick={fetchTags} disabled={!isConnected}>Načíst tagy</button>
       <div id="message">{message}</div>
       <div id="tag-container">
         {tags.map((tag, index) => (
@@ -121,10 +128,12 @@ function RegistrationForm() {
 }
 
 function App() {
+  const [role, setRole] = useState(null);
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<RFIDReader />} />
+        <Route path="/" element={role === null ? <RoleSelection setRole={setRole} /> : (role === "spravce" ? <RFIDReader /> : <RegistrationForm />)} />
         <Route path="/registration" element={<RegistrationForm />} />
       </Routes>
     </Router>
