@@ -1,8 +1,22 @@
-import React, { useState, useEffect } from "react";
-import './styles.css';
+// App.js
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
+import './styles.css';
 
-function App() {
+// Role Selection Component
+function RoleSelection({ setRole }) {
+  return (
+    <div className="container">
+      <h1>Vyberte roli</h1>
+      <button onClick={() => setRole("spravce")}>Správce</button>
+      <button onClick={() => setRole("zavodnik")}>Závodník</button>
+    </div>
+  );
+}
+
+// RFID Reader Component
+function RFIDReader() {
   const [isConnected, setIsConnected] = useState(false);
   const [message, setMessage] = useState("");
   const [tags, setTags] = useState([]);
@@ -27,29 +41,27 @@ function App() {
       });
   };
 
-  useEffect(() => {
-    if (isConnected) {
-      const interval = setInterval(() => {
-        axios.get("http://localhost:5000/fetch_taglist")
-          .then((response) => {
-            if (response.data.status === "success") {
-              setTags(response.data.taglist.split("\n"));
-            } else {
-              setMessage("Error: " + response.data.message);
-            }
-          });
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isConnected]);
+  const fetchTags = () => {
+    axios.get("http://localhost:5000/fetch_taglist")
+      .then((response) => {
+        if (response.data.status === "success") {
+          setTags(response.data.taglist);
+        } else {
+          setMessage("Error: " + response.data.message);
+        }
+      })
+      .catch((error) => {
+        setMessage("Error: " + error.message);
+      });
+  };
 
   return (
     <div className="container">
-      <h1>Welcome to the App!</h1>
+      <h1>RFID Reader</h1>
       <button onClick={handleConnect}>
         {isConnected ? "Disconnect" : "Connect"}
       </button>
+      <button onClick={fetchTags} disabled={!isConnected}>Načíst tagy</button>
       <div id="message">{message}</div>
       <div id="tag-container">
         {tags.map((tag, index) => (
@@ -57,6 +69,74 @@ function App() {
         ))}
       </div>
     </div>
+  );
+}
+
+// Registration Form Component
+function RegistrationForm() {
+  const [formData, setFormData] = useState({
+    forename: '',
+    surname: '',
+    year: '',
+    club: ''
+  });
+  const [message, setMessage] = useState('');
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/registration', formData);
+      setMessage('Uživatel byl úspěšně zaregistrován');
+      setFormData({ forename: '', surname: '', year: '', club: '' });
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Chyba při registraci');
+    }
+  };
+
+  return (
+    <div>
+      <h1>Registrace</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Jméno:</label>
+          <input type="text" name="forename" value={formData.forename} onChange={handleChange} />
+        </div>
+        <div>
+          <label>Příjmení:</label>
+          <input type="text" name="surname" value={formData.surname} onChange={handleChange} />
+        </div>
+        <div>
+          <label>Rok narození:</label>
+          <input type="text" name="year" value={formData.year} onChange={handleChange} />
+        </div>
+        <div>
+          <label>Klub:</label>
+          <input type="text" name="club" value={formData.club} onChange={handleChange} />
+        </div>
+        <button type="submit">Registrovat</button>
+      </form>
+      <p>{message}</p>
+    </div>
+  );
+}
+
+function App() {
+  const [role, setRole] = useState(null);
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={role === null ? <RoleSelection setRole={setRole} /> : (role === "spravce" ? <RFIDReader /> : <RegistrationForm />)} />
+        <Route path="/registration" element={<RegistrationForm />} />
+      </Routes>
+    </Router>
   );
 }
 

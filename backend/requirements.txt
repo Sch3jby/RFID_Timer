@@ -1,2 +1,8 @@
 Flask
+Werkzeug
 Flask-Cors
+Flask-SQLAlchemy
+SQLAlchemy
+psycopg2-binary==2.9.6
+configparser==6.0.0
+requests
