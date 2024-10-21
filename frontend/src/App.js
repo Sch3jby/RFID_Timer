@@ -1,4 +1,3 @@
-// frontend/src/App.js
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
@@ -36,10 +35,13 @@ function RFIDReader() {
         axios.get("http://localhost:5000/fetch_taglist")
           .then((response) => {
             if (response.data.status === "success") {
-              setTags(response.data.taglist.split("\n"));
+              setTags(response.data.taglist);
             } else {
               setMessage("Error: " + response.data.message);
             }
+          })
+          .catch((error) => {
+            setMessage("Error: " + error.message);
           });
       }, 1000);
 
@@ -87,66 +89,37 @@ function RegistrationForm() {
       setMessage('Uživatel byl úspěšně zaregistrován');
       setFormData({ forename: '', surname: '', year: '', club: '' });
     } catch (error) {
-      setMessage(error.response?.data?.error || 'Došlo k chybě při registraci');
+      setMessage(error.response?.data?.error || 'Chyba při registraci');
     }
   };
 
   return (
-    <div className="registration-container">
-      <h2>Registrace uživatele</h2>
-      {message && <div className={message.includes('úspěšně') ? 'success-message' : 'error-message'}>{message}</div>}
+    <div>
+      <h1>Registrace</h1>
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="forename">Jméno:</label>
-          <input
-            type="text"
-            id="forename"
-            name="forename"
-            value={formData.forename}
-            onChange={handleChange}
-            required
-          />
+        <div>
+          <label>Jméno:</label>
+          <input type="text" name="forename" value={formData.forename} onChange={handleChange} />
         </div>
-        <div className="form-group">
-          <label htmlFor="surname">Příjmení:</label>
-          <input
-            type="text"
-            id="surname"
-            name="surname"
-            value={formData.surname}
-            onChange={handleChange}
-            required
-          />
+        <div>
+          <label>Příjmení:</label>
+          <input type="text" name="surname" value={formData.surname} onChange={handleChange} />
         </div>
-        <div className="form-group">
-          <label htmlFor="year">Rok narození:</label>
-          <input
-            type="number"
-            id="year"
-            name="year"
-            value={formData.year}
-            onChange={handleChange}
-            required
-          />
+        <div>
+          <label>Rok narození:</label>
+          <input type="text" name="year" value={formData.year} onChange={handleChange} />
         </div>
-        <div className="form-group">
-          <label htmlFor="club">Klub:</label>
-          <input
-            type="text"
-            id="club"
-            name="club"
-            value={formData.club}
-            onChange={handleChange}
-            required
-          />
+        <div>
+          <label>Klub:</label>
+          <input type="text" name="club" value={formData.club} onChange={handleChange} />
         </div>
         <button type="submit">Registrovat</button>
       </form>
+      <p>{message}</p>
     </div>
   );
 }
 
-// Main App Component
 function App() {
   return (
     <Router>

@@ -29,11 +29,11 @@ db.init_app(app)
 hostname = config.get('alien_rfid', 'hostname')
 port = config.getint('alien_rfid', 'port')
 
-# Zajištění existence adresáře pro logy
+# Log directory setup
 log_dir = os.path.join(os.path.dirname(__file__), 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
-# Konfigurace logování
+# Log configuration
 info_handler = RotatingFileHandler(os.path.join(log_dir, 'info.log'), maxBytes=5102410, backupCount=5)
 info_handler.setLevel(logging.INFO)
 info_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -112,12 +112,13 @@ def fetch_taglist():
             return jsonify({"status": "error", "message": "Not connected to RFID reader"})
         
         taglist_response = alien.command('get Taglist')
-        tags = taglist_response.split("\n")  # Assuming tags are separated by new lines
+        print(taglist_response)  # Debugging: print taglist to console
+        tags = taglist_response.split("\n")
                     
-        info_logger.info('Reader se úspěšně připojil')
+        info_logger.info('Reader successfully connected')
         return jsonify({"status": "success", "taglist": tags})
     except Exception as e:
-        error_logger.error('Reader se nepodařilo připojit: %s', str(e))
+        error_logger.error('Failed to connect to reader: %s', str(e))
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/registration', methods=['POST'])
@@ -130,13 +131,13 @@ def register():
         club = data.get('club')
 
         if not all([forename, surname, year, club]):
-            return jsonify({'error': 'Všechna pole jsou povinná'}), 400
+            return jsonify({'error': 'All fields are required'}), 400
 
         # Convert year to integer
         try:
             year = int(year)
         except ValueError:
-            return jsonify({'error': 'Rok narození musí být číslo'}), 400
+            return jsonify({'error': 'Year must be a number'}), 400
 
         new_user = User(
             forename=forename,
@@ -148,13 +149,18 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        info_logger.info('Nový uživatel %s %s byl registrován', forename, surname)
-        return jsonify({'message': 'Uživatel úspěšně zaregistrován'}), 201
+        info_logger.info('New user %s %s registered', forename, surname)
+        return jsonify({'message': 'User successfully registered'}), 201
 
     except Exception as e:
         db.session.rollback()
-        error_logger.error('Chyba při registraci uživatele: %s', str(e))
-        return jsonify({'error': 'Došlo k chybě při registraci'}), 400
+        error_logger.error('Error registering user: %s', str(e))
+        return jsonify({'error': 'Error registering user'}), 400
+
+# Catch-all route to serve React frontend
+@app.route('/<path:path>')
+def catch_all(path):
+    return app.send_static_file('index.html')
 
 # Create tables before first request
 with app.app_context():
