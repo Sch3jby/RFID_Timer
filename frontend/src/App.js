@@ -1,12 +1,12 @@
 // frontend/src/App.js
-
 import React, { useState, useEffect } from "react";
-import './styles.css';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
+import './styles.css';
 
-function App() {
+// RFID Reader Component
+function RFIDReader() {
   const [isConnected, setIsConnected] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [tags, setTags] = useState([]);
 
@@ -30,38 +30,6 @@ function App() {
       });
   };
 
-  const handleStartSaving = () => {
-    setMessage("Starting to save tags...");
-    axios.post("http://localhost:5000/start_saving")
-      .then((response) => {
-        if (response.data.status === "saving_started") {
-          setIsSaving(true);
-          setMessage("Started saving tags.");
-        } else {
-          setMessage("Error: " + response.data.message);
-        }
-      })
-      .catch(() => {
-        setMessage("Error: Could not start saving tags.");
-      });
-  };
-
-  const handleStopSaving = () => {
-    setMessage("Stopping saving tags...");
-    axios.post("http://localhost:5000/stop_saving")
-      .then((response) => {
-        if (response.data.status === "saving_stopped") {
-          setIsSaving(false);
-          setMessage("Stopped saving tags.");
-        } else {
-          setMessage("Error: " + response.data.message);
-        }
-      })
-      .catch(() => {
-        setMessage("Error: Could not stop saving tags.");
-      });
-  };
-
   useEffect(() => {
     if (isConnected) {
       const interval = setInterval(() => {
@@ -81,15 +49,9 @@ function App() {
 
   return (
     <div className="container">
-      <h1>Welcome to the App!</h1>
+      <h1>RFID Reader</h1>
       <button onClick={handleConnect}>
         {isConnected ? "Disconnect" : "Connect"}
-      </button>
-      <button onClick={handleStartSaving} disabled={!isConnected || isSaving}>
-        Start Saving
-      </button>
-      <button onClick={handleStopSaving} disabled={!isConnected || !isSaving}>
-        Stop Saving
       </button>
       <div id="message">{message}</div>
       <div id="tag-container">
@@ -98,6 +60,101 @@ function App() {
         ))}
       </div>
     </div>
+  );
+}
+
+// Registration Form Component
+function RegistrationForm() {
+  const [formData, setFormData] = useState({
+    forename: '',
+    surname: '',
+    year: '',
+    club: ''
+  });
+  const [message, setMessage] = useState('');
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/registration', formData);
+      setMessage('Uživatel byl úspěšně zaregistrován');
+      setFormData({ forename: '', surname: '', year: '', club: '' });
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Došlo k chybě při registraci');
+    }
+  };
+
+  return (
+    <div className="registration-container">
+      <h2>Registrace uživatele</h2>
+      {message && <div className={message.includes('úspěšně') ? 'success-message' : 'error-message'}>{message}</div>}
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="forename">Jméno:</label>
+          <input
+            type="text"
+            id="forename"
+            name="forename"
+            value={formData.forename}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="surname">Příjmení:</label>
+          <input
+            type="text"
+            id="surname"
+            name="surname"
+            value={formData.surname}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="year">Rok narození:</label>
+          <input
+            type="number"
+            id="year"
+            name="year"
+            value={formData.year}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="club">Klub:</label>
+          <input
+            type="text"
+            id="club"
+            name="club"
+            value={formData.club}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <button type="submit">Registrovat</button>
+      </form>
+    </div>
+  );
+}
+
+// Main App Component
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<RFIDReader />} />
+        <Route path="/registration" element={<RegistrationForm />} />
+      </Routes>
+    </Router>
   );
 }
 
