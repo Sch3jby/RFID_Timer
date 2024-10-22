@@ -6,7 +6,7 @@ services:
       context: ./backend
     image: janschejbal/raceapp:backend
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - DATABASE_URL=postgresql://admin:password@db:5432/race
       - PYTHONPATH=/app

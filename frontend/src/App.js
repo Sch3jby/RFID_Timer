@@ -1,5 +1,4 @@
-// App.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
 import './styles.css';
@@ -23,7 +22,7 @@ function RFIDReader() {
 
   const handleConnect = () => {
     setMessage("Attempting to connect...");
-    axios.post("http://localhost:5000/connect")
+    axios.post("http://localhost:5001/connect")
       .then((response) => {
         if (response.data.status === "connected") {
           setIsConnected(true);
@@ -41,19 +40,29 @@ function RFIDReader() {
       });
   };
 
-  const fetchTags = () => {
-    axios.get("http://localhost:5000/fetch_taglist")
-      .then((response) => {
-        if (response.data.status === "success") {
-          setTags(response.data.taglist);
-        } else {
-          setMessage("Error: " + response.data.message);
-        }
-      })
-      .catch((error) => {
-        setMessage("Error: " + error.message);
-      });
-  };
+  // Fetch tags automatically when connected
+  useEffect(() => {
+    let interval;
+    if (isConnected) {
+      interval = setInterval(() => {
+        axios.get("http://localhost:5001/fetch_taglist")
+          .then((response) => {
+            if (response.data.status === "success") {
+              setTags(response.data.taglist);
+            } else {
+              setMessage("Error: " + response.data.message);
+            }
+          })
+          .catch((error) => {
+            setMessage("Error: " + error.message);
+          });
+      }, 500);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isConnected]);
 
   return (
     <div className="container">
@@ -61,7 +70,6 @@ function RFIDReader() {
       <button onClick={handleConnect}>
         {isConnected ? "Disconnect" : "Connect"}
       </button>
-      <button onClick={fetchTags} disabled={!isConnected}>Načíst tagy</button>
       <div id="message">{message}</div>
       <div id="tag-container">
         {tags.map((tag, index) => (
@@ -92,7 +100,7 @@ function RegistrationForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/registration', formData);
+      const response = await axios.post('http://localhost:5001/registration', formData);
       setMessage('Uživatel byl úspěšně zaregistrován');
       setFormData({ forename: '', surname: '', year: '', club: '' });
     } catch (error) {

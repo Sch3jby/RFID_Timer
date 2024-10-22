@@ -113,7 +113,7 @@ def fetch_taglist():
             return jsonify({"status": "error", "message": "Not connected to RFID reader"})
         
         taglist_response = alien.command('get Taglist')
-        print(taglist_response)  # Debugging: print taglist to console
+        print(taglist_response)
         tags = taglist_response.split("\n")
                     
         info_logger.info('Reader successfully connected')
@@ -168,4 +168,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
