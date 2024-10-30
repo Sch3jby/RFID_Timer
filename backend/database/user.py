@@ -7,6 +7,7 @@ class User(db.Model):
     surname = db.Column(db.String(25), nullable=False)
     year = db.Column(db.Integer, nullable=False)
     club = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(70), nullable=False)
 
     def __repr__(self):
         return f'<User {self.id}>'

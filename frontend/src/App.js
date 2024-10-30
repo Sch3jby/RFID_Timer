@@ -174,7 +174,8 @@ function RegistrationForm() {
     forename: '',
     surname: '',
     year: '',
-    club: ''
+    club: '',
+    email: ''
   });
   const [message, setMessage] = useState('');
 
@@ -190,7 +191,7 @@ function RegistrationForm() {
     try {
       const response = await axios.post('http://localhost:5001/registration', formData);
       setMessage('Uživatel byl úspěšně zaregistrován');
-      setFormData({ forename: '', surname: '', year: '', club: '' });
+      setFormData({ forename: '', surname: '', year: '', club: '', email: '' });
     } catch (error) {
       setMessage(error.response?.data?.error || 'Chyba při registraci');
     }
@@ -215,6 +216,10 @@ function RegistrationForm() {
         <div>
           <label>Klub:</label>
           <input type="text" name="club" value={formData.club} onChange={handleChange} />
+        </div>
+        <div>
+          <label>Email:</label>
+          <input type="text" name="email" value={formData.email} onChange={handleChange} />
         </div>
         <button type="submit">Registrovat</button>
       </form>

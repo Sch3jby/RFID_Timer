@@ -130,6 +130,7 @@ def register():
         surname = data.get('surname')
         year = data.get('year')
         club = data.get('club')
+        email = data.get('email')
 
         if not all([forename, surname, year, club]):
             return jsonify({'error': 'All fields are required'}), 400
@@ -144,7 +145,8 @@ def register():
             forename=forename,
             surname=surname,
             year=year,
-            club=club
+            club=club,
+            email=email
         )
         
         db.session.add(new_user)
