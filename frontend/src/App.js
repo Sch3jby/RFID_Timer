@@ -14,7 +14,7 @@ function Navigation() {
           to="/timer" 
           className={`nav-button ${location.pathname === '/timer' ? 'active' : ''}`}
         >
-          Správce
+          Organizátor
         </Link>
         <Link 
           to="/registration" 
@@ -150,7 +150,7 @@ function StartList() {
             <th>Jméno</th>
             <th>Příjmení</th>
             <th>Rok narození</th>
-            <th>Klub</th>
+            <th>Klub / Město</th>
           </tr>
         </thead>
         <tbody>
@@ -214,7 +214,7 @@ function RegistrationForm() {
           <input type="text" name="year" value={formData.year} onChange={handleChange} />
         </div>
         <div>
-          <label>Klub:</label>
+          <label>Klub / Město:</label>
           <input type="text" name="club" value={formData.club} onChange={handleChange} />
         </div>
         <div>
