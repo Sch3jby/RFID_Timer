@@ -7,6 +7,8 @@ from flask_cors import CORS
 import telnetlib
 import configparser
 import time
+from datetime import datetime
+from enum import Enum
 
 # Import models
 from database import db
@@ -51,6 +53,20 @@ error_logger = logging.getLogger('error_logger')
 error_logger.setLevel(logging.ERROR)
 error_logger.addHandler(error_handler)
 
+# Enum for male categories
+class MaleCategory(Enum):
+    CHILDREN = "Males 7-15"
+    JUNIOR = "Males 16-18"
+    ADULT = "Males 19-40"
+    SENIOR = "Males 41+"
+
+# Enum for female categories
+class FemaleCategory(Enum):
+    CHILDREN = "Females 7-15"
+    JUNIOR = "Females 16-18"
+    ADULT = "Females 19-40"
+    SENIOR = "Females 41+"
+
 # RFID reader connection state
 class AlienRFID:
     def __init__(self, hostname, port):
@@ -88,6 +104,33 @@ class AlienRFID:
         return response.decode('ascii')
 
 alien = AlienRFID(hostname, port)
+
+# Methods
+def get_category(gender, birth_year):
+    current_year = datetime.now().year
+    age = current_year - birth_year
+
+    if gender == "M":
+        if 7 <= age <= 15:
+            return MaleCategory.CHILDREN.value
+        elif 16 <= age <= 18:
+            return MaleCategory.JUNIOR.value
+        elif 19 <= age <= 40:
+            return MaleCategory.ADULT.value
+        elif age >= 41:
+            return MaleCategory.SENIOR.value
+
+    elif gender == "F":
+        if 7 <= age <= 15:
+            return FemaleCategory.CHILDREN.value
+        elif 16 <= age <= 18:
+            return FemaleCategory.JUNIOR.value
+        elif 19 <= age <= 40:
+            return FemaleCategory.ADULT.value
+        elif age >= 41:
+            return FemaleCategory.SENIOR.value
+    else:
+        return "Unknown Category"
 
 # Routes
 @app.route('/')
@@ -131,8 +174,9 @@ def register():
         year = data.get('year')
         club = data.get('club')
         email = data.get('email')
+        gender = data.get('gender')
 
-        if not all([forename, surname, year, club]):
+        if not all([forename, surname, year, club, email, gender]):
             return jsonify({'error': 'All fields are required'}), 400
 
         # Convert year to integer
@@ -140,13 +184,16 @@ def register():
             year = int(year)
         except ValueError:
             return jsonify({'error': 'Year must be a number'}), 400
+        
+        category = get_category(gender, year)
 
         new_user = User(
             forename=forename,
             surname=surname,
             year=year,
             club=club,
-            email=email
+            email=email,
+            category=category
         )
         
         db.session.add(new_user)
@@ -170,7 +217,8 @@ def get_users():
                 'forename': user.forename,
                 'surname': user.surname,
                 'year': user.year,
-                'club': user.club
+                'club': user.club,
+                'category': user.category
             })
         return jsonify({'users': users_list})
     except Exception as e:

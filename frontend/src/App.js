@@ -151,6 +151,7 @@ function StartList() {
             <th>Příjmení</th>
             <th>Rok narození</th>
             <th>Klub / Město</th>
+            <th>Kategorie</th>
           </tr>
         </thead>
         <tbody>
@@ -160,6 +161,7 @@ function StartList() {
               <td>{user.surname}</td>
               <td>{user.year}</td>
               <td>{user.club}</td>
+              <td>{user.category}</td>
             </tr>
           ))}
         </tbody>
@@ -175,7 +177,8 @@ function RegistrationForm() {
     surname: '',
     year: '',
     club: '',
-    email: ''
+    email: '',
+    gender: ''
   });
   const [message, setMessage] = useState('');
 
@@ -191,7 +194,7 @@ function RegistrationForm() {
     try {
       const response = await axios.post('http://localhost:5001/registration', formData);
       setMessage('Uživatel byl úspěšně zaregistrován');
-      setFormData({ forename: '', surname: '', year: '', club: '', email: '' });
+      setFormData({ forename: '', surname: '', year: '', club: '', email: '', gender: ''});
     } catch (error) {
       setMessage(error.response?.data?.error || 'Chyba při registraci');
     }
@@ -220,6 +223,14 @@ function RegistrationForm() {
         <div>
           <label>Email:</label>
           <input type="text" name="email" value={formData.email} onChange={handleChange} />
+        </div>
+        <div>
+          <label>Pohlaví:</label>
+          <select name="gender" value={formData.gender} onChange={handleChange}>
+            <option value="">Vyberte...</option>
+            <option value="M">Muž</option>
+            <option value="F">Žena</option>
+          </select>
         </div>
         <button type="submit">Registrovat</button>
       </form>
