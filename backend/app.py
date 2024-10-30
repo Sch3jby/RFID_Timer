@@ -55,17 +55,17 @@ error_logger.addHandler(error_handler)
 
 # Enum for male categories
 class MaleCategory(Enum):
-    CHILDREN = "Males 7-15"
-    JUNIOR = "Males 16-18"
-    ADULT = "Males 19-40"
-    SENIOR = "Males 41+"
+    CHILDREN = "Muži 7-15"
+    JUNIOR = "Muži 16-18"
+    ADULT = "Muži 19-40"
+    SENIOR = "Muži 41+"
 
 # Enum for female categories
 class FemaleCategory(Enum):
-    CHILDREN = "Females 7-15"
-    JUNIOR = "Females 16-18"
-    ADULT = "Females 19-40"
-    SENIOR = "Females 41+"
+    CHILDREN = "Ženy 7-15"
+    JUNIOR = "Ženy 16-18"
+    ADULT = "Ženy 19-40"
+    SENIOR = "Ženy 41+"
 
 # RFID reader connection state
 class AlienRFID:

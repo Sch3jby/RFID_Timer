@@ -10,6 +10,12 @@ function Navigation() {
   return (
     <nav className="navigation">
       <div className="nav-container">
+      <Link 
+          to="/" 
+          className={`nav-button ${location.pathname === '/' ? 'active' : ''}`}
+        >
+          Home
+        </Link>
         <Link 
           to="/timer" 
           className={`nav-button ${location.pathname === '/timer' ? 'active' : ''}`}
