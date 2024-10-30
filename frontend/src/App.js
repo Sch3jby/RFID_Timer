@@ -1,17 +1,56 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import './styles.css';
 
-// Role Selection Component
-function RoleSelection() {
-  const navigate = useNavigate();
-
+// Navigation Component
+function Navigation() {
+  const location = useLocation();
+  
   return (
-    <div className="container">
-      <h1>Vyberte roli</h1>
-      <button onClick={() => navigate("/timer")}>Správce</button>
-      <button onClick={() => navigate("/registration")}>Závodník</button>
+    <nav className="navigation">
+      <div className="nav-container">
+        <Link 
+          to="/timer" 
+          className={`nav-button ${location.pathname === '/timer' ? 'active' : ''}`}
+        >
+          Správce
+        </Link>
+        <Link 
+          to="/registration" 
+          className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}
+        >
+          Závodník
+        </Link>
+        <Link 
+          to="/startlist" 
+          className={`nav-button ${location.pathname === '/startlist' ? 'active' : ''}`}
+        >
+          Startovní listina
+        </Link>
+      </div>
+    </nav>
+  );
+}
+
+// Home Component
+function Home() {
+  return (
+    <div className="home-container">
+      <h1>Vítejte v systému pro závody</h1>
+      <p>Vyberte jednu z možností v menu nahoře pro pokračování.</p>
+    </div>
+  );
+}
+
+// Layout Component
+function Layout({ children }) {
+  return (
+    <div className="app-container">
+      <Navigation />
+      <main className="main-content">
+        {children}
+      </main>
     </div>
   );
 }
@@ -81,6 +120,54 @@ function RFIDReader() {
   );
 }
 
+// StartList Component
+function StartList() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    axios.get('http://localhost:5001/startlist')
+      .then(response => {
+        setUsers(response.data.users);
+        setLoading(false);
+      })
+      .catch(error => {
+        setError('Chyba při načítání uživatelů');
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="container">Načítání...</div>;
+  if (error) return <div className="container">{error}</div>;
+
+  return (
+    <div className="container">
+      <h1>Startovní listina</h1>
+      <table className="startlist-table">
+        <thead>
+          <tr>
+            <th>Jméno</th>
+            <th>Příjmení</th>
+            <th>Rok narození</th>
+            <th>Klub</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user, index) => (
+            <tr key={index}>
+              <td>{user.forename}</td>
+              <td>{user.surname}</td>
+              <td>{user.year}</td>
+              <td>{user.club}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // Registration Form Component
 function RegistrationForm() {
   const [formData, setFormData] = useState({
@@ -136,14 +223,18 @@ function RegistrationForm() {
   );
 }
 
+// Main App Component
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<RoleSelection />} />
-        <Route path="/timer" element={<RFIDReader />} />
-        <Route path="/registration" element={<RegistrationForm />} />
-      </Routes>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/timer" element={<RFIDReader />} />
+          <Route path="/registration" element={<RegistrationForm />} />
+          <Route path="/startlist" element={<StartList />} />
+        </Routes>
+      </Layout>
     </Router>
   );
 }
