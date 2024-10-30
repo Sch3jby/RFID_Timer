@@ -1,20 +1,61 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import './styles.css';
 
-// Role Selection Component
-function RoleSelection({ setRole }) {
+// Navigation Component
+function Navigation() {
+  const location = useLocation();
+  
   return (
-    <div className="container">
-      <h1>Vyberte roli</h1>
-      <button onClick={() => setRole("spravce")}>Správce</button>
-      <button onClick={() => setRole("zavodnik")}>Závodník</button>
+    <nav className="navigation">
+      <div className="nav-container">
+        <Link 
+          to="/timer" 
+          className={`nav-button ${location.pathname === '/timer' ? 'active' : ''}`}
+        >
+          Organizátor
+        </Link>
+        <Link 
+          to="/registration" 
+          className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}
+        >
+          Závodník
+        </Link>
+        <Link 
+          to="/startlist" 
+          className={`nav-button ${location.pathname === '/startlist' ? 'active' : ''}`}
+        >
+          Startovní listina
+        </Link>
+      </div>
+    </nav>
+  );
+}
+
+// Home Component
+function Home() {
+  return (
+    <div className="home-container">
+      <h1>Vítejte v systému pro závody</h1>
+      <p>Vyberte jednu z možností v menu nahoře pro pokračování.</p>
     </div>
   );
 }
 
-// RFID Reader Component
+// Layout Component
+function Layout({ children }) {
+  return (
+    <div className="app-container">
+      <Navigation />
+      <main className="main-content">
+        {children}
+      </main>
+    </div>
+  );
+}
+
+// RFID Reader/Timer Component
 function RFIDReader() {
   const [isConnected, setIsConnected] = useState(false);
   const [message, setMessage] = useState("");
@@ -40,7 +81,6 @@ function RFIDReader() {
       });
   };
 
-  // Fetch tags automatically when connected
   useEffect(() => {
     let interval;
     if (isConnected) {
@@ -80,13 +120,62 @@ function RFIDReader() {
   );
 }
 
+// StartList Component
+function StartList() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    axios.get('http://localhost:5001/startlist')
+      .then(response => {
+        setUsers(response.data.users);
+        setLoading(false);
+      })
+      .catch(error => {
+        setError('Chyba při načítání uživatelů');
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="container">Načítání...</div>;
+  if (error) return <div className="container">{error}</div>;
+
+  return (
+    <div className="container">
+      <h1>Startovní listina</h1>
+      <table className="startlist-table">
+        <thead>
+          <tr>
+            <th>Jméno</th>
+            <th>Příjmení</th>
+            <th>Rok narození</th>
+            <th>Klub / Město</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user, index) => (
+            <tr key={index}>
+              <td>{user.forename}</td>
+              <td>{user.surname}</td>
+              <td>{user.year}</td>
+              <td>{user.club}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // Registration Form Component
 function RegistrationForm() {
   const [formData, setFormData] = useState({
     forename: '',
     surname: '',
     year: '',
-    club: ''
+    club: '',
+    email: ''
   });
   const [message, setMessage] = useState('');
 
@@ -102,14 +191,14 @@ function RegistrationForm() {
     try {
       const response = await axios.post('http://localhost:5001/registration', formData);
       setMessage('Uživatel byl úspěšně zaregistrován');
-      setFormData({ forename: '', surname: '', year: '', club: '' });
+      setFormData({ forename: '', surname: '', year: '', club: '', email: '' });
     } catch (error) {
       setMessage(error.response?.data?.error || 'Chyba při registraci');
     }
   };
 
   return (
-    <div>
+    <div className="container">
       <h1>Registrace</h1>
       <form onSubmit={handleSubmit}>
         <div>
@@ -125,8 +214,12 @@ function RegistrationForm() {
           <input type="text" name="year" value={formData.year} onChange={handleChange} />
         </div>
         <div>
-          <label>Klub:</label>
+          <label>Klub / Město:</label>
           <input type="text" name="club" value={formData.club} onChange={handleChange} />
+        </div>
+        <div>
+          <label>Email:</label>
+          <input type="text" name="email" value={formData.email} onChange={handleChange} />
         </div>
         <button type="submit">Registrovat</button>
       </form>
@@ -135,15 +228,18 @@ function RegistrationForm() {
   );
 }
 
+// Main App Component
 function App() {
-  const [role, setRole] = useState(null);
-
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={role === null ? <RoleSelection setRole={setRole} /> : (role === "spravce" ? <RFIDReader /> : <RegistrationForm />)} />
-        <Route path="/registration" element={<RegistrationForm />} />
-      </Routes>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/timer" element={<RFIDReader />} />
+          <Route path="/registration" element={<RegistrationForm />} />
+          <Route path="/startlist" element={<StartList />} />
+        </Routes>
+      </Layout>
     </Router>
   );
 }

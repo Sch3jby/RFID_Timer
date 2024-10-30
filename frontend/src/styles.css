@@ -4,80 +4,91 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
-    background-image: url('/public/static/pictures/background.jpg'); /* Path to your background image */
-    background-size: cover; /* Cover the entire viewport */
-    background-position: center; /* Center the background image */
-    background-repeat: no-repeat; /* Prevent repeating the image */
+    background-image: url('/public/static/pictures/background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* Main container for the app */
 .container {
     text-align: center;
-    max-width: 600px; /* Set a max width for the container */
-    width: 100%; /* Ensure the container does not exceed the max-width */
-    margin: 0 auto;
-    padding: 20px; /* Add padding around the container */
-    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent background for readability */
-    border-radius: 10px; /* Rounded corners */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+    max-width: 600px;
+    width: 90%;
+    margin: 20px auto;
+    padding: 30px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Styling for buttons */
-button {
-    background-color: #007bff;
+/* Button container specific styles */
+.button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 300px;
+    margin: 20px auto;
+}
+
+/* Role button specific styles */
+.role-button {
+    display: block;
+    width: 100%;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    background-color: #4CAF50;
     color: white;
     border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 5px; /* Rounded corners for button */
-    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
-}
-
-/* Button hover effect */
-button:hover {
-    background-color: #0056b3;
-}
-
-/* Message area styling */
-#message {
-    margin-top: 20px;
-    font-size: 18px;
-    color: #333; /* Dark text color for better readability */
-}
-
-/* Tag container styling */
-#tag-container {
-    margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px; /* Space between tags */
-    height: 300px; /* Fixed height for the container */
-    width: 100%; /* Full width within the container */
-    max-width: 100%; /* Ensure it does not exceed the container width */
-    overflow-y: auto; /* Vertical scrollbar when needed */
-    border: 1px solid #ddd; /* Border around the container */
-    padding: 10px; /* Padding inside the container */
-    background-color: #fff; /* Background color for the tag container */
-    box-sizing: border-box; /* Include padding and border in width and height */
-}
-
-/* Styling for individual tag boxes */
-.tag-box {
-    background-color: #fff;
-    padding: 10px;
-    border: 1px solid #ddd;
     border-radius: 5px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    font-size: 14px;
-    color: #333;
-    transition: box-shadow 0.3s ease; /* Smooth transition for hover effect */
+    transition: all 0.3s ease;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Hover effect for tag boxes */
-.tag-box:hover {
-    box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+.role-button:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.role-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure h1 is visible */
+h1 {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 28px;
+    text-align: center;
+}
+
+/* Home page specific styles */
+.home-container {
+    text-align: center;
+    padding: 50px 20px;
+    max-width: 800px;
+    margin: 40px auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.home-container h1 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 32px;
+}
+
+.home-container p {
+    color: #666;
+    font-size: 18px;
+    line-height: 1.6;
 }

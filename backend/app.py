@@ -130,6 +130,7 @@ def register():
         surname = data.get('surname')
         year = data.get('year')
         club = data.get('club')
+        email = data.get('email')
 
         if not all([forename, surname, year, club]):
             return jsonify({'error': 'All fields are required'}), 400
@@ -144,7 +145,8 @@ def register():
             forename=forename,
             surname=surname,
             year=year,
-            club=club
+            club=club,
+            email=email
         )
         
         db.session.add(new_user)
@@ -157,6 +159,23 @@ def register():
         db.session.rollback()
         error_logger.error('Error registering user: %s', str(e))
         return jsonify({'error': 'Error registering user'}), 400
+    
+@app.route('/startlist', methods=['GET'])
+def get_users():
+    try:
+        users = User.query.all()
+        users_list = []
+        for user in users:
+            users_list.append({
+                'forename': user.forename,
+                'surname': user.surname,
+                'year': user.year,
+                'club': user.club
+            })
+        return jsonify({'users': users_list})
+    except Exception as e:
+        error_logger.error('Error fetching users: %s', str(e))
+        return jsonify({'error': 'Error fetching users'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
