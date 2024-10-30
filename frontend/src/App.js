@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import axios from "axios";
 import './styles.css';
 
 // Role Selection Component
-function RoleSelection({ setRole }) {
+function RoleSelection() {
+  const navigate = useNavigate();
+
   return (
     <div className="container">
       <h1>Vyberte roli</h1>
-      <button onClick={() => setRole("spravce")}>Správce</button>
-      <button onClick={() => setRole("zavodnik")}>Závodník</button>
+      <button onClick={() => navigate("/timer")}>Správce</button>
+      <button onClick={() => navigate("/registration")}>Závodník</button>
     </div>
   );
 }
 
-// RFID Reader Component
+// RFID Reader/Timer Component
 function RFIDReader() {
   const [isConnected, setIsConnected] = useState(false);
   const [message, setMessage] = useState("");
@@ -40,7 +42,6 @@ function RFIDReader() {
       });
   };
 
-  // Fetch tags automatically when connected
   useEffect(() => {
     let interval;
     if (isConnected) {
@@ -109,7 +110,7 @@ function RegistrationForm() {
   };
 
   return (
-    <div>
+    <div className="container">
       <h1>Registrace</h1>
       <form onSubmit={handleSubmit}>
         <div>
@@ -136,12 +137,11 @@ function RegistrationForm() {
 }
 
 function App() {
-  const [role, setRole] = useState(null);
-
   return (
     <Router>
       <Routes>
-        <Route path="/" element={role === null ? <RoleSelection setRole={setRole} /> : (role === "spravce" ? <RFIDReader /> : <RegistrationForm />)} />
+        <Route path="/" element={<RoleSelection />} />
+        <Route path="/timer" element={<RFIDReader />} />
         <Route path="/registration" element={<RegistrationForm />} />
       </Routes>
     </Router>
