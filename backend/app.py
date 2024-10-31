@@ -9,10 +9,12 @@ import configparser
 import time
 from datetime import datetime
 from enum import Enum
+import re
 
 # Import models
 from database import db
 from database.user import User
+from database.tag import Tag
 
 # Load configuration from config.ini
 config = configparser.ConfigParser()
@@ -131,6 +133,66 @@ def get_category(gender, birth_year):
             return FemaleCategory.SENIOR.value
     else:
         return "Unknown Category"
+    
+def parse_tags(data):
+    """Parse tag data from RFID reader response"""
+    # Upravený pattern pro přesnou shodu s formátem dat
+    pattern = r"Tag:([\w\s]+), Disc:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Last:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Count:(\d+), Ant:(\d+), Proto:(\d+)"
+    tags_found = []
+    
+    for line in data.split('\n'):
+        if not line.strip():  # Přeskočit prázdné řádky
+            continue
+            
+        match = re.match(pattern, line.strip())
+        if match:
+            try:
+                tag_id, discovery_time, last_seen_time, count, ant, proto = match.groups()
+                
+                # Získat poslední 4 číslice z tag_id
+                number = tag_id.strip().split()[-1]
+                
+                result = store_tags_to_database(
+                    tag_id=tag_id.strip(),
+                    number=int(number),
+                    discovery_time=discovery_time,
+                    last_seen_time=last_seen_time,
+                    count=int(count),
+                    antenna=int(ant),
+                    protocol=int(proto)
+                )
+                if result:
+                    tags_found.append(result)
+                    info_logger.info(f'Successfully processed tag: {tag_id}')
+            except Exception as e:
+                error_logger.error(f'Error processing line "{line}": {str(e)}')
+        else:
+            error_logger.warning(f'Line did not match pattern: {line}')
+    
+    return tags_found
+
+def store_tags_to_database(tag_id, number, discovery_time, last_seen_time, count, antenna, protocol):
+    """Store tag data in the database"""
+    try:
+        new_tag = Tag(
+            tag_id=tag_id,
+            number=number,
+            discovery_time=discovery_time,
+            last_seen_time=last_seen_time,
+            count=count,
+            antenna=antenna,
+            protocol=protocol
+        )
+        
+        db.session.add(new_tag)
+        db.session.commit()
+        info_logger.info(f'Stored new tag: {tag_id}')
+        return new_tag
+    
+    except Exception as e:
+        db.session.rollback()
+        error_logger.error(f'Error storing/updating tag {tag_id}: {str(e)}')
+        raise
 
 # Routes
 @app.route('/')
@@ -156,6 +218,7 @@ def fetch_taglist():
             return jsonify({"status": "error", "message": "Not connected to RFID reader"})
         
         taglist_response = alien.command('get Taglist')
+        parse_tags(taglist_response)
         print(taglist_response)
         tags = taglist_response.split("\n")
                     
@@ -179,7 +242,6 @@ def register():
         if not all([forename, surname, year, club, email, gender]):
             return jsonify({'error': 'All fields are required'}), 400
 
-        # Convert year to integer
         try:
             year = int(year)
         except ValueError:
@@ -224,6 +286,27 @@ def get_users():
     except Exception as e:
         error_logger.error('Error fetching users: %s', str(e))
         return jsonify({'error': 'Error fetching users'}), 500
+    
+@app.route('/tags', methods=['GET'])
+def get_tags():
+    """Get all stored tags from database"""
+    try:
+        tags = Tag.query.all()
+        tags_list = []
+        for tag in tags:
+            tags_list.append({
+                'tag_id': tag.tag_id,
+                'number': tag.number,
+                'discovery_time': tag.discovery_time,
+                'last_seen_time': tag.last_seen_time,
+                'count': tag.count,
+                'antenna': tag.antenna,
+                'protocol': tag.protocol
+            })
+        return jsonify({'tags': tags_list})
+    except Exception as e:
+        error_logger.error(f'Error fetching tags: {str(e)}')
+        return jsonify({'error': 'Error fetching tags'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
@@ -231,8 +314,12 @@ def catch_all(path):
     return app.send_static_file('index.html')
 
 # Create tables before first request
-with app.app_context():
-    db.create_all()
+def init_db():
+    """Initialize database tables"""
+    with app.app_context():
+        db.create_all()
+        info_logger.info('Database tables created successfully')
 
 if __name__ == '__main__':
+    init_db()
     app.run(host='0.0.0.0', port=5001, debug=True)
