@@ -291,7 +291,7 @@ def get_users():
 def get_tags():
     """Get all stored tags from database"""
     try:
-        tags = Tag.query.all()
+        tags = BackUpTag.query.all()
         tags_list = []
         for tag in tags:
             tags_list.append({
