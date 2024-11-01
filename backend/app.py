@@ -14,7 +14,7 @@ import re
 # Import models
 from database import db
 from database.user import User
-from database.tag import Tag
+from database.tag import BackUpTag
 
 # Load configuration from config.ini
 config = configparser.ConfigParser()
@@ -174,7 +174,7 @@ def parse_tags(data):
 def store_tags_to_database(tag_id, number, discovery_time, last_seen_time, count, antenna, protocol):
     """Store tag data in the database"""
     try:
-        new_tag = Tag(
+        new_tag = BackUpTag(
             tag_id=tag_id,
             number=number,
             discovery_time=discovery_time,
