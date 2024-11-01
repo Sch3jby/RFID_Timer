@@ -57,17 +57,25 @@ error_logger.addHandler(error_handler)
 
 # Enum for male categories
 class MaleCategory(Enum):
-    CHILDREN = "Muži 7-15"
-    JUNIOR = "Muži 16-18"
-    ADULT = "Muži 19-40"
-    SENIOR = "Muži 41+"
+    CHILDRENA = "Men 5-9"
+    CHILDRENB = "Men 10-15"
+    JUNIOR = "Men 16-20"
+    ADULTA = "Men 21-39"
+    ADULTB = "Men 40-49"
+    ADULTC = "Men 50-59"
+    ADULTD = "Men 60-69"
+    SENIOR = "Men 70+"
 
 # Enum for female categories
 class FemaleCategory(Enum):
-    CHILDREN = "Ženy 7-15"
-    JUNIOR = "Ženy 16-18"
-    ADULT = "Ženy 19-40"
-    SENIOR = "Ženy 41+"
+    CHILDRENA = "Women 5-9"
+    CHILDRENB = "Women 10-15"
+    JUNIOR = "Women 16-20"
+    ADULTA = "Women 21-39"
+    ADULTB = "Women 40-49"
+    ADULTC = "Women 50-59"
+    ADULTD = "Women 60-69"
+    SENIOR = "Women 70+"
 
 # RFID reader connection state
 class AlienRFID:
@@ -113,23 +121,39 @@ def get_category(gender, birth_year):
     age = current_year - birth_year
 
     if gender == "M":
-        if 7 <= age <= 15:
-            return MaleCategory.CHILDREN.value
-        elif 16 <= age <= 18:
+        if 5 <= age <= 9:
+            return MaleCategory.CHILDRENA.value
+        elif 10 <= age <= 15:
+            return MaleCategory.CHILDRENB.value
+        elif 16 <= age <= 20:
             return MaleCategory.JUNIOR.value
-        elif 19 <= age <= 40:
-            return MaleCategory.ADULT.value
-        elif age >= 41:
+        elif 21 <= age <= 39:
+            return MaleCategory.ADULTA.value
+        elif 40 <= age <= 49:
+            return MaleCategory.ADULTB.value
+        elif 50 <= age <= 59:
+            return MaleCategory.ADULTC.value
+        elif 60 <= age <= 69:
+            return MaleCategory.ADULTD.value
+        elif age >= 70:
             return MaleCategory.SENIOR.value
 
     elif gender == "F":
-        if 7 <= age <= 15:
-            return FemaleCategory.CHILDREN.value
-        elif 16 <= age <= 18:
+        if 5 <= age <= 9:
+            return FemaleCategory.CHILDRENA.value
+        elif 10 <= age <= 15:
+            return FemaleCategory.CHILDRENB.value
+        elif 16 <= age <= 20:
             return FemaleCategory.JUNIOR.value
-        elif 19 <= age <= 40:
-            return FemaleCategory.ADULT.value
-        elif age >= 41:
+        elif 21 <= age <= 39:
+            return FemaleCategory.ADULTA.value
+        elif 40 <= age <= 49:
+            return FemaleCategory.ADULTB.value
+        elif 50 <= age <= 59:
+            return FemaleCategory.ADULTC.value
+        elif 60 <= age <= 69:
+            return FemaleCategory.ADULTD.value
+        elif age >= 70:
             return FemaleCategory.SENIOR.value
     else:
         return "Unknown Category"
