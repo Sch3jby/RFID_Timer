@@ -293,7 +293,6 @@ def get_users():
             users_list.append({
                 'forename': user.forename,
                 'surname': user.surname,
-                'year': user.year,
                 'club': user.club,
                 'category': user.category
             })

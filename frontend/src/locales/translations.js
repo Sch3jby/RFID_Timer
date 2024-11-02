@@ -8,7 +8,7 @@ export const translations = {
       },
       home: {
         welcome: "Vítejte v systému pro závody",
-        selectOption: "Vyberte jednu z možností v menu nahoře pro pokračování."
+        selectOption: "Vítejte na úvodní stránce."
       },
       registration: {
         title: "Registrace",
@@ -32,7 +32,6 @@ export const translations = {
         columns: {
           firstName: "Jméno",
           lastName: "Příjmení",
-          birthYear: "Rok narození",
           club: "Klub / Město",
           category: "Kategorie"
         }
@@ -56,7 +55,7 @@ export const translations = {
       },
       home: {
         welcome: "Welcome to the Race System",
-        selectOption: "Select one of the options in the menu above to continue."
+        selectOption: "Welcome on the homepage"
       },
       registration: {
         title: "Registration",

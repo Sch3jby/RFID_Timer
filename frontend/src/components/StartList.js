@@ -31,7 +31,6 @@ function StartList() {
           <tr>
             <th>{t('startList.columns.firstName')}</th>
             <th>{t('startList.columns.lastName')}</th>
-            <th>{t('startList.columns.birthYear')}</th>
             <th>{t('startList.columns.club')}</th>
             <th>{t('startList.columns.category')}</th>
           </tr>
@@ -41,7 +40,6 @@ function StartList() {
             <tr key={index}>
               <td>{user.forename}</td>
               <td>{user.surname}</td>
-              <td>{user.year}</td>
               <td>{user.club}</td>
               <td>{user.category}</td>
             </tr>
