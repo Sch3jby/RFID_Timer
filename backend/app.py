@@ -15,6 +15,7 @@ import re
 from database import db
 from database.user import User
 from database.tag import BackUpTag
+from database.race import Race
 
 # Load configuration from config.ini
 config = configparser.ConfigParser()
@@ -162,7 +163,7 @@ def parse_tags(data):
     tags_found = []
     
     for line in data.split('\n'):
-        if not line.strip():  # Přeskočit prázdné řádky
+        if not line.strip():
             continue
             
         match = re.match(pattern, line.strip())
@@ -236,9 +237,10 @@ def fetch_taglist():
         parse_tags(taglist_response)
         print(taglist_response)
         tags = taglist_response.split("\n")
+        middle_tags = tags[1:-1]
                     
         info_logger.info('Reader successfully connected')
-        return jsonify({"status": "success", "taglist": tags})
+        return jsonify({"status": "success", "taglist": middle_tags})
     except Exception as e:
         error_logger.error('Failed to connect to reader: %s', str(e))
         return jsonify({"status": "error", "message": str(e)})
