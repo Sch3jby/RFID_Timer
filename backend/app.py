@@ -15,6 +15,7 @@ import re
 from database import db
 from database.user import User
 from database.tag import BackUpTag
+from database.race import Race
 
 # Load configuration from config.ini
 config = configparser.ConfigParser()
@@ -85,21 +86,18 @@ class AlienRFID:
         self.terminal = None
         self.connected = False
 
-    def connect(self, retries=5):
-        for attempt in range(retries):
-            try:
-                self.terminal = telnetlib.Telnet(self.hostname, self.port)
-                self.terminal.read_until(b'Username>', timeout=5)
-                self.terminal.write(b'alien\n')  # Replace with actual username
-                self.terminal.read_until(b'Password>', timeout=5)
-                self.terminal.write(b'password\n')  # Replace with actual password
-                self.terminal.read_until(b'>', timeout=5)
-                self.connected = True
-                return
-            except Exception as e:
-                print(f"Attempt {attempt + 1} failed: {e}")
-                time.sleep(2)
-        raise RuntimeError(f"Failed to connect after {retries} attempts.")
+    def connect(self):
+        try:
+            self.terminal = telnetlib.Telnet(self.hostname, self.port)
+            self.terminal.read_until(b'Username>', timeout=5)
+            self.terminal.write(b'alien\n')
+            self.terminal.read_until(b'Password>', timeout=5)
+            self.terminal.write(b'password\n')
+            self.terminal.read_until(b'>', timeout=5)
+            self.connected = True
+            return
+        except Exception as e:
+            print(f"Attempt failed: {e}")
 
     def disconnect(self):
         if self.connected and self.terminal:
@@ -165,7 +163,7 @@ def parse_tags(data):
     tags_found = []
     
     for line in data.split('\n'):
-        if not line.strip():  # Přeskočit prázdné řádky
+        if not line.strip():
             continue
             
         match = re.match(pattern, line.strip())
@@ -180,10 +178,7 @@ def parse_tags(data):
                     tag_id=tag_id.strip(),
                     number=int(number),
                     discovery_time=discovery_time,
-                    last_seen_time=last_seen_time,
-                    count=int(count),
-                    antenna=int(ant),
-                    protocol=int(proto)
+                    last_seen_time=last_seen_time
                 )
                 if result:
                     tags_found.append(result)
@@ -195,17 +190,14 @@ def parse_tags(data):
     
     return tags_found
 
-def store_tags_to_database(tag_id, number, discovery_time, last_seen_time, count, antenna, protocol):
+def store_tags_to_database(tag_id, number, discovery_time, last_seen_time):
     """Store tag data in the database"""
     try:
         new_tag = BackUpTag(
             tag_id=tag_id,
             number=number,
             discovery_time=discovery_time,
-            last_seen_time=last_seen_time,
-            count=count,
-            antenna=antenna,
-            protocol=protocol
+            last_seen_time=last_seen_time
         )
         
         db.session.add(new_tag)
@@ -230,7 +222,7 @@ def connect_reader():
             alien.disconnect()
             return jsonify({"status": "disconnected"})
         else:
-            alien.connect(retries=5)
+            alien.connect()
             return jsonify({"status": "connected"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
@@ -245,9 +237,10 @@ def fetch_taglist():
         parse_tags(taglist_response)
         print(taglist_response)
         tags = taglist_response.split("\n")
+        middle_tags = tags[1:-1]
                     
         info_logger.info('Reader successfully connected')
-        return jsonify({"status": "success", "taglist": tags})
+        return jsonify({"status": "success", "taglist": middle_tags})
     except Exception as e:
         error_logger.error('Failed to connect to reader: %s', str(e))
         return jsonify({"status": "error", "message": str(e)})
@@ -302,7 +295,6 @@ def get_users():
             users_list.append({
                 'forename': user.forename,
                 'surname': user.surname,
-                'year': user.year,
                 'club': user.club,
                 'category': user.category
             })
