@@ -1,4 +1,4 @@
-# Průběh práce
+# Průběh práce (hlavní body bakalářské práce)
 
 <!--✅ ❌ ❓ 🛠 📋-->
 
