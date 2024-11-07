@@ -11,8 +11,8 @@
 ---
 
 ### ✅ Napojení databáze
-- **Vyberte si vhodnou databázi (PostgreSQL)** - ✅ Hotovo
-- **Napojte databázi** - ✅ Hotovo
+- **Vyběr vhodné databáze (PostgreSQL)** - ✅ Hotovo
+- **Napojení databáze** - ✅ Hotovo
 
 ---
 
@@ -51,3 +51,4 @@
 ---
 
 ### ❌ Výsledková listina
+- **Vytvořit v databázi novou tabulku výsledků zvlášť pro každý závod** - ❌ Dodělat
