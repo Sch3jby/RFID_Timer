@@ -6,7 +6,7 @@
 ### ✅ Spojení s readerem
 - **Základní komunikace s readerem** - ✅ Hotovo
 - **Zobrazení Tagů v UI** - ✅ Hotovo
-- **Ukládání všech načtených Tagů do databáze (záloha) - ✅ Hotovo
+- **Ukládání všech načtených Tagů do databáze (záloha)** - ✅ Hotovo
 
 ---
 
