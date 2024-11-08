@@ -36,10 +36,10 @@
 
 ---
 
-### ❌ Volba závodu
+### ✅ Volba závodu
 - **Vytvoření tabulky závod s potřebnými parametry v databázi** - ✅ Hotovo
-- **Volba při registraci** - ❌ Dodělat
-- **Propojení s uživatelem** - ❌ Dodělat
+- **Volba při registraci** - ✅ Hotovo
+- **Propojení s uživatelem** - ✅ Hotovo
 
 ---
 
