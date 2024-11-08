@@ -30,6 +30,7 @@ export const translations = {
         title: "Startovní listina",
         loading: "Načítání...",
         error: "Chyba při načítání uživatelů",
+        search: "Hledat",
         columns: {
           name: "Jméno",
           club: "Klub / Město",
@@ -78,6 +79,7 @@ export const translations = {
         title: "Start List",
         loading: "Loading...",
         error: "Error loading users",
+        search: "Search",
         columns: {
           name: "Name",
           birthYear: "Birth Year",
