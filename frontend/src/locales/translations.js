@@ -23,17 +23,18 @@ export const translations = {
         female: "Žena",
         register: "Registrovat",
         success: "Uživatel byl úspěšně zaregistrován",
-        error: "Chyba při registraci"
+        error: "Chyba při registraci",
+        race: "Závod"
       },
       startList: {
         title: "Startovní listina",
         loading: "Načítání...",
         error: "Chyba při načítání uživatelů",
         columns: {
-          firstName: "Jméno",
-          lastName: "Příjmení",
+          name: "Jméno",
           club: "Klub / Město",
-          category: "Kategorie"
+          category: "Kategorie",
+          race: "Závod"
         }
       },
       rfidReader: {
@@ -70,18 +71,19 @@ export const translations = {
         female: "Female",
         register: "Register",
         success: "User has been successfully registered",
-        error: "Registration error"
+        error: "Registration error",
+        race: "Race"
       },
       startList: {
         title: "Start List",
         loading: "Loading...",
         error: "Error loading users",
         columns: {
-          firstName: "First Name",
-          lastName: "Last Name",
+          name: "Name",
           birthYear: "Birth Year",
           club: "Club / City",
-          category: "Category"
+          category: "Category",
+          race: "Race"
         }
       },
       rfidReader: {
