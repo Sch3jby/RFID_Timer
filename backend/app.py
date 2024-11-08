@@ -255,15 +255,23 @@ def register():
         club = data.get('club')
         email = data.get('email')
         gender = data.get('gender')
+        race_id = data.get('race_id')
 
-        if not all([forename, surname, year, club, email, gender]):
+        # Kontrola všech povinných polí včetně race_id
+        if not all([forename, surname, year, club, email, gender, race_id]):
             return jsonify({'error': 'All fields are required'}), 400
 
         try:
             year = int(year)
+            race_id = int(race_id)
         except ValueError:
-            return jsonify({'error': 'Year must be a number'}), 400
+            return jsonify({'error': 'Year and race_id must be numbers'}), 400
         
+        # Ověření, že závod existuje
+        race = Race.query.get(race_id)
+        if not race:
+            return jsonify({'error': 'Selected race does not exist'}), 404
+
         category = get_category(gender, year)
 
         new_user = User(
@@ -272,13 +280,14 @@ def register():
             year=year,
             club=club,
             email=email,
-            category=category
+            category=category,
+            race_id=race_id
         )
         
         db.session.add(new_user)
         db.session.commit()
         
-        info_logger.info('New user %s %s registered', forename, surname)
+        info_logger.info('New user %s %s registered for race %d', forename, surname, race_id)
         return jsonify({'message': 'User successfully registered'}), 201
 
     except Exception as e:
@@ -289,14 +298,22 @@ def register():
 @app.route('/startlist', methods=['GET'])
 def get_users():
     try:
-        users = User.query.all()
+        race_id = request.args.get('race_id')
+        
+        if race_id:
+            users = User.query.filter_by(race_id=race_id).all()
+        else:
+            users = User.query.all()
+            
         users_list = []
         for user in users:
+            race = Race.query.get(user.race_id)
             users_list.append({
                 'forename': user.forename,
                 'surname': user.surname,
                 'club': user.club,
-                'category': user.category
+                'category': user.category,
+                'race_name': race.name if race else 'Unknown Race'
             })
         return jsonify({'users': users_list})
     except Exception as e:
@@ -323,6 +340,24 @@ def get_tags():
     except Exception as e:
         error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
+
+@app.route('/races', methods=['GET'])
+def get_races():
+    try:
+        races = Race.query.all()
+        races_list = []
+        for race in races:
+            races_list.append({
+                'id': race.id,
+                'name': race.name,
+                'date': race.date.strftime('%Y-%m-%d'),
+                'start': race.start
+            })
+        return jsonify({'races': races_list})
+    except Exception as e:
+        error_logger.error('Error fetching races: %s', str(e))
+        return jsonify({'error': 'Error fetching races'}), 500
+
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
