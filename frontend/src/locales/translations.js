@@ -45,7 +45,11 @@ export const translations = {
         connecting: "Připojování...",
         connected: "Připojeno k RFID čtečce.",
         disconnected: "Odpojeno od RFID čtečky.",
-        error: "Chyba: "
+        error: "Chyba: ",
+        start: "Start",
+        stop: "Stop",
+        race: "Závod",
+        select: "Vyberte...",
       }
     },
     en: {
@@ -95,7 +99,11 @@ export const translations = {
         connecting: "Connecting...",
         connected: "Connected to RFID reader.",
         disconnected: "Disconnected from RFID reader.",
-        error: "Error: "
+        error: "Error: ",
+        start: "Start",
+        stop: "Stop",
+        race: "Race",
+        select: "Select...",
       }
     }
   };

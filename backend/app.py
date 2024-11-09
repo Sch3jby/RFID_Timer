@@ -16,6 +16,7 @@ from database import db
 from database.user import User
 from database.tag import BackUpTag
 from database.race import Race
+from database.race_operations import setup_all_race_results_tables
 
 # Load configuration from config.ini
 config = configparser.ConfigParser()
@@ -366,10 +367,11 @@ def catch_all(path):
 
 # Create tables before first request
 def init_db():
-    """Initialize database tables"""
+    """Initialize database tables and create race results tables"""
     with app.app_context():
         db.create_all()
-        info_logger.info('Database tables created successfully')
+        setup_all_race_results_tables()
+        info_logger.info('Database tables and race results tables created successfully')
 
 if __name__ == '__main__':
     init_db()
