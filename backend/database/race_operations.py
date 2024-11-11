@@ -7,7 +7,7 @@ def create_race_results_table(race_id, table_name):
     """Create a results table for a specific race if it doesn't exist"""
     create_table_sql = text(f"""
         CREATE TABLE IF NOT EXISTS {table_name} (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY,
             user_id INTEGER REFERENCES users(id),
             start_time TIMESTAMP,
             finish_time TIMESTAMP,

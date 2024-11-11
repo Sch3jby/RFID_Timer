@@ -1,0 +1,327 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  :root {
+    --primary-color: #3b82f6;
+    --primary-hover: #60a5fa;
+    --secondary-color: #94a3b8;
+    --danger-color: #ef4444;
+    --success-color: #22c55e;
+    --background-color: #0f172a;
+    --text-color: #e2e8f0;
+    --border-color: #1e293b;
+    --border-radius: 0.375rem;
+    --transition: all 0.2s ease-in-out;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.5;
+    color: #e2e8f0;
+    background-color: #0f172a;
+  }
+  
+  /* Layout */
+  .app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  /* Navigation */
+  .navigation {
+    background-color: #1e293b;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .nav-button {
+    text-decoration: none;
+    color: #94a3b8;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+  }
+  
+  .nav-button:hover {
+    color: #3b82f6;
+    background-color: #334155;
+  }
+  
+  .nav-button.active {
+    color: #3b82f6;
+    background-color: #1e40af;
+    font-weight: 500;
+  }
+  
+  /* Home Page */
+  .home-container {
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+  
+  .home-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: #3b82f6;
+  }
+  
+  .home-container p {
+    font-size: 1.125rem;
+    color: #94a3b8;
+  }
+  
+  /* Forms */
+  .form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #1e293b;
+    border-radius: var(--border-radius);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  label {
+    font-weight: 500;
+    color: #e2e8f0;
+  }
+  
+  input,
+  select {
+    padding: 0.75rem;
+    border: 1px solid #1e293b;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    background-color: #0f172a;
+    color: #e2e8f0;
+  }
+  
+  input:focus,
+  select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  button {
+    padding: 0.75rem 1.5rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  
+  button:hover {
+    background-color: #60a5fa;
+  }
+  
+  button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  /* Messages */
+  .message {
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+  }
+  
+  .message.success {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+  
+  .message.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+  
+  /* Tables */
+  .table-container {
+    overflow-x: auto;
+    background-color: #1e293b;
+    border-radius: var(--border-radius);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+  }
+  
+  th,
+  td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #1e293b;
+  }
+  
+  th {
+    background-color: #1e293b;
+    font-weight: 500;
+    color: #94a3b8;
+  }
+  
+  tr:hover {
+    background-color: #334155;
+  }
+  
+  /* RFID Reader */
+  .rfid-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #1e293b;
+    border-radius: var(--border-radius);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  }
+  
+  .tag-container {
+    margin-top: 10px;
+  }
+  
+  .tag-box {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #334155;
+    border: 1px solid #1e293b;
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-family: monospace;
+  }
+  
+  /* Loading State */
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    color: #94a3b8;
+  }
+  
+  .loading::after {
+    content: '';
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid #1e293b;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 0.5rem;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Language Switcher */
+  .language-switcher {
+    padding: 0.5rem 1rem;
+    background-color: #1e293b;
+    border: 1px solid #1e293b;
+    border-radius: var(--border-radius);
+    color: #94a3b8;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-left: auto;
+  }
+  
+  .language-switcher:hover {
+    color: #3b82f6;
+    border-color: #3b82f6;
+    background-color: #334155;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .main-content {
+      padding: 1rem;
+    }
+  
+    .nav-container {
+      justify-content: center;
+    }
+  
+    .home-container h1 {
+      font-size: 2rem;
+    }
+  
+    th,
+    td {
+      padding: 0.75rem;
+    }
+  
+    .form-container {
+      padding: 1rem;
+    }
+  
+    .language-switcher {
+      margin-left: 0;
+      text-align: center;
+      width: auto;
+      min-width: 80px;
+    }
+  }
+  
+  /* Utility Classes */
+  .text-center {
+    text-align: center;
+  }
+  
+  .mt-4 {
+    margin-top: 1rem;
+  }
+  
+  .mb-4 {
+    margin-bottom: 1rem;
+  }
+  
+  .w-full {
+    width: 100%;
+  }
