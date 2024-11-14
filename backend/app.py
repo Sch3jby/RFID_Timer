@@ -13,9 +13,11 @@ import re
 
 # Import models
 from database import db
-from database.user import User
+from database.user import Users
 from database.tag import BackUpTag
 from database.race import Race
+from database.registration import Registration
+
 from database.race_operations import setup_all_race_results_tables
 
 # Load configuration from config.ini
@@ -258,7 +260,6 @@ def register():
         gender = data.get('gender')
         race_id = data.get('race_id')
 
-        # Kontrola všech povinných polí včetně race_id
         if not all([forename, surname, year, club, email, gender, race_id]):
             return jsonify({'error': 'All fields are required'}), 400
 
@@ -267,58 +268,76 @@ def register():
             race_id = int(race_id)
         except ValueError:
             return jsonify({'error': 'Year and race_id must be numbers'}), 400
-        
-        # Ověření, že závod existuje
+
         race = Race.query.get(race_id)
         if not race:
             return jsonify({'error': 'Selected race does not exist'}), 404
 
         category = get_category(gender, year)
 
-        new_user = User(
-            forename=forename,
-            surname=surname,
-            year=year,
-            club=club,
-            email=email,
-            category=category,
-            race_id=race_id
+        user = Users.query.filter_by(email=email).first()
+        if not user:
+            user = Users(
+                forename=forename,
+                surname=surname,
+                year=year,
+                club=club,
+                email=email,
+                gender=gender,
+                category=category
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        registration = Registration(
+            race_id=race_id,
+            user_id=user.id,
+            start_time=None,
+            finish_time=None,
+            race_time=None,
+            position=None,
+            category_position=None
         )
-        
-        db.session.add(new_user)
+        db.session.add(registration)
         db.session.commit()
-        
-        info_logger.info('New user %s %s registered for race %d', forename, surname, race_id)
+
         return jsonify({'message': 'User successfully registered'}), 201
 
     except Exception as e:
         db.session.rollback()
-        error_logger.error('Error registering user: %s', str(e))
         return jsonify({'error': 'Error registering user'}), 400
-    
+
 @app.route('/startlist', methods=['GET'])
 def get_users():
     try:
         race_id = request.args.get('race_id')
-        
+
         if race_id:
-            users = User.query.filter_by(race_id=race_id).all()
+            registrations = Registration.query.filter_by(race_id=race_id).all()
+            users = [reg.user for reg in registrations]
         else:
-            users = User.query.all()
-            
+            users = Users.query.all()
+
         users_list = []
         for user in users:
-            race = Race.query.get(user.race_id)
-            users_list.append({
-                'forename': user.forename,
-                'surname': user.surname,
-                'club': user.club,
-                'category': user.category,
-                'race_name': race.name if race else 'Unknown Race'
-            })
+            registrations = user.registrations
+            for registration in registrations:
+                race = Race.query.get(registration.race_id)
+                users_list.append({
+                    'forename': user.forename,
+                    'surname': user.surname,
+                    'club': user.club,
+                    'category': user.category,
+                    'race_name': race.name if race else 'Unknown Race',
+                    'start_time': registration.start_time,
+                    'finish_time': registration.finish_time,
+                    'race_time': str(registration.race_time),
+                    'position': registration.position,
+                    'category_position': registration.category_position
+                })
         return jsonify({'users': users_list})
+
     except Exception as e:
-        error_logger.error('Error fetching users: %s', str(e))
         return jsonify({'error': 'Error fetching users'}), 500
     
 @app.route('/tags', methods=['GET'])

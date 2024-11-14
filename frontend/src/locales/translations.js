@@ -1,10 +1,13 @@
+import Calendar from "../components/Calendar";
+
 export const translations = {
     cs: {
       nav: {
         home: "Domů",
         organizer: "Organizátor",
         competitor: "Závodník",
-        startList: "Startovní listina"
+        startList: "Startovní listina",
+        calendar: "Kalendář"
       },
       home: {
         welcome: "Vítejte v systému pro závody",
@@ -50,6 +53,16 @@ export const translations = {
         stop: "Stop",
         race: "Závod",
         select: "Vyberte...",
+      },
+      calendar: {
+        title: "Kalendář",
+        loading: "Načítání...",
+        error: "Chyba při načítání závodů",
+        search: "Hledat",
+        columns: {
+          name: "Závod",
+          date: "Datum"
+        }
       }
     },
     en: {
@@ -57,7 +70,8 @@ export const translations = {
         home: "Home",
         organizer: "Organizer",
         competitor: "Competitor",
-        startList: "Start List"
+        startList: "Start List",
+        calendar: "Calendar"
       },
       home: {
         welcome: "Welcome to the Race System",
@@ -104,6 +118,17 @@ export const translations = {
         stop: "Stop",
         race: "Race",
         select: "Select...",
+      },
+      calendar: {
+        title: "Calendar",
+        loading: "Loading...",
+        error: "Error loading races",
+        search: "Search",
+        columns: {
+          name: "Race",
+          date: "Date"
+        }
       }
     }
+
   };

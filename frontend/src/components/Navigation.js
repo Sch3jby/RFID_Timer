@@ -34,6 +34,12 @@ function Navigation() {
         >
           {t('nav.startList')}
         </Link>
+        <Link 
+          to="/calendar" 
+          className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
+        >
+          {t('nav.calendar')}
+        </Link>
         <LanguageSwitcher />
       </div>
     </nav>
