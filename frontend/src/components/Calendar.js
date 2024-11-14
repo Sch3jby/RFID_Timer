@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '../contexts/LanguageContext';
+import { Link } from 'react-router-dom';
 
 function Calendar() {
   const { t } = useTranslation();
@@ -75,9 +76,11 @@ function Calendar() {
           </tr>
         </thead>
         <tbody>
-          {filteredRaces.map((race, index) => (
-            <tr key={index}>
-              <td>{race.name}</td>
+          {filteredRaces.map((race) => (
+            <tr key={race.id}>
+              <td>
+                <Link to={`/race/${race.id}`}>{race.name}</Link> {/* Odkaz na detail závodu */}
+              </td>
               <td>{race.date}</td>
             </tr>
           ))}

@@ -311,13 +311,12 @@ def register():
 def get_users():
     try:
         race_id = request.args.get('race_id')
-
+        
         if race_id:
-            registrations = Registration.query.filter_by(race_id=race_id).all()
-            users = [reg.user for reg in registrations]
+            users = Users.query.filter_by(race_id=race_id).all()
         else:
             users = Users.query.all()
-
+            
         users_list = []
         for user in users:
             registrations = user.registrations
@@ -328,16 +327,11 @@ def get_users():
                     'surname': user.surname,
                     'club': user.club,
                     'category': user.category,
-                    'race_name': race.name if race else 'Unknown Race',
-                    'start_time': registration.start_time,
-                    'finish_time': registration.finish_time,
-                    'race_time': str(registration.race_time),
-                    'position': registration.position,
-                    'category_position': registration.category_position
+                    'race_name': race.name if race else 'Unknown Race'
                 })
         return jsonify({'users': users_list})
-
     except Exception as e:
+        error_logger.error('Error fetching users: %s', str(e))
         return jsonify({'error': 'Error fetching users'}), 500
     
 @app.route('/tags', methods=['GET'])
@@ -377,7 +371,23 @@ def get_races():
     except Exception as e:
         error_logger.error('Error fetching races: %s', str(e))
         return jsonify({'error': 'Error fetching races'}), 500
-
+    
+@app.route('/race/<int:race_id>', methods=['GET'])
+def get_race_detail(race_id):
+    try:
+        race = Race.query.get(race_id)
+        if not race:
+            return jsonify({'error': 'Race not found'}), 404
+        race_detail = {
+            'id': race.id,
+            'name': race.name,
+            'date': race.date.strftime('%Y-%m-%d'),
+            'start': race.start
+        }
+        return jsonify({'race': race_detail})
+    except Exception as e:
+        error_logger.error(f'Error fetching race details: {str(e)}')
+        return jsonify({'error': 'Error fetching race details'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
