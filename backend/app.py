@@ -275,19 +275,17 @@ def register():
 
         category = get_category(gender, year)
 
-        user = Users.query.filter_by(email=email).first()
-        if not user:
-            user = Users(
-                forename=forename,
-                surname=surname,
-                year=year,
-                club=club,
-                email=email,
-                gender=gender,
-                category=category
-            )
-            db.session.add(user)
-            db.session.commit()
+        user = Users(
+            forename=forename,
+            surname=surname,
+            year=year,
+            club=club,
+            email=email,
+            gender=gender,
+            category=category
+        )
+        db.session.add(user)
+        db.session.commit()
 
         registration = Registration(
             race_id=race_id,
@@ -365,7 +363,8 @@ def get_races():
                 'id': race.id,
                 'name': race.name,
                 'date': race.date.strftime('%Y-%m-%d'),
-                'start': race.start
+                'start': race.start,
+                'description': race.description
             })
         return jsonify({'races': races_list})
     except Exception as e:
@@ -378,11 +377,28 @@ def get_race_detail(race_id):
         race = Race.query.get(race_id)
         if not race:
             return jsonify({'error': 'Race not found'}), 404
+            
+        # Get registrations for this race
+        registrations = Registration.query.filter_by(race_id=race_id).all()
+        participants = []
+        
+        for registration in registrations:
+            user = Users.query.get(registration.user_id)
+            if user:
+                participants.append({
+                    'forename': user.forename,
+                    'surname': user.surname,
+                    'club': user.club,
+                    'category': user.category
+                })
+                
         race_detail = {
             'id': race.id,
             'name': race.name,
             'date': race.date.strftime('%Y-%m-%d'),
-            'start': race.start
+            'start': race.start,
+            'description': race.description,
+            'participants': participants
         }
         return jsonify({'race': race_detail})
     except Exception as e:

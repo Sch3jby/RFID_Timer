@@ -1,4 +1,5 @@
 import Calendar from "../components/Calendar";
+import RaceDetail from "../components/RaceDetail";
 
 export const translations = {
     cs: {
@@ -63,6 +64,15 @@ export const translations = {
           name: "Závod",
           date: "Datum"
         }
+      },
+      raceDetail: {
+        date: "Datum",
+        loading: "Načítání...",
+        error: "Chyba při načítání závodů",
+        search: "Hledat",
+        startType: "Typ startu",
+        participants: "Seznam přihlášených",
+        description: "Popis"
       }
     },
     en: {
@@ -128,6 +138,15 @@ export const translations = {
           name: "Race",
           date: "Date"
         }
+      },
+      raceDetail: {
+        date: "Date",
+        loading: "Loading...",
+        error: "Error loading races",
+        search: "Search",
+        startType: "Start type",
+        participants: "List of registered users",
+        description: "Description"
       }
     }
 

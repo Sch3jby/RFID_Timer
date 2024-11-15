@@ -16,6 +16,7 @@ function RegistrationForm() {
   const [races, setRaces] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(true);
+  const [raceInput, setRaceInput] = useState('');
 
   // Fetch available races when component mounts
   useEffect(() => {
@@ -43,6 +44,21 @@ function RegistrationForm() {
     });
   };
 
+  const handleRaceChange = (e) => {
+    const inputValue = e.target.value;
+    setRaceInput(inputValue);
+    
+    // Najít odpovídající závod a nastavit jeho ID
+    const selectedRace = races.find(race => 
+      `${race.name} - ${race.date}` === inputValue
+    );
+    
+    setFormData({
+      ...formData,
+      race_id: selectedRace ? selectedRace.id : ''
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -57,6 +73,7 @@ function RegistrationForm() {
         gender: '',
         race_id: ''
       });
+      setRaceInput('');
     } catch (error) {
       setMessage({ 
         type: 'error', 
@@ -75,19 +92,19 @@ function RegistrationForm() {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>{t('registration.race')}:</label>
-          <select 
-            name="race_id" 
-            value={formData.race_id} 
-            onChange={handleChange}
+          <input
+            list="races"
+            type="text"
+            value={raceInput}
+            onChange={handleRaceChange}
+            placeholder={t('registration.select')}
             required
-          >
-            <option value="">{t('registration.select')}</option>
+          />
+          <datalist id="races">
             {races.map((race) => (
-              <option key={race.id} value={race.id}>
-                {race.name} - {race.date}
-              </option>
+              <option key={race.id} value={`${race.name} - ${race.date}`} />
             ))}
-          </select>
+          </datalist>
         </div>
         <div className="form-group">
           <label>{t('registration.firstName')}:</label>
