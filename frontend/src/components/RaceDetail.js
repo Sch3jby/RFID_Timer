@@ -85,9 +85,9 @@ function RaceDetail() {
         <table className="participants-table">
           <thead>
             <tr>
-              <th>{t('startList.columns.name')}</th>
-              <th>{t('startList.columns.club')}</th>
-              <th>{t('startList.columns.category')}</th>
+              <th>{t('raceDetail.columns.name')}</th>
+              <th>{t('raceDetail.columns.club')}</th>
+              <th>{t('raceDetail.columns.category')}</th>
             </tr>
           </thead>
           <tbody>

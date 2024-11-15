@@ -30,18 +30,6 @@ export const translations = {
         error: "Chyba při registraci",
         race: "Závod"
       },
-      startList: {
-        title: "Startovní listina",
-        loading: "Načítání...",
-        error: "Chyba při načítání uživatelů",
-        search: "Hledat",
-        columns: {
-          name: "Jméno",
-          club: "Klub / Město",
-          category: "Kategorie",
-          race: "Závod"
-        }
-      },
       rfidReader: {
         title: "RFID Reader",
         connect: "Připojit",
@@ -72,7 +60,12 @@ export const translations = {
         search: "Hledat",
         startType: "Typ startu",
         participants: "Seznam přihlášených",
-        description: "Popis"
+        description: "Popis",
+        columns: {
+          name: "Jméno",
+          club: "Datum",
+          category: "Kategorie"
+        }
       }
     },
     en: {
@@ -102,19 +95,6 @@ export const translations = {
         success: "User has been successfully registered",
         error: "Registration error",
         race: "Race"
-      },
-      startList: {
-        title: "Start List",
-        loading: "Loading...",
-        error: "Error loading users",
-        search: "Search",
-        columns: {
-          name: "Name",
-          birthYear: "Birth Year",
-          club: "Club / City",
-          category: "Category",
-          race: "Race"
-        }
       },
       rfidReader: {
         title: "RFID Reader",
@@ -146,7 +126,12 @@ export const translations = {
         search: "Search",
         startType: "Start type",
         participants: "List of registered users",
-        description: "Description"
+        description: "Description",
+        columns: {
+          name: "Name",
+          club: "Date",
+          category: "Category"
+        }
       }
     }
 

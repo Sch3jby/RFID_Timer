@@ -29,12 +29,6 @@ function Navigation() {
           {t('nav.competitor')}
         </Link>
         <Link 
-          to="/startlist" 
-          className={`nav-button ${location.pathname === '/startlist' ? 'active' : ''}`}
-        >
-          {t('nav.startList')}
-        </Link>
-        <Link 
           to="/calendar" 
           className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
         >

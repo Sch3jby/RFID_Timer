@@ -304,33 +304,6 @@ def register():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Error registering user'}), 400
-
-@app.route('/startlist', methods=['GET'])
-def get_users():
-    try:
-        race_id = request.args.get('race_id')
-        
-        if race_id:
-            users = Users.query.filter_by(race_id=race_id).all()
-        else:
-            users = Users.query.all()
-            
-        users_list = []
-        for user in users:
-            registrations = user.registrations
-            for registration in registrations:
-                race = Race.query.get(registration.race_id)
-                users_list.append({
-                    'forename': user.forename,
-                    'surname': user.surname,
-                    'club': user.club,
-                    'category': user.category,
-                    'race_name': race.name if race else 'Unknown Race'
-                })
-        return jsonify({'users': users_list})
-    except Exception as e:
-        error_logger.error('Error fetching users: %s', str(e))
-        return jsonify({'error': 'Error fetching users'}), 500
     
 @app.route('/tags', methods=['GET'])
 def get_tags():
