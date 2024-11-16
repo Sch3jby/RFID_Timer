@@ -42,3 +42,8 @@ def setup_all_race_results_tables():
             table_name = f'race_results_{race.id}'
             if not race.results_table_name:
                 create_race_results_table(race.id, table_name)
+
+def get_categories(self):
+        """Vrátí všechny kategorie pro tento závod"""
+        return [rc.category for rc in self.race_categories]
+    
