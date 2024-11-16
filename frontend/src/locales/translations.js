@@ -6,7 +6,7 @@ export const translations = {
       nav: {
         home: "Domů",
         organizer: "Organizátor",
-        competitor: "Závodník",
+        competitor: "Registrace",
         startList: "Startovní listina",
         calendar: "Kalendář"
       },
@@ -72,7 +72,7 @@ export const translations = {
       nav: {
         home: "Home",
         organizer: "Organizer",
-        competitor: "Competitor",
+        competitor: "Registration",
         startList: "Start List",
         calendar: "Calendar"
       },
