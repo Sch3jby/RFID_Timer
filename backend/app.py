@@ -17,6 +17,7 @@ from database.user import Users
 from database.tag import BackUpTag
 from database.race import Race
 from database.registration import Registration
+from database.category import Category
 
 from database.race_operations import setup_all_race_results_tables
 
@@ -59,28 +60,6 @@ error_logger = logging.getLogger('error_logger')
 error_logger.setLevel(logging.ERROR)
 error_logger.addHandler(error_handler)
 
-# Enum for male categories
-class MaleCategory(Enum):
-    CHILDRENA = "Men 5-9"
-    CHILDRENB = "Men 10-15"
-    JUNIOR = "Men 16-20"
-    ADULTA = "Men 21-39"
-    ADULTB = "Men 40-49"
-    ADULTC = "Men 50-59"
-    ADULTD = "Men 60-69"
-    SENIOR = "Men 70+"
-
-# Enum for female categories
-class FemaleCategory(Enum):
-    CHILDRENA = "Women 5-9"
-    CHILDRENB = "Women 10-15"
-    JUNIOR = "Women 16-20"
-    ADULTA = "Women 21-39"
-    ADULTB = "Women 40-49"
-    ADULTC = "Women 50-59"
-    ADULTD = "Women 60-69"
-    SENIOR = "Women 70+"
-
 # RFID reader connection state
 class AlienRFID:
     def __init__(self, hostname, port):
@@ -118,46 +97,21 @@ alien = AlienRFID(hostname, port)
 
 # Methods
 def get_category(gender, birth_year):
+    """
+    Get appropriate category based on gender and birth year from database
+    """
     current_year = datetime.now().year
     age = current_year - birth_year
 
-    if gender == "M":
-        if 5 <= age <= 9:
-            return MaleCategory.CHILDRENA.value
-        elif 10 <= age <= 15:
-            return MaleCategory.CHILDRENB.value
-        elif 16 <= age <= 20:
-            return MaleCategory.JUNIOR.value
-        elif 21 <= age <= 39:
-            return MaleCategory.ADULTA.value
-        elif 40 <= age <= 49:
-            return MaleCategory.ADULTB.value
-        elif 50 <= age <= 59:
-            return MaleCategory.ADULTC.value
-        elif 60 <= age <= 69:
-            return MaleCategory.ADULTD.value
-        elif age >= 70:
-            return MaleCategory.SENIOR.value
+    # Získáme všechny kategorie pro dané pohlaví
+    categories = Category.query.filter_by(gender=gender).all()
+    
+    # Najdeme odpovídající kategorii podle věku
+    for category in categories:
+        if category.min_age <= age <= category.max_age:
+            return category.category_name
 
-    elif gender == "F":
-        if 5 <= age <= 9:
-            return FemaleCategory.CHILDRENA.value
-        elif 10 <= age <= 15:
-            return FemaleCategory.CHILDRENB.value
-        elif 16 <= age <= 20:
-            return FemaleCategory.JUNIOR.value
-        elif 21 <= age <= 39:
-            return FemaleCategory.ADULTA.value
-        elif 40 <= age <= 49:
-            return FemaleCategory.ADULTB.value
-        elif 50 <= age <= 59:
-            return FemaleCategory.ADULTC.value
-        elif 60 <= age <= 69:
-            return FemaleCategory.ADULTD.value
-        elif age >= 70:
-            return FemaleCategory.SENIOR.value
-    else:
-        return "Unknown Category"
+    return "Unknown Category"
     
 def parse_tags(data):
     """Parse tag data from RFID reader response"""
@@ -273,7 +227,16 @@ def register():
         if not race:
             return jsonify({'error': 'Selected race does not exist'}), 404
 
-        category = get_category(gender, year)
+        # Get category from database
+        current_year = datetime.now().year
+        age = current_year - year
+        category = Category.query.filter_by(gender=gender)\
+            .filter(Category.min_age <= age)\
+            .filter(Category.max_age >= age)\
+            .first()
+
+        if not category:
+            return jsonify({'error': 'No suitable category found for this age and gender'}), 400
 
         user = Users(
             forename=forename,
@@ -282,7 +245,7 @@ def register():
             club=club,
             email=email,
             gender=gender,
-            category=category
+            category=category.category_name
         )
         db.session.add(user)
         db.session.commit()
@@ -290,6 +253,7 @@ def register():
         registration = Registration(
             race_id=race_id,
             user_id=user.id,
+            category_id=category.id
         )
         db.session.add(registration)
         db.session.commit()
@@ -298,7 +262,7 @@ def register():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': 'Error registering user'}), 400
+        return jsonify({'error': f'Error registering user: {str(e)}'}), 400
     
 @app.route('/tags', methods=['GET'])
 def get_tags():
@@ -320,6 +284,24 @@ def get_tags():
     except Exception as e:
         error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
+
+@app.route('/categories', methods=['GET'])
+def get_categories():
+    """Get all categories from database"""
+    try:
+        categories = Category.query.all()
+        categories_list = []
+        for category in categories:
+            categories_list.append({
+                'id': category.id,
+                'name': category.category_name,
+                'gender': category.gender,
+                'min_age': category.min_age,
+                'max_age': category.max_age
+            })
+        return jsonify({'categories': categories_list})
+    except Exception as e:
+        return jsonify({'error': f'Error fetching categories: {str(e)}'}), 500
 
 @app.route('/races', methods=['GET'])
 def get_races():

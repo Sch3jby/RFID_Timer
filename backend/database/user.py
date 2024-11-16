@@ -11,4 +11,5 @@ class Users(db.Model):
     gender = db.Column(db.String(1), nullable=False)
     category = db.Column(db.String(50), nullable=False)
 
+    # Relationship with Registration
     registrations = db.relationship('Registration', backref='users')

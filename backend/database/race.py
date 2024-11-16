@@ -9,4 +9,5 @@ class Race(db.Model):
     results_table_name = db.Column(db.String(50))
     description = db.Column(db.String(5000))
 
+    # Relationship with Registration
     registrations = db.relationship('Registration', backref='race')
