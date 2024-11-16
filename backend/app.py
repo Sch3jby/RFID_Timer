@@ -290,11 +290,6 @@ def register():
         registration = Registration(
             race_id=race_id,
             user_id=user.id,
-            start_time=None,
-            finish_time=None,
-            race_time=None,
-            position=None,
-            category_position=None
         )
         db.session.add(registration)
         db.session.commit()
