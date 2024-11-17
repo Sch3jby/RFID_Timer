@@ -230,7 +230,7 @@ def register():
         # Get category from database
         current_year = datetime.now().year
         age = current_year - year
-        category = Category.query.filter_by(gender=gender)\
+        category = Category.query.filter_by(gender=gender, race_id=race_id)\
             .filter(Category.min_age <= age)\
             .filter(Category.max_age >= age)\
             .first()
