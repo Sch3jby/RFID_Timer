@@ -6,10 +6,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import telnetlib
 import configparser
-import time
 from datetime import datetime
-from enum import Enum
 import re
+from sqlalchemy import text
 
 # Import models
 from database import db
@@ -284,6 +283,42 @@ def get_tags():
     except Exception as e:
         error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
+
+@app.route('/store_results', methods=['POST'])
+def store_results():
+    try:
+        data = request.json
+        tags = data.get('tags', [])
+        race_id = data.get('race_id')
+
+        if not race_id:
+            return jsonify({"status": "error", "message": "Race ID is required"}), 400
+
+        table_name = f'race_results_{race_id}'
+        
+        stored_results = 0
+        for tag in tags:
+            # Insert into race-specific results table
+            insert_sql = text(f'''
+                INSERT INTO {table_name} (tag_id, timestamp) 
+                VALUES (:tag_id, :timestamp)
+            ''')
+            db.session.execute(insert_sql, {
+                'tag_id': tag, 
+                'timestamp': datetime.now()
+            })
+            stored_results += 1
+        
+        db.session.commit()
+        return jsonify({
+            "status": "success", 
+            "message": f"Stored {stored_results} results for race {race_id}"
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        error_logger.error(f'Error storing results: {str(e)}')
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/categories', methods=['GET'])
 def get_categories():

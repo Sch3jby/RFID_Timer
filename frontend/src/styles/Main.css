@@ -261,16 +261,16 @@
   
   .tag-container {
     margin-top: 10px;
-  }
-  
-  .tag-box {
-    margin-bottom: 10px;
-    padding: 10px;
-    background-color: #f8fafc;
+    max-height: 200px;
+    overflow-y: auto;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    text-align: center;
-    font-family: monospace;
+    padding: 10px;
+  }
+  
+  .tag-container .badge {
+    margin: 2px;
+    display: inline-block;
   }
   
   /* Loading State */
