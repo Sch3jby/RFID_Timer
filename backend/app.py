@@ -243,8 +243,7 @@ def register():
             year=year,
             club=club,
             email=email,
-            gender=gender,
-            category=category.category_name
+            gender=gender
         )
         db.session.add(user)
         db.session.commit()
@@ -252,7 +251,8 @@ def register():
         registration = Registration(
             race_id=race_id,
             user_id=user.id,
-            category_id=category.id
+            category_id=category.id,
+            category_name=category.category_name
         )
         db.session.add(registration)
         db.session.commit()
@@ -374,7 +374,7 @@ def get_race_detail(race_id):
                     'forename': user.forename,
                     'surname': user.surname,
                     'club': user.club,
-                    'category': user.category
+                    'category': registration.category_name
                 })
                 
         race_detail = {
