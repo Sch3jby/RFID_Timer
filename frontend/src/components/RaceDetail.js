@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 
 function RaceDetail() {
   const { t } = useTranslation();
   const { id } = useParams();
+  const navigate = useNavigate();
   const [race, setRace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -60,6 +61,14 @@ function RaceDetail() {
     }
   };
 
+  const handleRegister = () => {
+    navigate('/registration', { 
+      state: { 
+        preselectedRace: `${race.name} - ${race.date}` 
+      } 
+    });
+  };
+
   const sortedParticipants = [...filteredParticipants].sort((a, b) => {
     const modifier = sortDirection === 'asc' ? 1 : -1;
     return a[sortColumn].localeCompare(b[sortColumn]) * modifier;
@@ -85,6 +94,14 @@ function RaceDetail() {
         <h3><strong>{t('raceDetail.startType')}:</strong> {race.start}</h3>
         <h3><strong>{t('raceDetail.description')}:</strong></h3>
         <p>{race.description}</p>
+        
+        {/* New Register Button */}
+        <button 
+          onClick={handleRegister} 
+          className="register-button mt-4"
+        >
+          {t('raceDetail.register')}
+        </button>
       </div>
       
       <div className="participants-section">

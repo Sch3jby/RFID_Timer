@@ -28,7 +28,8 @@ export const translations = {
         register: "Registrovat",
         success: "Uživatel byl úspěšně zaregistrován",
         error: "Chyba při registraci",
-        race: "Závod"
+        race: "Závod",
+        track: "Trať"
       },
       rfidReader: {
         title: "RFID Reader",
@@ -61,6 +62,8 @@ export const translations = {
         startType: "Typ startu",
         participants: "Seznam přihlášených",
         description: "Popis",
+        register: "Přihlásit se",
+        noParticipants: "Nebyli nalezeni žádní uživatelé",
         columns: {
           name: "Jméno",
           club: "Datum",
@@ -94,7 +97,8 @@ export const translations = {
         register: "Register",
         success: "User has been successfully registered",
         error: "Registration error",
-        race: "Race"
+        race: "Race",
+        track: "Track"
       },
       rfidReader: {
         title: "RFID Reader",
@@ -127,6 +131,8 @@ export const translations = {
         startType: "Start type",
         participants: "List of registered users",
         description: "Description",
+        register: "Register",
+        noParticipants: "No users found",
         columns: {
           name: "Name",
           club: "Date",

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from 'react-router-dom';
 import axios from "axios";
 import { useTranslation } from '../contexts/LanguageContext';
 
 function RegistrationForm() {
   const { t } = useTranslation();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     forename: '',
     surname: '',
@@ -21,17 +23,31 @@ function RegistrationForm() {
   const [raceInput, setRaceInput] = useState('');
   const [trackInput, setTrackInput] = useState('');
 
-  // Fetch available races and tracks when component mounts
   useEffect(() => {
     const fetchData = async () => {
       try {
         const racesResponse = await axios.get('http://localhost:5001/races');
         setRaces(racesResponse.data.races);
 
-        // Populate tracks based on the selected race
-        if (formData.race_id) {
-          const tracksResponse = await axios.get(`http://localhost:5001/tracks?race_id=${formData.race_id}`);
-          setTracks(tracksResponse.data.tracks);
+        // Check for pre-selected race from navigation state
+        if (location.state?.preselectedRace) {
+          setRaceInput(location.state.preselectedRace);
+          
+          // Find the corresponding race and set its ID
+          const selectedRace = racesResponse.data.races.find(race => 
+            `${race.name} - ${race.date}` === location.state.preselectedRace
+          );
+          
+          if (selectedRace) {
+            // Fetch tracks for the pre-selected race
+            const tracksResponse = await axios.get(`http://localhost:5001/tracks?race_id=${selectedRace.id}`);
+            setTracks(tracksResponse.data.tracks);
+            
+            setFormData(prevData => ({
+              ...prevData,
+              race_id: selectedRace.id
+            }));
+          }
         }
       } catch (error) {
         setMessage({ 
@@ -44,7 +60,7 @@ function RegistrationForm() {
     };
 
     fetchData();
-  }, [t, formData.race_id]);
+  }, [t, location.state]);
 
   const handleChange = (e) => {
     setFormData({
