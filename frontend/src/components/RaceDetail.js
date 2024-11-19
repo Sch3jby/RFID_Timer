@@ -11,6 +11,8 @@ function RaceDetail() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredParticipants, setFilteredParticipants] = useState([]);
+  const [sortColumn, setSortColumn] = useState('surname');
+  const [sortDirection, setSortDirection] = useState('asc');
 
   useEffect(() => {
     const fetchRace = async () => {
@@ -49,6 +51,20 @@ function RaceDetail() {
     }
   };
 
+  const handleSort = (column) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedParticipants = [...filteredParticipants].sort((a, b) => {
+    const modifier = sortDirection === 'asc' ? 1 : -1;
+    return a[sortColumn].localeCompare(b[sortColumn]) * modifier;
+  });
+
   if (loading) {
     return <div className="loading">{t('common.loading')}</div>;
   }
@@ -72,7 +88,9 @@ function RaceDetail() {
       </div>
       
       <div className="participants-section">
-        <h2>{t('raceDetail.participants')}</h2>
+        <h2>
+          {t('raceDetail.participants')} ({filteredParticipants.length})
+        </h2>
         <div className="search-container">
           <input
             type="text"
@@ -85,19 +103,27 @@ function RaceDetail() {
         <table className="participants-table">
           <thead>
             <tr>
-              <th>{t('raceDetail.columns.name')}</th>
-              <th>{t('raceDetail.columns.club')}</th>
-              <th>{t('raceDetail.columns.category')}</th>
+              <th onClick={() => handleSort('surname')}>{t('raceDetail.columns.name')}</th>
+              <th onClick={() => handleSort('club')}>{t('raceDetail.columns.club')}</th>
+              <th onClick={() => handleSort('category')}>{t('raceDetail.columns.category')}</th>
             </tr>
           </thead>
           <tbody>
-            {filteredParticipants.map((participant, index) => (
-              <tr key={index}>
-                <td>{participant.forename} {participant.surname}</td>
-                <td>{participant.club}</td>
-                <td>{participant.category}</td>
+            {sortedParticipants.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="text-center">
+                  {t('raceDetail.noParticipants')}
+                </td>
               </tr>
-            ))}
+            ) : (
+              sortedParticipants.map((participant, index) => (
+                <tr key={index}>
+                  <td>{participant.forename} {participant.surname}</td>
+                  <td>{participant.club}</td>
+                  <td>{participant.category}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

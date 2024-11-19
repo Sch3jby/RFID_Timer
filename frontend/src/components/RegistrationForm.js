@@ -11,31 +11,40 @@ function RegistrationForm() {
     club: '',
     email: '',
     gender: '',
-    race_id: ''
+    race_id: '',
+    track_id: ''
   });
   const [races, setRaces] = useState([]);
+  const [tracks, setTracks] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(true);
   const [raceInput, setRaceInput] = useState('');
+  const [trackInput, setTrackInput] = useState('');
 
-  // Fetch available races when component mounts
+  // Fetch available races and tracks when component mounts
   useEffect(() => {
-    const fetchRaces = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/races');
-        setRaces(response.data.races);
+        const racesResponse = await axios.get('http://localhost:5001/races');
+        setRaces(racesResponse.data.races);
+
+        // Populate tracks based on the selected race
+        if (formData.race_id) {
+          const tracksResponse = await axios.get(`http://localhost:5001/tracks?race_id=${formData.race_id}`);
+          setTracks(tracksResponse.data.tracks);
+        }
       } catch (error) {
         setMessage({ 
           type: 'error', 
-          text: t('registration.errorLoadingRaces') 
+          text: t('registration.errorLoadingData') 
         });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRaces();
-  }, [t]);
+    fetchData();
+  }, [t, formData.race_id]);
 
   const handleChange = (e) => {
     setFormData({
@@ -48,14 +57,44 @@ function RegistrationForm() {
     const inputValue = e.target.value;
     setRaceInput(inputValue);
     
-    // Najít odpovídající závod a nastavit jeho ID
+    // Find the corresponding race and set its ID
     const selectedRace = races.find(race => 
       `${race.name} - ${race.date}` === inputValue
     );
     
     setFormData({
       ...formData,
-      race_id: selectedRace ? selectedRace.id : ''
+      race_id: selectedRace ? selectedRace.id : '',
+      track_id: ''
+    });
+
+    // Fetch tracks for the selected race
+    const fetchTracks = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5001/tracks?race_id=${selectedRace?.id}`);
+        setTracks(response.data.tracks);
+      } catch (error) {
+        setMessage({ 
+          type: 'error', 
+          text: t('registration.errorLoadingTracks') 
+        });
+      }
+    };
+    fetchTracks();
+  };
+
+  const handleTrackChange = (e) => {
+    const inputValue = e.target.value;
+    setTrackInput(inputValue);
+    
+    // Find the corresponding track and set its ID
+    const selectedTrack = tracks.find(track => 
+      `${track.name} - ${track.distance}km` === inputValue
+    );
+    
+    setFormData({
+      ...formData,
+      track_id: selectedTrack ? selectedTrack.id : ''
     });
   };
 
@@ -71,9 +110,11 @@ function RegistrationForm() {
         club: '', 
         email: '', 
         gender: '',
-        race_id: ''
+        race_id: '',
+        track_id: ''
       });
       setRaceInput('');
+      setTrackInput('');
     } catch (error) {
       setMessage({ 
         type: 'error', 
@@ -103,6 +144,22 @@ function RegistrationForm() {
           <datalist id="races">
             {races.map((race) => (
               <option key={race.id} value={`${race.name} - ${race.date}`} />
+            ))}
+          </datalist>
+        </div>
+        <div className="form-group">
+          <label>{t('registration.track')}:</label>
+          <input
+            list="tracks"
+            type="text"
+            value={trackInput}
+            onChange={handleTrackChange}
+            placeholder={t('registration.select')}
+            required
+          />
+          <datalist id="tracks">
+            {tracks.map((track) => (
+              <option key={track.id} value={`${track.name} - ${track.distance}km`} />
             ))}
           </datalist>
         </div>

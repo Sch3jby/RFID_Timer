@@ -13,10 +13,11 @@ from sqlalchemy import text
 # Import models
 from database import db
 from database.user import Users
-from database.tag import BackUpTag
+from database.backup import BackUpTag
 from database.race import Race
 from database.registration import Registration
 from database.category import Category
+from database.track import Track
 
 from database.race_operations import setup_all_race_results_tables
 
@@ -212,30 +213,31 @@ def register():
         email = data.get('email')
         gender = data.get('gender')
         race_id = data.get('race_id')
+        track_id = data.get('track_id')
 
-        if not all([forename, surname, year, club, email, gender, race_id]):
+        if not all([forename, surname, year, club, email, gender, race_id, track_id]):
             return jsonify({'error': 'All fields are required'}), 400
 
         try:
             year = int(year)
             race_id = int(race_id)
+            track_id = int(track_id)
         except ValueError:
-            return jsonify({'error': 'Year and race_id must be numbers'}), 400
+            return jsonify({'error': 'Year, race_id, and track_id must be numbers'}), 400
 
         race = Race.query.get(race_id)
-        if not race:
-            return jsonify({'error': 'Selected race does not exist'}), 404
+        track = Track.query.get(track_id)
+        
+        if not race or not track or track.race_id != race_id:
+            return jsonify({'error': 'Invalid race or track selection'}), 404
 
-        # Get category from database
         current_year = datetime.now().year
-        age = current_year - year
-        category = Category.query.filter_by(gender=gender, race_id=race_id)\
-            .filter(Category.min_age <= age)\
-            .filter(Category.max_age >= age)\
-            .first()
+        user_age = current_year - year
 
-        if not category:
-            return jsonify({'error': 'No suitable category found for this age and gender'}), 400
+        if user_age < track.min_age or user_age > track.max_age:
+            return jsonify({
+                'error': f'Age not eligible for this track. Must be between {track.min_age} and {track.max_age} years old.'
+            }), 400
 
         user = Users(
             forename=forename,
@@ -249,19 +251,22 @@ def register():
         db.session.commit()
 
         registration = Registration(
-            race_id=race_id,
             user_id=user.id,
-            category_id=category.id,
-            category_name=category.category_name
+            track_id=track_id,
+            race_id=race_id
         )
         db.session.add(registration)
         db.session.commit()
 
-        return jsonify({'message': 'User successfully registered'}), 201
+        return jsonify({
+            'message': 'User successfully registered', 
+            'registration_id': registration.id
+        }), 201
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Error registering user: {str(e)}'}), 400
+        error_logger.error(f'Error registering user: {str(e)}')
+        return jsonify({'error': f'Error registering user: {str(e)}'}), 500
     
 @app.route('/tags', methods=['GET'])
 def get_tags():
@@ -355,6 +360,26 @@ def get_races():
     except Exception as e:
         error_logger.error('Error fetching races: %s', str(e))
         return jsonify({'error': 'Error fetching races'}), 500
+
+@app.route('/tracks', methods=['GET'])
+def get_tracks():
+    race_id = request.args.get('race_id', type=int)
+    if not race_id:
+        return jsonify({'error': 'Race ID is required'}), 400
+    
+    try:
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        tracks_list = []
+        for track in tracks:
+            tracks_list.append({
+                'id': track.id,
+                'name': track.name,
+                'distance': track.distance
+            })
+        return jsonify({'tracks': tracks_list})
+    except Exception as e:
+        error_logger.error('Error fetching tracks: %s', str(e))
+        return jsonify({'error': 'Error fetching tracks'}), 500
     
 @app.route('/race/<int:race_id>', methods=['GET'])
 def get_race_detail(race_id):
@@ -363,18 +388,27 @@ def get_race_detail(race_id):
         if not race:
             return jsonify({'error': 'Race not found'}), 404
             
-        # Get registrations for this race
-        registrations = Registration.query.filter_by(race_id=race_id).all()
-        participants = []
+        # Get tracks for this race
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        track_ids = [track.id for track in tracks]
         
+        # Get registrations for this race's tracks
+        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
+        participants = []
+
         for registration in registrations:
             user = Users.query.get(registration.user_id)
-            if user:
+            category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
+                                    filter(Category.min_age <= (datetime.now().year - user.year), 
+                                        Category.max_age >= (datetime.now().year - user.year)).\
+                                    first()
+            if user and category:
                 participants.append({
                     'forename': user.forename,
                     'surname': user.surname,
                     'club': user.club,
-                    'category': registration.category_name
+                    'category': category.category_name,
+                    'track': Track.query.get(registration.track_id).name
                 })
                 
         race_detail = {
@@ -388,7 +422,7 @@ def get_race_detail(race_id):
         return jsonify({'race': race_detail})
     except Exception as e:
         error_logger.error(f'Error fetching race details: {str(e)}')
-        return jsonify({'error': 'Error fetching race details'}), 500
+        return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
