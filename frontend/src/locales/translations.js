@@ -66,8 +66,10 @@ export const translations = {
         noParticipants: "Nebyli nalezeni žádní uživatelé",
         columns: {
           name: "Jméno",
-          club: "Datum",
-          category: "Kategorie"
+          club: "Klub/Město",
+          category: "Kategorie",
+          track: "Trať",
+          startTime: "Čas startu"
         }
       }
     },
@@ -135,8 +137,10 @@ export const translations = {
         noParticipants: "No users found",
         columns: {
           name: "Name",
-          club: "Date",
-          category: "Category"
+          club: "Club/City",
+          category: "Category",
+          track: "Track",
+          startTime: "Start time"
         }
       }
     }

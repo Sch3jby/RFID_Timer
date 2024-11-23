@@ -6,7 +6,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import telnetlib
 import configparser
-from datetime import datetime
+from datetime import datetime, time, timedelta
 import re
 from sqlalchemy import text
 
@@ -167,6 +167,32 @@ def store_tags_to_database(tag_id, number, discovery_time, last_seen_time):
         error_logger.error(f'Error storing/updating tag {tag_id}: {str(e)}')
         raise
 
+def combine_times(time1: time, time2: time) -> time:
+    """
+    Combine two time objects by adding their hours, minutes, and seconds.
+    
+    Args:
+        time1: First time object
+        time2: Second time object
+        
+    Returns:
+        Combined time object
+    """
+    # Convert times to timedelta for arithmetic
+    delta1 = timedelta(hours=time1.hour, minutes=time1.minute, seconds=time1.second)
+    delta2 = timedelta(hours=time2.hour, minutes=time2.minute, seconds=time2.second)
+    
+    # Add the timedeltas
+    combined = delta1 + delta2
+    
+    # Convert back to time object
+    total_seconds = int(combined.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    
+    return time(hour=hours, minute=minutes, second=seconds)
+
 # Routes
 @app.route('/')
 def index():
@@ -238,6 +264,35 @@ def register():
             return jsonify({
                 'error': f'Age not eligible for this track. Must be between {track.min_age} and {track.max_age} years old.'
             }), 400
+        
+        # Výpočet plus_start_time pro intervalový start
+        plus_start_time = None
+        if race.start == 'I':
+            # Najít poslední plus_start_time pro danou trať
+            last_registration = Registration.query.filter_by(
+                race_id=race_id,
+                track_id=track_id
+            ).order_by(Registration.plus_start_time.desc()).first()
+            
+            if last_registration and last_registration.plus_start_time:
+                # Přidat 30 sekund k poslednímu času
+                last_seconds = (last_registration.plus_start_time.hour * 3600 + 
+                              last_registration.plus_start_time.minute * 60 +
+                              last_registration.plus_start_time.second)
+                new_seconds = last_seconds + 30
+                
+                hours = new_seconds // 3600
+                minutes = (new_seconds % 3600) // 60
+                seconds = new_seconds % 60
+                
+                plus_start_time = time(hour=hours, minute=minutes, second=seconds)
+            else:
+                # První závodník na trati začíná v čase 00:00:30
+                plus_start_time = time(0, 0, 30)
+
+        if race.start == 'M':
+            plus_start_time = time(0, 0, 0)
+
 
         user = Users(
             forename=forename,
@@ -253,14 +308,16 @@ def register():
         registration = Registration(
             user_id=user.id,
             track_id=track_id,
-            race_id=race_id
+            race_id=race_id,
+            plus_start_time=plus_start_time
         )
         db.session.add(registration)
         db.session.commit()
 
         return jsonify({
             'message': 'User successfully registered', 
-            'registration_id': registration.id
+            'registration_id': registration.id,
+            'plus_start_time': plus_start_time.strftime('%H:%M:%S') if plus_start_time else None
         }), 201
 
     except Exception as e:
@@ -398,17 +455,26 @@ def get_race_detail(race_id):
 
         for registration in registrations:
             user = Users.query.get(registration.user_id)
+            track = Track.query.get(registration.track_id)
+            
             category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
                                     filter(Category.min_age <= (datetime.now().year - user.year), 
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
-            if user and category:
+                                    
+            if user and category and track:
+                # Calculate the actual start time by combining expected_start_time and plus_start_time
+                start_time = track.expected_start_time
+                if registration.plus_start_time:
+                    start_time = combine_times(track.expected_start_time, registration.plus_start_time)
+                
                 participants.append({
                     'forename': user.forename,
                     'surname': user.surname,
                     'club': user.club,
                     'category': category.category_name,
-                    'track': Track.query.get(registration.track_id).name
+                    'track': track.name,
+                    'start_time': start_time.strftime('%H:%M:%S') if start_time else None
                 })
                 
         race_detail = {
@@ -420,6 +486,7 @@ def get_race_detail(race_id):
             'participants': participants
         }
         return jsonify({'race': race_detail})
+        
     except Exception as e:
         error_logger.error(f'Error fetching race details: {str(e)}')
         return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500

@@ -13,7 +13,7 @@ def create_race_results_table(race_id):
     create_table_sql = text(f'''
     CREATE TABLE IF NOT EXISTS {table_name} (
         id SERIAL PRIMARY KEY,
-        tag_id VARCHAR(255) NOT NULL,
+        number VARCHAR(255) NOT NULL,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         user_id INTEGER,
         lap_number INTEGER DEFAULT 1,

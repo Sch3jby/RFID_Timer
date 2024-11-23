@@ -221,6 +221,7 @@
   .participants-table th {
     background-color: #f5f5f5;
     font-weight: bold;
+    cursor: pointer;
   }
   
   .participants-table tbody tr:hover {

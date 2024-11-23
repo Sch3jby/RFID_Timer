@@ -12,7 +12,7 @@ function RaceDetail() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredParticipants, setFilteredParticipants] = useState([]);
-  const [sortColumn, setSortColumn] = useState('surname');
+  const [sortColumn, setSortColumn] = useState('start_time');
   const [sortDirection, setSortDirection] = useState('asc');
 
   useEffect(() => {
@@ -98,7 +98,7 @@ function RaceDetail() {
         {/* New Register Button */}
         <button 
           onClick={handleRegister} 
-          className="register-button mt-4"
+          className="register-button"
         >
           {t('raceDetail.register')}
         </button>
@@ -123,6 +123,8 @@ function RaceDetail() {
               <th onClick={() => handleSort('surname')}>{t('raceDetail.columns.name')}</th>
               <th onClick={() => handleSort('club')}>{t('raceDetail.columns.club')}</th>
               <th onClick={() => handleSort('category')}>{t('raceDetail.columns.category')}</th>
+              <th onClick={() => handleSort('track')}>{t('raceDetail.columns.track')}</th>
+              <th onClick={() => handleSort('start_time')}>{t('raceDetail.columns.startTime')}</th>
             </tr>
           </thead>
           <tbody>
@@ -138,6 +140,8 @@ function RaceDetail() {
                   <td>{participant.forename} {participant.surname}</td>
                   <td>{participant.club}</td>
                   <td>{participant.category}</td>
+                  <td>{participant.track}</td>
+                  <td>{participant.start_time}</td>
                 </tr>
               ))
             )}
