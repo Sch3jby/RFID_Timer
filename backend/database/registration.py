@@ -9,3 +9,4 @@ class Registration(db.Model):
     track_id = db.Column(db.Integer, db.ForeignKey('track.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     race_id = db.Column(db.Integer, db.ForeignKey('race.id'), nullable=False)
+    registration_time = db.Column(db.Time, nullable=False)
