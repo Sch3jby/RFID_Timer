@@ -309,7 +309,8 @@ def register():
             user_id=user.id,
             track_id=track_id,
             race_id=race_id,
-            plus_start_time=plus_start_time
+            plus_start_time=plus_start_time,
+            registration_time=datetime.now()
         )
         db.session.add(registration)
         db.session.commit()
@@ -449,24 +450,68 @@ def get_race_detail(race_id):
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
         
-        # Get registrations for this race's tracks
+        # Get all registrations for this race's tracks
         registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
-        participants = []
-
+        
+        # Group registrations by category
+        category_registrations = {}
         for registration in registrations:
             user = Users.query.get(registration.user_id)
             track = Track.query.get(registration.track_id)
             
+            if not user or not track:
+                continue
+                
             category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
                                     filter(Category.min_age <= (datetime.now().year - user.year), 
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
-                                    
-            if user and category and track:
-                # Calculate the actual start time by combining expected_start_time and plus_start_time
-                start_time = track.expected_start_time
-                if registration.plus_start_time:
-                    start_time = combine_times(track.expected_start_time, registration.plus_start_time)
+            
+            if not category:
+                continue
+                
+            # Create key for category grouping
+            category_key = f"{track.id}_{category.id}"
+            
+            if category_key not in category_registrations:
+                category_registrations[category_key] = {
+                    'category': category,
+                    'registrations': [],
+                    'current_plus_time': timedelta(0)  # Initialize plus time counter for category
+                }
+            
+            category_registrations[category_key]['registrations'].append({
+                'registration': registration,
+                'user': user,
+                'track': track
+            })
+
+        # Process participants with calculated start times
+        participants = []
+        
+        # Sort registrations within each category
+        for category_key, category_data in category_registrations.items():
+            category = category_data['category']
+            registrations = category_data['registrations']
+            
+            # Sort registrations by registration time or any other criteria
+            registrations.sort(key=lambda x: x['registration'].registration_time)
+            
+            # Calculate start times for each registration in category
+            for reg_data in registrations:
+                registration = reg_data['registration']
+                user = reg_data['user']
+                track = reg_data['track']
+                
+                # Calculate start time
+                start_time = category.expected_start_time
+                
+                if start_time:
+                    start_time = (datetime.combine(datetime.min, start_time) + 
+                                category_data['current_plus_time']).time()
+                    
+                    # Update plus time for next participant in this category
+                    category_data['current_plus_time'] += timedelta(seconds=30)
                 
                 participants.append({
                     'forename': user.forename,
@@ -476,7 +521,7 @@ def get_race_detail(race_id):
                     'track': track.name,
                     'start_time': start_time.strftime('%H:%M:%S') if start_time else None
                 })
-                
+        
         race_detail = {
             'id': race.id,
             'name': race.name,
