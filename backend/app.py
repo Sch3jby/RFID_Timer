@@ -6,16 +6,20 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import telnetlib
 import configparser
-import time
-from datetime import datetime
-from enum import Enum
+from datetime import datetime, time, timedelta
 import re
+from sqlalchemy import text
 
 # Import models
 from database import db
-from database.user import User
-from database.tag import BackUpTag
+from database.user import Users
+from database.backup import BackUpTag
 from database.race import Race
+from database.registration import Registration
+from database.category import Category
+from database.track import Track
+
+from database.race_operations import setup_all_race_results_tables
 
 # Load configuration from config.ini
 config = configparser.ConfigParser()
@@ -56,28 +60,6 @@ error_logger = logging.getLogger('error_logger')
 error_logger.setLevel(logging.ERROR)
 error_logger.addHandler(error_handler)
 
-# Enum for male categories
-class MaleCategory(Enum):
-    CHILDRENA = "Men 5-9"
-    CHILDRENB = "Men 10-15"
-    JUNIOR = "Men 16-20"
-    ADULTA = "Men 21-39"
-    ADULTB = "Men 40-49"
-    ADULTC = "Men 50-59"
-    ADULTD = "Men 60-69"
-    SENIOR = "Men 70+"
-
-# Enum for female categories
-class FemaleCategory(Enum):
-    CHILDRENA = "Women 5-9"
-    CHILDRENB = "Women 10-15"
-    JUNIOR = "Women 16-20"
-    ADULTA = "Women 21-39"
-    ADULTB = "Women 40-49"
-    ADULTC = "Women 50-59"
-    ADULTD = "Women 60-69"
-    SENIOR = "Women 70+"
-
 # RFID reader connection state
 class AlienRFID:
     def __init__(self, hostname, port):
@@ -115,46 +97,21 @@ alien = AlienRFID(hostname, port)
 
 # Methods
 def get_category(gender, birth_year):
+    """
+    Get appropriate category based on gender and birth year from database
+    """
     current_year = datetime.now().year
     age = current_year - birth_year
 
-    if gender == "M":
-        if 5 <= age <= 9:
-            return MaleCategory.CHILDRENA.value
-        elif 10 <= age <= 15:
-            return MaleCategory.CHILDRENB.value
-        elif 16 <= age <= 20:
-            return MaleCategory.JUNIOR.value
-        elif 21 <= age <= 39:
-            return MaleCategory.ADULTA.value
-        elif 40 <= age <= 49:
-            return MaleCategory.ADULTB.value
-        elif 50 <= age <= 59:
-            return MaleCategory.ADULTC.value
-        elif 60 <= age <= 69:
-            return MaleCategory.ADULTD.value
-        elif age >= 70:
-            return MaleCategory.SENIOR.value
+    # Získáme všechny kategorie pro dané pohlaví
+    categories = Category.query.filter_by(gender=gender).all()
+    
+    # Najdeme odpovídající kategorii podle věku
+    for category in categories:
+        if category.min_age <= age <= category.max_age:
+            return category.category_name
 
-    elif gender == "F":
-        if 5 <= age <= 9:
-            return FemaleCategory.CHILDRENA.value
-        elif 10 <= age <= 15:
-            return FemaleCategory.CHILDRENB.value
-        elif 16 <= age <= 20:
-            return FemaleCategory.JUNIOR.value
-        elif 21 <= age <= 39:
-            return FemaleCategory.ADULTA.value
-        elif 40 <= age <= 49:
-            return FemaleCategory.ADULTB.value
-        elif 50 <= age <= 59:
-            return FemaleCategory.ADULTC.value
-        elif 60 <= age <= 69:
-            return FemaleCategory.ADULTD.value
-        elif age >= 70:
-            return FemaleCategory.SENIOR.value
-    else:
-        return "Unknown Category"
+    return "Unknown Category"
     
 def parse_tags(data):
     """Parse tag data from RFID reader response"""
@@ -210,6 +167,32 @@ def store_tags_to_database(tag_id, number, discovery_time, last_seen_time):
         error_logger.error(f'Error storing/updating tag {tag_id}: {str(e)}')
         raise
 
+def combine_times(time1: time, time2: time) -> time:
+    """
+    Combine two time objects by adding their hours, minutes, and seconds.
+    
+    Args:
+        time1: First time object
+        time2: Second time object
+        
+    Returns:
+        Combined time object
+    """
+    # Convert times to timedelta for arithmetic
+    delta1 = timedelta(hours=time1.hour, minutes=time1.minute, seconds=time1.second)
+    delta2 = timedelta(hours=time2.hour, minutes=time2.minute, seconds=time2.second)
+    
+    # Add the timedeltas
+    combined = delta1 + delta2
+    
+    # Convert back to time object
+    total_seconds = int(combined.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    
+    return time(hour=hours, minute=minutes, second=seconds)
+
 # Routes
 @app.route('/')
 def index():
@@ -256,69 +239,91 @@ def register():
         email = data.get('email')
         gender = data.get('gender')
         race_id = data.get('race_id')
+        track_id = data.get('track_id')
 
-        # Kontrola všech povinných polí včetně race_id
-        if not all([forename, surname, year, club, email, gender, race_id]):
+        if not all([forename, surname, year, club, email, gender, race_id, track_id]):
             return jsonify({'error': 'All fields are required'}), 400
 
         try:
             year = int(year)
             race_id = int(race_id)
+            track_id = int(track_id)
         except ValueError:
-            return jsonify({'error': 'Year and race_id must be numbers'}), 400
-        
-        # Ověření, že závod existuje
+            return jsonify({'error': 'Year, race_id, and track_id must be numbers'}), 400
+
         race = Race.query.get(race_id)
-        if not race:
-            return jsonify({'error': 'Selected race does not exist'}), 404
+        track = Track.query.get(track_id)
+        
+        if not race or not track or track.race_id != race_id:
+            return jsonify({'error': 'Invalid race or track selection'}), 404
 
-        category = get_category(gender, year)
+        current_year = datetime.now().year
+        user_age = current_year - year
 
-        new_user = User(
+        if user_age < track.min_age or user_age > track.max_age:
+            return jsonify({
+                'error': f'Age not eligible for this track. Must be between {track.min_age} and {track.max_age} years old.'
+            }), 400
+        
+        # Výpočet plus_start_time pro intervalový start
+        plus_start_time = None
+        if race.start == 'I':
+            # Najít poslední plus_start_time pro danou trať
+            last_registration = Registration.query.filter_by(
+                race_id=race_id,
+                track_id=track_id
+            ).order_by(Registration.plus_start_time.desc()).first()
+            
+            if last_registration and last_registration.plus_start_time:
+                # Přidat 30 sekund k poslednímu času
+                last_seconds = (last_registration.plus_start_time.hour * 3600 + 
+                              last_registration.plus_start_time.minute * 60 +
+                              last_registration.plus_start_time.second)
+                new_seconds = last_seconds + 30
+                
+                hours = new_seconds // 3600
+                minutes = (new_seconds % 3600) // 60
+                seconds = new_seconds % 60
+                
+                plus_start_time = time(hour=hours, minute=minutes, second=seconds)
+            else:
+                # První závodník na trati začíná v čase 00:00:30
+                plus_start_time = time(0, 0, 30)
+
+        if race.start == 'M':
+            plus_start_time = time(0, 0, 0)
+
+
+        user = Users(
             forename=forename,
             surname=surname,
             year=year,
             club=club,
             email=email,
-            category=category,
-            race_id=race_id
+            gender=gender
         )
-        
-        db.session.add(new_user)
+        db.session.add(user)
         db.session.commit()
-        
-        info_logger.info('New user %s %s registered for race %d', forename, surname, race_id)
-        return jsonify({'message': 'User successfully registered'}), 201
+
+        registration = Registration(
+            user_id=user.id,
+            track_id=track_id,
+            race_id=race_id,
+            plus_start_time=plus_start_time
+        )
+        db.session.add(registration)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'User successfully registered', 
+            'registration_id': registration.id,
+            'plus_start_time': plus_start_time.strftime('%H:%M:%S') if plus_start_time else None
+        }), 201
 
     except Exception as e:
         db.session.rollback()
-        error_logger.error('Error registering user: %s', str(e))
-        return jsonify({'error': 'Error registering user'}), 400
-    
-@app.route('/startlist', methods=['GET'])
-def get_users():
-    try:
-        race_id = request.args.get('race_id')
-        
-        if race_id:
-            users = User.query.filter_by(race_id=race_id).all()
-        else:
-            users = User.query.all()
-            
-        users_list = []
-        for user in users:
-            race = Race.query.get(user.race_id)
-            users_list.append({
-                'forename': user.forename,
-                'surname': user.surname,
-                'club': user.club,
-                'category': user.category,
-                'race_name': race.name if race else 'Unknown Race'
-            })
-        return jsonify({'users': users_list})
-    except Exception as e:
-        error_logger.error('Error fetching users: %s', str(e))
-        return jsonify({'error': 'Error fetching users'}), 500
+        error_logger.error(f'Error registering user: {str(e)}')
+        return jsonify({'error': f'Error registering user: {str(e)}'}), 500
     
 @app.route('/tags', methods=['GET'])
 def get_tags():
@@ -341,6 +346,60 @@ def get_tags():
         error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
 
+@app.route('/store_results', methods=['POST'])
+def store_results():
+    try:
+        data = request.json
+        tags = data.get('tags', [])
+        race_id = data.get('race_id')
+
+        if not race_id:
+            return jsonify({"status": "error", "message": "Race ID is required"}), 400
+
+        table_name = f'race_results_{race_id}'
+        
+        stored_results = 0
+        for tag in tags:
+            # Insert into race-specific results table
+            insert_sql = text(f'''
+                INSERT INTO {table_name} (tag_id, timestamp) 
+                VALUES (:tag_id, :timestamp)
+            ''')
+            db.session.execute(insert_sql, {
+                'tag_id': tag, 
+                'timestamp': datetime.now()
+            })
+            stored_results += 1
+        
+        db.session.commit()
+        return jsonify({
+            "status": "success", 
+            "message": f"Stored {stored_results} results for race {race_id}"
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        error_logger.error(f'Error storing results: {str(e)}')
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/categories', methods=['GET'])
+def get_categories():
+    """Get all categories from database"""
+    try:
+        categories = Category.query.all()
+        categories_list = []
+        for category in categories:
+            categories_list.append({
+                'id': category.id,
+                'name': category.category_name,
+                'gender': category.gender,
+                'min_age': category.min_age,
+                'max_age': category.max_age
+            })
+        return jsonify({'categories': categories_list})
+    except Exception as e:
+        return jsonify({'error': f'Error fetching categories: {str(e)}'}), 500
+
 @app.route('/races', methods=['GET'])
 def get_races():
     try:
@@ -351,13 +410,86 @@ def get_races():
                 'id': race.id,
                 'name': race.name,
                 'date': race.date.strftime('%Y-%m-%d'),
-                'start': race.start
+                'start': race.start,
+                'description': race.description
             })
         return jsonify({'races': races_list})
     except Exception as e:
         error_logger.error('Error fetching races: %s', str(e))
         return jsonify({'error': 'Error fetching races'}), 500
 
+@app.route('/tracks', methods=['GET'])
+def get_tracks():
+    race_id = request.args.get('race_id', type=int)
+    if not race_id:
+        return jsonify({'error': 'Race ID is required'}), 400
+    
+    try:
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        tracks_list = []
+        for track in tracks:
+            tracks_list.append({
+                'id': track.id,
+                'name': track.name,
+                'distance': track.distance
+            })
+        return jsonify({'tracks': tracks_list})
+    except Exception as e:
+        error_logger.error('Error fetching tracks: %s', str(e))
+        return jsonify({'error': 'Error fetching tracks'}), 500
+    
+@app.route('/race/<int:race_id>', methods=['GET'])
+def get_race_detail(race_id):
+    try:
+        race = Race.query.get(race_id)
+        if not race:
+            return jsonify({'error': 'Race not found'}), 404
+            
+        # Get tracks for this race
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        track_ids = [track.id for track in tracks]
+        
+        # Get registrations for this race's tracks
+        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
+        participants = []
+
+        for registration in registrations:
+            user = Users.query.get(registration.user_id)
+            track = Track.query.get(registration.track_id)
+            
+            category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
+                                    filter(Category.min_age <= (datetime.now().year - user.year), 
+                                        Category.max_age >= (datetime.now().year - user.year)).\
+                                    first()
+                                    
+            if user and category and track:
+                # Calculate the actual start time by combining expected_start_time and plus_start_time
+                start_time = track.expected_start_time
+                if registration.plus_start_time:
+                    start_time = combine_times(track.expected_start_time, registration.plus_start_time)
+                
+                participants.append({
+                    'forename': user.forename,
+                    'surname': user.surname,
+                    'club': user.club,
+                    'category': category.category_name,
+                    'track': track.name,
+                    'start_time': start_time.strftime('%H:%M:%S') if start_time else None
+                })
+                
+        race_detail = {
+            'id': race.id,
+            'name': race.name,
+            'date': race.date.strftime('%Y-%m-%d'),
+            'start': race.start,
+            'description': race.description,
+            'participants': participants
+        }
+        return jsonify({'race': race_detail})
+        
+    except Exception as e:
+        error_logger.error(f'Error fetching race details: {str(e)}')
+        return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
@@ -366,10 +498,11 @@ def catch_all(path):
 
 # Create tables before first request
 def init_db():
-    """Initialize database tables"""
+    """Initialize database tables and create race results tables"""
     with app.app_context():
         db.create_all()
-        info_logger.info('Database tables created successfully')
+        setup_all_race_results_tables()
+        info_logger.info('Database tables and race results tables created successfully')
 
 if __name__ == '__main__':
     init_db()

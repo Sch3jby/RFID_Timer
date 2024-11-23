@@ -1,5 +1,5 @@
 # tag_operations.py
-from tag import db, BackUpTag
+from backend.database.backup import db, BackUpTag
 
 def add_tag(tag, number, discoveryTime, lastSeenTime):
     detected_tag = BackUpTag(number=number, tag=tag, discoveryTime=discoveryTime, lastSeenTime=lastSeenTime)

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from 'react-router-dom';
 import axios from "axios";
 import { useTranslation } from '../contexts/LanguageContext';
 
 function RegistrationForm() {
   const { t } = useTranslation();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     forename: '',
     surname: '',
@@ -11,35 +13,104 @@ function RegistrationForm() {
     club: '',
     email: '',
     gender: '',
-    race_id: ''
+    race_id: '',
+    track_id: ''
   });
   const [races, setRaces] = useState([]);
+  const [tracks, setTracks] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(true);
+  const [raceInput, setRaceInput] = useState('');
+  const [trackInput, setTrackInput] = useState('');
 
-  // Fetch available races when component mounts
   useEffect(() => {
-    const fetchRaces = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/races');
-        setRaces(response.data.races);
+        const racesResponse = await axios.get('http://localhost:5001/races');
+        setRaces(racesResponse.data.races);
+
+        // Check for pre-selected race from navigation state
+        if (location.state?.preselectedRace) {
+          setRaceInput(location.state.preselectedRace);
+          
+          // Find the corresponding race and set its ID
+          const selectedRace = racesResponse.data.races.find(race => 
+            `${race.name} - ${race.date}` === location.state.preselectedRace
+          );
+          
+          if (selectedRace) {
+            // Fetch tracks for the pre-selected race
+            const tracksResponse = await axios.get(`http://localhost:5001/tracks?race_id=${selectedRace.id}`);
+            setTracks(tracksResponse.data.tracks);
+            
+            setFormData(prevData => ({
+              ...prevData,
+              race_id: selectedRace.id
+            }));
+          }
+        }
       } catch (error) {
         setMessage({ 
           type: 'error', 
-          text: t('registration.errorLoadingRaces') 
+          text: t('registration.errorLoadingData') 
         });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRaces();
-  }, [t]);
+    fetchData();
+  }, [t, location.state]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  const handleRaceChange = (e) => {
+    const inputValue = e.target.value;
+    setRaceInput(inputValue);
+    
+    // Find the corresponding race and set its ID
+    const selectedRace = races.find(race => 
+      `${race.name} - ${race.date}` === inputValue
+    );
+    
+    setFormData({
+      ...formData,
+      race_id: selectedRace ? selectedRace.id : '',
+      track_id: ''
+    });
+
+    // Fetch tracks for the selected race
+    const fetchTracks = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5001/tracks?race_id=${selectedRace?.id}`);
+        setTracks(response.data.tracks);
+      } catch (error) {
+        setMessage({ 
+          type: 'error', 
+          text: t('registration.errorLoadingTracks') 
+        });
+      }
+    };
+    fetchTracks();
+  };
+
+  const handleTrackChange = (e) => {
+    const inputValue = e.target.value;
+    setTrackInput(inputValue);
+    
+    // Find the corresponding track and set its ID
+    const selectedTrack = tracks.find(track => 
+      `${track.name} - ${track.distance}km` === inputValue
+    );
+    
+    setFormData({
+      ...formData,
+      track_id: selectedTrack ? selectedTrack.id : ''
     });
   };
 
@@ -55,8 +126,11 @@ function RegistrationForm() {
         club: '', 
         email: '', 
         gender: '',
-        race_id: ''
+        race_id: '',
+        track_id: ''
       });
+      setRaceInput('');
+      setTrackInput('');
     } catch (error) {
       setMessage({ 
         type: 'error', 
@@ -75,19 +149,35 @@ function RegistrationForm() {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>{t('registration.race')}:</label>
-          <select 
-            name="race_id" 
-            value={formData.race_id} 
-            onChange={handleChange}
+          <input
+            list="races"
+            type="text"
+            value={raceInput}
+            onChange={handleRaceChange}
+            placeholder={t('registration.select')}
             required
-          >
-            <option value="">{t('registration.select')}</option>
+          />
+          <datalist id="races">
             {races.map((race) => (
-              <option key={race.id} value={race.id}>
-                {race.name} - {race.date}
-              </option>
+              <option key={race.id} value={`${race.name} - ${race.date}`} />
             ))}
-          </select>
+          </datalist>
+        </div>
+        <div className="form-group">
+          <label>{t('registration.track')}:</label>
+          <input
+            list="tracks"
+            type="text"
+            value={trackInput}
+            onChange={handleTrackChange}
+            placeholder={t('registration.select')}
+            required
+          />
+          <datalist id="tracks">
+            {tracks.map((track) => (
+              <option key={track.id} value={`${track.name} - ${track.distance}km`} />
+            ))}
+          </datalist>
         </div>
         <div className="form-group">
           <label>{t('registration.firstName')}:</label>

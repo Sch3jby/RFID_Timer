@@ -50,5 +50,5 @@
 
 ---
 
-### ❌ Výsledková listina
-- **Vytvořit v databázi novou tabulku výsledků zvlášť pro každý závod** - ❌ Dodělat
+### ✅ Výsledková listina
+- **Vytvořit v databázi novou tabulku výsledků zvlášť pro každý závod** - ✅ Hotovo

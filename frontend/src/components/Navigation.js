@@ -29,10 +29,10 @@ function Navigation() {
           {t('nav.competitor')}
         </Link>
         <Link 
-          to="/startlist" 
-          className={`nav-button ${location.pathname === '/startlist' ? 'active' : ''}`}
+          to="/calendar" 
+          className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
         >
-          {t('nav.startList')}
+          {t('nav.calendar')}
         </Link>
         <LanguageSwitcher />
       </div>
