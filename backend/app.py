@@ -265,34 +265,76 @@ def register():
                 'error': f'Age not eligible for this track. Must be between {track.min_age} and {track.max_age} years old.'
             }), 400
         
-        # Výpočet plus_start_time pro intervalový start
-        plus_start_time = None
-        if race.start == 'I':
-            # Najít poslední plus_start_time pro danou trať
-            last_registration = Registration.query.filter_by(
-                race_id=race_id,
-                track_id=track_id
-            ).order_by(Registration.plus_start_time.desc()).first()
+        category = Category.query.filter(
+            Category.track_id == track_id,
+            Category.min_age <= user_age,
+            Category.max_age >= user_age,
+            Category.gender == gender
+        ).first()
+        
+        if not category:
+            return jsonify({
+                'error': 'No suitable category found for this user'
+            }), 400
+
+        # Výchozí hodnota pro hromadný start
+        plus_start_time = time(0, 0, 0)
+        actual_start_time = category.expected_start_time
+        
+        if race.start == 'I':  # Intervalový start
+            last_registration = (
+                Registration.query
+                .join(Users)
+                .filter(
+                    Registration.race_id == race_id,
+                    Registration.track_id == track_id,
+                    Users.gender == gender,
+                    current_year - Users.year >= category.min_age,
+                    current_year - Users.year <= category.max_age
+                )
+                .order_by(Registration.plus_start_time.desc())
+                .first()
+            )
             
             if last_registration and last_registration.plus_start_time:
-                # Přidat 30 sekund k poslednímu času
-                last_seconds = (last_registration.plus_start_time.hour * 3600 + 
-                              last_registration.plus_start_time.minute * 60 +
-                              last_registration.plus_start_time.second)
-                new_seconds = last_seconds + 30
+                # Převedeme poslední čas na sekundy od půlnoci
+                last_seconds = (
+                    last_registration.plus_start_time.hour * 3600 +
+                    last_registration.plus_start_time.minute * 60 +
+                    last_registration.plus_start_time.second
+                )
                 
+                # Převedeme očekávaný čas kategorie na sekundy od půlnoci
+                category_seconds = (
+                    category.expected_start_time.hour * 3600 +
+                    category.expected_start_time.minute * 60 +
+                    category.expected_start_time.second
+                )
+                
+                # Pokud je poslední čas menší než očekávaný čas kategorie,
+                # začneme od očekávaného času + 30 sekund
+                if last_seconds < category_seconds:
+                    new_seconds = category_seconds + 30
+                else:
+                    new_seconds = last_seconds + 30
+                
+                # Převedeme zpět na time objekt
                 hours = new_seconds // 3600
                 minutes = (new_seconds % 3600) // 60
                 seconds = new_seconds % 60
                 
-                plus_start_time = time(hour=hours, minute=minutes, second=seconds)
+                actual_start_time = time(hour=hours, minute=minutes, second=seconds)
+                
+                # Vypočteme plus_start_time jako rozdíl od očekávaného času
+                plus_seconds = new_seconds - category_seconds
+                plus_hours = plus_seconds // 3600
+                plus_minutes = (plus_seconds % 3600) // 60
+                plus_secs = plus_seconds % 60
+                
+                plus_start_time = time(hour=plus_hours, minute=plus_minutes, second=plus_secs)
             else:
-                # První závodník na trati začíná v čase 00:00:30
+                # První závodník v kategorii začíná v expected_start_time
                 plus_start_time = time(0, 0, 30)
-
-        if race.start == 'M':
-            plus_start_time = time(0, 0, 0)
-
 
         user = Users(
             forename=forename,
@@ -318,7 +360,8 @@ def register():
         return jsonify({
             'message': 'User successfully registered', 
             'registration_id': registration.id,
-            'plus_start_time': plus_start_time.strftime('%H:%M:%S') if plus_start_time else None
+            'category_name': category.category_name,
+            'start_time': actual_start_time.strftime('%H:%M:%S')
         }), 201
 
     except Exception as e:
@@ -446,72 +489,48 @@ def get_race_detail(race_id):
         if not race:
             return jsonify({'error': 'Race not found'}), 404
             
-        # Get tracks for this race
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
         
-        # Get all registrations for this race's tracks
         registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
-        
-        # Group registrations by category
-        category_registrations = {}
+        participants = []
+
         for registration in registrations:
             user = Users.query.get(registration.user_id)
             track = Track.query.get(registration.track_id)
             
-            if not user or not track:
-                continue
-                
             category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
                                     filter(Category.min_age <= (datetime.now().year - user.year), 
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
-            
-            if not category:
-                continue
-                
-            # Create key for category grouping
-            category_key = f"{track.id}_{category.id}"
-            
-            if category_key not in category_registrations:
-                category_registrations[category_key] = {
-                    'category': category,
-                    'registrations': [],
-                    'current_plus_time': timedelta(0)  # Initialize plus time counter for category
-                }
-            
-            category_registrations[category_key]['registrations'].append({
-                'registration': registration,
-                'user': user,
-                'track': track
-            })
-
-        # Process participants with calculated start times
-        participants = []
-        
-        # Sort registrations within each category
-        for category_key, category_data in category_registrations.items():
-            category = category_data['category']
-            registrations = category_data['registrations']
-            
-            # Sort registrations by registration time or any other criteria
-            registrations.sort(key=lambda x: x['registration'].registration_time)
-            
-            # Calculate start times for each registration in category
-            for reg_data in registrations:
-                registration = reg_data['registration']
-                user = reg_data['user']
-                track = reg_data['track']
-                
-                # Calculate start time
-                start_time = category.expected_start_time
-                
-                if start_time:
-                    start_time = (datetime.combine(datetime.min, start_time) + 
-                                category_data['current_plus_time']).time()
+                                    
+            if user and category and track:
+                # Vypočítat skutečný čas startu
+                if registration.plus_start_time:
+                    # Převedeme časy na sekundy
+                    category_seconds = (
+                        category.expected_start_time.hour * 3600 +
+                        category.expected_start_time.minute * 60 +
+                        category.expected_start_time.second
+                    )
                     
-                    # Update plus time for next participant in this category
-                    category_data['current_plus_time'] += timedelta(seconds=30)
+                    plus_seconds = (
+                        registration.plus_start_time.hour * 3600 +
+                        registration.plus_start_time.minute * 60 +
+                        registration.plus_start_time.second
+                    )
+                    
+                    # Sečteme sekundy
+                    total_seconds = category_seconds + plus_seconds
+                    
+                    # Převedeme zpět na time
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    seconds = total_seconds % 60
+                    
+                    actual_start = time(hour=hours, minute=minutes, second=seconds)
+                else:
+                    actual_start = category.expected_start_time
                 
                 participants.append({
                     'forename': user.forename,
@@ -519,9 +538,9 @@ def get_race_detail(race_id):
                     'club': user.club,
                     'category': category.category_name,
                     'track': track.name,
-                    'start_time': start_time.strftime('%H:%M:%S') if start_time else None
+                    'start_time': actual_start.strftime('%H:%M:%S')
                 })
-        
+                
         race_detail = {
             'id': race.id,
             'name': race.name,
