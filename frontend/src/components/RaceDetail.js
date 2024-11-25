@@ -40,11 +40,13 @@ function RaceDetail() {
         const fullName = `${participant.forename.toLowerCase()} ${participant.surname.toLowerCase()}`;
         const club = participant.club.toLowerCase();
         const category = participant.category.toLowerCase();
+        const track = participant.track.toLowerCase();
 
         return (
           fullName.includes(query) ||
           club.includes(query) ||
-          category.includes(query)
+          category.includes(query) ||
+          track.includes(query)
         );
       });
 

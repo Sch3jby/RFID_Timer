@@ -277,65 +277,6 @@ def register():
                 'error': 'No suitable category found for this user'
             }), 400
 
-        # Výchozí hodnota pro hromadný start
-        plus_start_time = time(0, 0, 0)
-        actual_start_time = category.expected_start_time
-        
-        if race.start == 'I':  # Intervalový start
-            last_registration = (
-                Registration.query
-                .join(Users)
-                .filter(
-                    Registration.race_id == race_id,
-                    Registration.track_id == track_id,
-                    Users.gender == gender,
-                    current_year - Users.year >= category.min_age,
-                    current_year - Users.year <= category.max_age
-                )
-                .order_by(Registration.plus_start_time.desc())
-                .first()
-            )
-            
-            if last_registration and last_registration.plus_start_time:
-                # Převedeme poslední čas na sekundy od půlnoci
-                last_seconds = (
-                    last_registration.plus_start_time.hour * 3600 +
-                    last_registration.plus_start_time.minute * 60 +
-                    last_registration.plus_start_time.second
-                )
-                
-                # Převedeme očekávaný čas kategorie na sekundy od půlnoci
-                category_seconds = (
-                    category.expected_start_time.hour * 3600 +
-                    category.expected_start_time.minute * 60 +
-                    category.expected_start_time.second
-                )
-                
-                # Pokud je poslední čas menší než očekávaný čas kategorie,
-                # začneme od očekávaného času + 30 sekund
-                if last_seconds < category_seconds:
-                    new_seconds = category_seconds + 30
-                else:
-                    new_seconds = last_seconds + 30
-                
-                # Převedeme zpět na time objekt
-                hours = new_seconds // 3600
-                minutes = (new_seconds % 3600) // 60
-                seconds = new_seconds % 60
-                
-                actual_start_time = time(hour=hours, minute=minutes, second=seconds)
-                
-                # Vypočteme plus_start_time jako rozdíl od očekávaného času
-                plus_seconds = new_seconds - category_seconds
-                plus_hours = plus_seconds // 3600
-                plus_minutes = (plus_seconds % 3600) // 60
-                plus_secs = plus_seconds % 60
-                
-                plus_start_time = time(hour=plus_hours, minute=plus_minutes, second=plus_secs)
-            else:
-                # První závodník v kategorii začíná v expected_start_time
-                plus_start_time = time(0, 0, 30)
-
         user = Users(
             forename=forename,
             surname=surname,
@@ -351,7 +292,6 @@ def register():
             user_id=user.id,
             track_id=track_id,
             race_id=race_id,
-            plus_start_time=plus_start_time,
             registration_time=datetime.now()
         )
         db.session.add(registration)
@@ -360,8 +300,7 @@ def register():
         return jsonify({
             'message': 'User successfully registered', 
             'registration_id': registration.id,
-            'category_name': category.category_name,
-            'start_time': actual_start_time.strftime('%H:%M:%S')
+            'category_name': category.category_name
         }), 201
 
     except Exception as e:
@@ -495,6 +434,8 @@ def get_race_detail(race_id):
         registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
         participants = []
 
+        # Group registrations by track, category, and gender
+        registration_groups = {}
         for registration in registrations:
             user = Users.query.get(registration.user_id)
             track = Track.query.get(registration.track_id)
@@ -503,11 +444,20 @@ def get_race_detail(race_id):
                                     filter(Category.min_age <= (datetime.now().year - user.year), 
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
-                                    
+            
             if user and category and track:
-                # Vypočítat skutečný čas startu
-                if registration.plus_start_time:
-                    # Převedeme časy na sekundy
+                key = (track.id, category.id, user.gender)
+                if key not in registration_groups:
+                    registration_groups[key] = []
+                registration_groups[key].append((registration, user, track, category))
+
+        plus_start_time = time(0, 0, 30)
+
+        # Process each group separately
+        for (track_id, category_id, gender), group_registrations in registration_groups.items():
+            for idx, (registration, user, track, category) in enumerate(group_registrations):
+                if race.start == 'I':
+                    # Calculate start time
                     category_seconds = (
                         category.expected_start_time.hour * 3600 +
                         category.expected_start_time.minute * 60 +
@@ -515,15 +465,13 @@ def get_race_detail(race_id):
                     )
                     
                     plus_seconds = (
-                        registration.plus_start_time.hour * 3600 +
-                        registration.plus_start_time.minute * 60 +
-                        registration.plus_start_time.second
+                        plus_start_time.hour * 3600 +
+                        plus_start_time.minute * 60 +
+                        plus_start_time.second
                     )
                     
-                    # Sečteme sekundy
-                    total_seconds = category_seconds + plus_seconds
+                    total_seconds = category_seconds + (plus_seconds * (idx + 1))
                     
-                    # Převedeme zpět na time
                     hours = total_seconds // 3600
                     minutes = (total_seconds % 3600) // 60
                     seconds = total_seconds % 60
