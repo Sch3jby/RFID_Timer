@@ -451,7 +451,7 @@ def get_race_detail(race_id):
                     registration_groups[key] = []
                 registration_groups[key].append((registration, user, track, category))
 
-        plus_start_time = time(0, 0, 30)
+        plus_start_time = race.interval_time
 
         # Process each group separately
         for (track_id, category_id, gender), group_registrations in registration_groups.items():
