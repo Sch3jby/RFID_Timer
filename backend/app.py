@@ -326,11 +326,17 @@ def get_tags():
         error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
 
+import re
+from datetime import datetime
+from flask import jsonify, request
+from sqlalchemy import text
+from database.race import db
+
 @app.route('/store_results', methods=['POST'])
 def store_results():
     try:
         data = request.json
-        tags = data.get('tags', [])
+        tags_raw = data.get('tags', [])  # Nyní očekáváme list
         race_id = data.get('race_id')
         track_id = data.get('track_id')
 
@@ -339,34 +345,74 @@ def store_results():
 
         table_name = f'race_results_{race_id}'
         
+        # Pattern pro extrakci dat
+        pattern = r"Tag:([\w\s]+), Disc:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Last:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Count:(\d+), Ant:(\d+), Proto:(\d+)"
+        
         stored_results = 0
-        for tag in tags:
-            # Extrahujte číslo z tagu
-            try:
-                number = tag.split()[-1]  # Předpokládá formát "Tag: XXXX"
-            except:
-                number = tag
+        tags_found = []
+        
+        for line in tags_raw:  # Procházíme přímo list
+            line = line.strip()
+            if not line:
+                continue
+                
+            match = re.match(pattern, line)
+            if not match:
+                continue
 
-            insert_sql = text(f'''
-                INSERT INTO {table_name} (number, track_id, timestamp) 
-                VALUES (:number, :track_id, :timestamp)
-            ''')
-            db.session.execute(insert_sql, {
-                'number': number, 
-                'track_id': track_id,
-                'timestamp': datetime.now()
-            })
-            stored_results += 1
+            try:
+                tag_id, discovery_time, last_seen_time, count, ant, proto = match.groups()
+                
+                # Extrakce čísla tagu
+                number = tag_id.strip().split()[-1]
+                tag_id = tag_id.strip()
+                
+                # Parsování časových údajů
+                # discovery_datetime = datetime.strptime(discovery_time, "%Y/%m/%d %H:%M:%S.%f")
+                last_seen_datetime = datetime.strptime(last_seen_time, "%Y/%m/%d %H:%M:%S.%f")
+                
+                # Vložení dat do databáze
+                insert_sql = text(f'''
+                    INSERT INTO {table_name} (
+                        number,
+                        tag_id, 
+                        track_id, 
+                        timestamp,
+                        last_seen_time 
+                    ) 
+                    VALUES (
+                        :number,
+                        :tag_id, 
+                        :track_id, 
+                        :timestamp,
+                        :last_seen_time
+                    )
+                ''')
+                
+                db.session.execute(insert_sql, {
+                    'number': number,
+                    'tag_id': tag_id, 
+                    'track_id': track_id,
+                    'timestamp': datetime.now(),
+                    'last_seen_time': last_seen_datetime,
+                })
+                
+                stored_results += 1
+                tags_found.append(tag_id)
+                
+            except Exception as e:
+                print(f"Error processing tag: {e}")
         
         db.session.commit()
         return jsonify({
             "status": "success", 
-            "message": f"Stored {stored_results} results for race {race_id}, track {track_id}"
+            "message": f"Stored {stored_results} results for race {race_id}, track {track_id}",
+            "tags_found": tags_found
         })
     
     except Exception as e:
         db.session.rollback()
-        error_logger.error(f'Error storing results: {str(e)}')
+        print(f"Error storing results: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/categories', methods=['GET'])
