@@ -341,8 +341,9 @@ def store_results():
         
         stored_results = 0
         for tag in tags:
+            # Extrahujte číslo z tagu
             try:
-                number = tag.split()[-1]
+                number = tag.split()[-1]  # Předpokládá formát "Tag: XXXX"
             except:
                 number = tag
 
