@@ -17,8 +17,8 @@ function Navigation() {
           {t('nav.home')}
         </Link>
         <Link 
-          to="/timer" 
-          className={`nav-button ${location.pathname === '/timer' ? 'active' : ''}`}
+          to="/rfid-reader" 
+          className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
         >
           {t('nav.organizer')}
         </Link>

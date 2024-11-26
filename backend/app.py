@@ -134,7 +134,6 @@ def parse_tags(data):
                 result = store_tags_to_database(
                     tag_id=tag_id.strip(),
                     number=int(number),
-                    discovery_time=discovery_time,
                     last_seen_time=last_seen_time
                 )
                 if result:
@@ -147,13 +146,12 @@ def parse_tags(data):
     
     return tags_found
 
-def store_tags_to_database(tag_id, number, discovery_time, last_seen_time):
+def store_tags_to_database(tag_id, number, last_seen_time):
     """Store tag data in the database"""
     try:
         new_tag = BackUpTag(
             tag_id=tag_id,
             number=number,
-            discovery_time=discovery_time,
             last_seen_time=last_seen_time
         )
         
@@ -318,7 +316,6 @@ def get_tags():
             tags_list.append({
                 'tag_id': tag.tag_id,
                 'number': tag.number,
-                'discovery_time': tag.discovery_time,
                 'last_seen_time': tag.last_seen_time,
                 'count': tag.count,
                 'antenna': tag.antenna,
@@ -335,21 +332,27 @@ def store_results():
         data = request.json
         tags = data.get('tags', [])
         race_id = data.get('race_id')
+        track_id = data.get('track_id')
 
-        if not race_id:
-            return jsonify({"status": "error", "message": "Race ID is required"}), 400
+        if not race_id or not track_id:
+            return jsonify({"status": "error", "message": "Race ID and Track ID are required"}), 400
 
         table_name = f'race_results_{race_id}'
         
         stored_results = 0
         for tag in tags:
-            # Insert into race-specific results table
+            try:
+                number = tag.split()[-1]
+            except:
+                number = tag
+
             insert_sql = text(f'''
-                INSERT INTO {table_name} (tag_id, timestamp) 
-                VALUES (:tag_id, :timestamp)
+                INSERT INTO {table_name} (number, track_id, timestamp) 
+                VALUES (:number, :track_id, :timestamp)
             ''')
             db.session.execute(insert_sql, {
-                'tag_id': tag, 
+                'number': number, 
+                'track_id': track_id,
                 'timestamp': datetime.now()
             })
             stored_results += 1
@@ -357,7 +360,7 @@ def store_results():
         db.session.commit()
         return jsonify({
             "status": "success", 
-            "message": f"Stored {stored_results} results for race {race_id}"
+            "message": f"Stored {stored_results} results for race {race_id}, track {track_id}"
         })
     
     except Exception as e:
