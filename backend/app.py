@@ -546,6 +546,53 @@ def get_race_detail(race_id):
     except Exception as e:
         error_logger.error(f'Error fetching race details: {str(e)}')
         return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500
+    
+@app.route('/set_track_start_time', methods=['POST'])
+def set_track_start_time():
+    try:
+        data = request.json
+        race_id = data.get('race_id')
+        track_id = data.get('track_id')
+        start_time = data.get('start_time')
+
+        if not all([race_id, track_id]):
+            return jsonify({'error': 'Missing required parameters'}), 400
+
+        # If 'auto' is passed, generate current time
+        if start_time == 'auto':
+            start_time = (timedelta(hours=1)+datetime.now()).strftime('%H:%M:%S')
+
+        else:
+            start_time = f"{start_time}:00"
+
+        # Find all categories associated with this track
+        categories = Category.query.filter_by(track_id=track_id).all()
+
+        if not categories:
+            return jsonify({'error': 'No categories found for this track'}), 404
+
+        # Update the actual_start_time for all categories
+        for category in categories:
+            category.actual_start_time = datetime.strptime(start_time, '%H:%M:%S').time()
+        
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Start time set successfully for all categories', 
+            'start_time': start_time,
+            'categories': [
+                {
+                    'id': cat.id, 
+                    'name': cat.category_name, 
+                    'gender': cat.gender
+                } for cat in categories
+            ]
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        error_logger.error(f'Error setting start time: {str(e)}')
+        return jsonify({'error': str(e)}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
