@@ -7,6 +7,7 @@ import RFIDReader from './components/RFIDReader';
 import RegistrationForm from './components/RegistrationForm';
 import Calendar from './components/Calendar';
 import RaceDetail from './components/RaceDetail';
+import RFIDReaderDetail from './components/RFIDReaderDetail';
 
 import './styles/Main.css';
 
@@ -17,10 +18,11 @@ function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/timer" element={<RFIDReader />} />
+            <Route path="/rfid-reader" element={<RFIDReader />} />
             <Route path="/registration" element={<RegistrationForm />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/race/:id" element={<RaceDetail />} />
+            <Route path="/rfid-reader/:raceId" element={<RFIDReaderDetail />} />
           </Routes>
         </Layout>
       </Router>
