@@ -60,13 +60,8 @@ function RFIDReaderDetail() {
           setIsConnected(false);
           setMessage("RFID Reader disconnected");
           
-          // Reset states
+          // Reset only current tags, keep track states unchanged
           setCurrentTags([]);
-          const resetTrackStates = Object.keys(trackStates).reduce((acc, trackId) => {
-            acc[trackId] = { isStarted: false, storedTags: [] };
-            return acc;
-          }, {});
-          setTrackStates(resetTrackStates);
         } else {
           setMessage(`Error: ${response.data.message}`);
         }
@@ -83,6 +78,7 @@ function RFIDReaderDetail() {
       [trackId]: {
         ...prev[trackId],
         isStarted: !prev[trackId].isStarted,
+        // Clear stored tags when starting the track
         storedTags: !prev[trackId].isStarted ? [] : prev[trackId].storedTags
       }
     }));
@@ -90,7 +86,6 @@ function RFIDReaderDetail() {
 
   // Tag processing function
   const processTag = (tag) => {
-    // Extrahujte číslo z tagu, předpokládá formát "Tag: XXXX"
     const match = tag.match(/Tag:\s*(\d+)/);
     return match ? match[1] : tag;
   };
@@ -174,7 +169,7 @@ function RFIDReaderDetail() {
   }
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       {/* Navigation and Race Info */}
       <div className="row mb-4">
         <div className="col-12">
@@ -221,16 +216,18 @@ function RFIDReaderDetail() {
         <div className="col-12">
           <div className="card">
             <div className="card-header">
-              <h3>Current Tags</h3>
+              <h4>Current Tags</h4>
             </div>
-            <div className="card-body">
-              {currentTags.length === 0 ? (
-                <p className="text-muted">No tags detected</p>
-              ) : (
-                currentTags.map((tag, index) => (
-                  <span key={index} className="badge bg-secondary m-1">{tag}</span>
-                ))
-              )}
+            <div className="tag-container">
+              <div className="card-body">
+                {currentTags.length === 0 ? (
+                  <p className="text-muted">No tags detected</p>
+                ) : (
+                  currentTags.map((tag, index) => (
+                    <span key={index} className="badge bg-secondary m-1">{tag}</span>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -241,11 +238,10 @@ function RFIDReaderDetail() {
         {tracks.map(track => (
           <div key={track.id} className="col-md-6 mb-3">
             <div className="card">
-              <div className="card-header d-flex justify-content-between align-items-center">
+              <div className="card-header">
                 <h3>{track.name} - {track.distance} km</h3>
                 <button 
                   onClick={() => handleTrackStartStop(track.id)} 
-                  disabled={!isConnected}
                   className={`btn ${trackStates[track.id]?.isStarted ? 'btn-warning' : 'btn-success'}`}
                 >
                   {trackStates[track.id]?.isStarted ? 'Stop' : 'Start'} Track
@@ -253,7 +249,7 @@ function RFIDReaderDetail() {
               </div>
               <div className="card-body">
                 <h4>Stored Tags</h4>
-                <div className="tag-container border p-2">
+                <div className="tag-container">
                   {trackStates[track.id]?.storedTags.length === 0 ? (
                     <p className="text-muted">No tags stored</p>
                   ) : (

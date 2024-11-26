@@ -290,7 +290,7 @@ def register():
             user_id=user.id,
             track_id=track_id,
             race_id=race_id,
-            registration_time=datetime.now()
+            registration_time=datetime.now() + timedelta(hours=1)
         )
         db.session.add(registration)
         db.session.commit()
@@ -325,12 +325,6 @@ def get_tags():
     except Exception as e:
         error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
-
-import re
-from datetime import datetime
-from flask import jsonify, request
-from sqlalchemy import text
-from database.race import db
 
 @app.route('/store_results', methods=['POST'])
 def store_results():
@@ -393,7 +387,7 @@ def store_results():
                     'number': number,
                     'tag_id': tag_id, 
                     'track_id': track_id,
-                    'timestamp': datetime.now(),
+                    'timestamp': datetime.now() + timedelta(hours=1),
                     'last_seen_time': last_seen_datetime,
                 })
                 

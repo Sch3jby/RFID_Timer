@@ -261,7 +261,8 @@
   }
   
   .tag-container {
-    margin-top: 10px;
+    margin-top: 15px;
+    margin-bottom: 30px;
     max-height: 200px;
     overflow-y: auto;
     border: 1px solid var(--border-color);
