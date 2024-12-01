@@ -16,11 +16,9 @@ def create_race_results_table(race_id):
         number INTEGER NOT NULL,
         tag_id VARCHAR(255) NOT NULL,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER,
         lap_number INTEGER DEFAULT 1,
         track_id INTEGER NOT NULL,
-        last_seen_time TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        last_seen_time TIMESTAMP
     )
     ''')
     
