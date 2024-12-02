@@ -69,17 +69,13 @@ class AlienRFID:
         self.connected = False
 
     def connect(self):
-        try:
-            self.terminal = telnetlib.Telnet(self.hostname, self.port)
-            self.terminal.read_until(b'Username>', timeout=5)
-            self.terminal.write(b'alien\n')
-            self.terminal.read_until(b'Password>', timeout=5)
-            self.terminal.write(b'password\n')
-            self.terminal.read_until(b'>', timeout=5)
-            self.connected = True
-            return
-        except Exception as e:
-            print(f"Attempt failed: {e}")
+        self.terminal = telnetlib.Telnet(self.hostname, self.port)
+        self.terminal.read_until(b'Username>', timeout=3)
+        self.terminal.write(b'alien\n')
+        self.terminal.read_until(b'Password>', timeout=3)
+        self.terminal.write(b'password\n')
+        self.terminal.read_until(b'>', timeout=3)
+        self.connected = True
 
     def disconnect(self):
         if self.connected and self.terminal:
@@ -200,13 +196,33 @@ def index():
 def connect_reader():
     try:
         if alien.connected:
+            # Explicitní odpojení 
             alien.disconnect()
+            alien.connected = False
             return jsonify({"status": "disconnected"})
-        else:
+        
+        try:
+            # Explicitní připojení
             alien.connect()
+            alien.connected = True
             return jsonify({"status": "connected"})
+        
+        except Exception as e:
+            # Konzistentní error handling
+            alien.connected = False
+            error_logger.error(f'Failed to connect to RFID reader: {str(e)}')
+            return jsonify({
+                "status": "error", 
+                "message": str(e)
+            }), 400  # Použít 400 místo 500 pro client-side errors
+    
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        # Neočekávané systémové chyby
+        error_logger.critical(f'Unexpected connect error: {str(e)}')
+        return jsonify({
+            "status": "error", 
+            "message": "Unexpected system error"
+        }), 500
 
 @app.route('/fetch_taglist', methods=['GET'])
 def fetch_taglist():
@@ -424,15 +440,20 @@ def manual_result_store():
                 "message": "Number, Race ID, and Track ID are required"
             }), 400
 
-        # Convert time-only string to full timestamp
         if timestamp_str:
-            # Combine current date with provided time
-            timestamp = datetime.combine(
-                datetime.now().date(), 
-                datetime.strptime(timestamp_str, "%H:%M:%S").time()
-            )
+            try:
+                timestamp = datetime.combine(
+                    datetime.now().date(), 
+                    datetime.strptime(timestamp_str, "%H:%M:%S").time()
+                )
+            except ValueError:
+                return jsonify({
+                    "status": "error",
+                    "message": "Invalid timestamp format. Use HH:MM:SS."
+                }), 400
         else:
             timestamp = datetime.now() + timedelta(hours=1)
+
 
         table_name = f'race_results_{race_id}'
         
