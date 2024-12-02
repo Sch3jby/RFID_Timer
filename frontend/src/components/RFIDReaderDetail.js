@@ -13,17 +13,13 @@ function RFIDReaderDetail() {
   const [tracks, setTracks] = useState([]);
   const [trackCategories, setTrackCategories] = useState({});
   
-  // State for tracking which tracks are started with start times
   const [trackStates, setTrackStates] = useState({});
-
-  // State for start time inputs
   const [startTimeInputs, setStartTimeInputs] = useState({});
+  const [manualEntries, setManualEntries] = useState({});
 
   useEffect(() => {
-    // Fetch categories first
     axios.get('http://localhost:5001/categories')
       .then(categoriesResponse => {
-        // Group categories by track
         const categoriesByTrack = categoriesResponse.data.categories.reduce((acc, category) => {
           if (!acc[category.track_id]) {
             acc[category.track_id] = [];
@@ -33,20 +29,16 @@ function RFIDReaderDetail() {
         }, {});
         setTrackCategories(categoriesByTrack);
 
-        // Fetch race details
         return axios.get(`http://localhost:5001/race/${raceId}`);
       })
       .then(response => {
         setRaceDetail(response.data.race);
-
-        // Fetch tracks for this race
         return axios.get(`http://localhost:5001/tracks?race_id=${raceId}`);
       })
       .then(response => {
         const fetchedTracks = response.data.tracks;
         setTracks(fetchedTracks);
         
-        // Initialize track states
         const initialTrackStates = fetchedTracks.reduce((acc, track) => {
           acc[track.id] = {
             isStarted: false,
@@ -56,7 +48,6 @@ function RFIDReaderDetail() {
         }, {});
         setTrackStates(initialTrackStates);
 
-        // Initialize start time inputs
         const initialStartTimeInputs = fetchedTracks.reduce((acc, track) => {
           acc[track.id] = {
             time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
@@ -66,6 +57,15 @@ function RFIDReaderDetail() {
           return acc;
         }, {});
         setStartTimeInputs(initialStartTimeInputs);
+
+        const initialManualEntries = fetchedTracks.reduce((acc, track) => {
+          acc[track.id] = {
+            number: '',
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+          };
+          return acc;
+        }, {});
+        setManualEntries(initialManualEntries);
       })
       .catch(error => {
         console.error("Error fetching data:", error);
@@ -73,7 +73,6 @@ function RFIDReaderDetail() {
       });
   }, [raceId]);
 
-  // Handle start time input change
   const handleStartTimeChange = (trackId, value) => {
     setStartTimeInputs(prev => ({
       ...prev,
@@ -85,7 +84,6 @@ function RFIDReaderDetail() {
     }));
   };
 
-  // Handle automatic time checkbox
   const handleAutomaticTimeToggle = (trackId) => {
     setStartTimeInputs(prev => ({
       ...prev,
@@ -96,8 +94,59 @@ function RFIDReaderDetail() {
     }));
   };
 
+  const handleManualNumberChange = (trackId, value) => {
+    setManualEntries(prev => ({
+      ...prev,
+      [trackId]: { 
+        ...prev[trackId], 
+        number: value 
+      }
+    }));
+  };
+
+  const handleManualTimestampChange = (trackId, value) => {
+    setManualEntries(prev => ({
+      ...prev,
+      [trackId]: { 
+        ...prev[trackId], 
+        timestamp: value 
+      }
+    }));
+  };
+
+  const handleManualResultInsert = (trackId) => {
+    const entry = manualEntries[trackId];
+    
+    if (!entry.number || !entry.timestamp) {
+      setMessage(`Error: Number and timestamp are required for track ${trackId}`);
+      return;
+    }
+  
+    const resultData = {
+      race_id: raceId,
+      track_id: trackId,
+      number: entry.number,
+      timestamp: entry.timestamp
+    };
+  
+    axios.post('http://localhost:5001/manual_result_store', resultData)
+      .then(response => {
+        setMessage(`Successfully stored result for track ${trackId}: Number ${entry.number}`);
+        
+        setManualEntries(prev => ({
+          ...prev,
+          [trackId]: { 
+            number: '', 
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) 
+          }
+        }));
+      })
+      .catch(error => {
+        setMessage(`Error storing result: ${error.response?.data?.message || error.message}`);
+      });
+  };
+
   const handleTrackStartStop = (trackId) => {
-    // If start time is not locked, prepare to set start time
     if (!startTimeInputs[trackId].isLocked) {
       axios.post('http://localhost:5001/set_track_start_time', {
         race_id: raceId,
@@ -107,7 +156,6 @@ function RFIDReaderDetail() {
           : startTimeInputs[trackId].time
       })
       .then((response) => {
-        // Lock the start time input
         setStartTimeInputs(prev => ({
           ...prev,
           [trackId]: { 
@@ -116,7 +164,6 @@ function RFIDReaderDetail() {
           }
         }));
         
-        // Start the track
         setTrackStates(prev => ({
           ...prev,
           [trackId]: {
@@ -133,20 +180,18 @@ function RFIDReaderDetail() {
       .catch(error => {
         setMessage(`Error setting start time: ${error.message}`);
       });
-  } else {
-    // If start time is already locked, just toggle start/stop
-    setTrackStates(prev => ({
-      ...prev,
-      [trackId]: {
-        ...prev[trackId],
-        isStarted: !prev[trackId].isStarted,
-        storedTags: !prev[trackId].isStarted ? [] : prev[trackId].storedTags
-      }
-    }));
-  }
-};
+    } else {
+      setTrackStates(prev => ({
+        ...prev,
+        [trackId]: {
+          ...prev[trackId],
+          isStarted: !prev[trackId].isStarted,
+          storedTags: !prev[trackId].isStarted ? [] : prev[trackId].storedTags
+        }
+      }));
+    }
+  };
 
-  // RFID Reader Connection
   const handleConnect = () => {
     axios.post("http://localhost:5001/connect")
       .then((response) => {
@@ -156,8 +201,6 @@ function RFIDReaderDetail() {
         } else if (response.data.status === "disconnected") {
           setIsConnected(false);
           setMessage("RFID Reader disconnected");
-          
-          // Reset only current tags, keep track states unchanged
           setCurrentTags([]);
         } else {
           setMessage(`Error: ${response.data.message}`);
@@ -168,13 +211,11 @@ function RFIDReaderDetail() {
       });
   };
 
-  // Tag processing function
   const processTag = (tag) => {
     const match = tag.match(/Tag:\s*(\d+)/);
     return match ? match[1] : tag;
   };
 
-  // Periodic Tag Fetching for each active track
   useEffect(() => {
     let interval;
     
@@ -185,19 +226,15 @@ function RFIDReaderDetail() {
             if (response.data.status === "success") {
               const fetchedTags = response.data.taglist;
               
-              // Zpracování tagů
               const processedTags = fetchedTags.map(processTag);
               
-              // Update current tags
               setCurrentTags(processedTags);
               
-              // Store backup tags for the race
               axios.post("http://localhost:5001/store_tags", { 
                 tags: processedTags,
                 race_id: raceId
               });
 
-              // Store results for each started track
               tracks.forEach(track => {
                 const trackState = trackStates[track.id];
                 if (trackState && trackState.isStarted) {
@@ -207,7 +244,6 @@ function RFIDReaderDetail() {
                     track_id: track.id
                   })
                   .then(() => {
-                    // Update stored tags for the specific track
                     setTrackStates(prev => ({
                       ...prev,
                       [track.id]: {
@@ -236,12 +272,10 @@ function RFIDReaderDetail() {
     };
   }, [isConnected, trackStates, raceId, tracks]);
 
-  // Navigation back to races list
   const handleBack = () => {
     navigate('/rfid-reader');
   };
 
-  // Render loading state
   if (!raceDetail) {
     return (
       <div className="container mt-4">
@@ -324,7 +358,39 @@ function RFIDReaderDetail() {
             <div className="card">
               <div className="card-header">
                 <h3>{track.name} - {track.distance} km</h3>
-                
+                {/* Manual Result Entry */}
+                  <div className="mt-3">
+                    <h4>Manual Result Entry</h4>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <label className="form-label">Number</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          value={manualEntries[track.id]?.number || ''}
+                          onChange={(e) => handleManualNumberChange(track.id, e.target.value)}
+                          placeholder="Enter participant number"
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Timestamp</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          value={manualEntries[track.id]?.timestamp || ''}
+                          onChange={(e) => handleManualTimestampChange(track.id, e.target.value)}
+                          placeholder="Enter time (HH:MM)"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      className="btn btn-primary mt-2"
+                      onClick={() => handleManualResultInsert(track.id)}
+                    >
+                      Insert Result
+                    </button>
+                  </div>
+                </div>
                 {/* Start Time Input */}
                 <div className="input-group mb-2">
                   <input 
@@ -344,7 +410,7 @@ function RFIDReaderDetail() {
                     <label className="form-check-label ms-1">Auto</label>
                   </div>
                 </div>
-
+                
                 {/* Start/Stop Track Button */}
                 <button 
                   onClick={() => handleTrackStartStop(track.id)} 
@@ -384,7 +450,6 @@ function RFIDReaderDetail() {
                   )}
                 </div>
               </div>
-            </div>
           </div>
         ))}
       </div>

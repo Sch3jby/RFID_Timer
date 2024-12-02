@@ -408,6 +408,73 @@ def store_results():
         db.session.rollback()
         print(f"Error storing results: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+@app.route('/manual_result_store', methods=['POST'])
+def manual_result_store():
+    try:
+        data = request.json
+        number = data.get('number')
+        race_id = data.get('race_id')
+        track_id = data.get('track_id')
+        timestamp_str = data.get('timestamp')
+
+        if not number or not race_id or not track_id:
+            return jsonify({
+                "status": "error", 
+                "message": "Number, Race ID, and Track ID are required"
+            }), 400
+
+        # Convert time-only string to full timestamp
+        if timestamp_str:
+            # Combine current date with provided time
+            timestamp = datetime.combine(
+                datetime.now().date(), 
+                datetime.strptime(timestamp_str, "%H:%M").time()
+            )
+        else:
+            timestamp = datetime.now() + timedelta(hours=1)
+
+        table_name = f'race_results_{race_id}'
+        
+        insert_sql = text(f'''
+            INSERT INTO {table_name} (
+                number,
+                tag_id, 
+                track_id, 
+                timestamp,
+                last_seen_time 
+            ) 
+            VALUES (
+                :number,
+                :tag_id, 
+                :track_id, 
+                :timestamp,
+                :last_seen_time
+            )
+        ''')
+        
+        tag_id = f"manually added Tag: {number}"
+        
+        db.session.execute(insert_sql, {
+            'number': number,
+            'tag_id': tag_id, 
+            'track_id': track_id,
+            'timestamp': timestamp,
+            'last_seen_time': timestamp,
+        })
+        
+        db.session.commit()
+        
+        return jsonify({
+            "status": "success", 
+            "message": f"Manually stored result for race {race_id}, track {track_id}, number {number}",
+            "tag_id": tag_id
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error storing manual result: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/categories', methods=['GET'])
 def get_categories():
