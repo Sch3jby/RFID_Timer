@@ -261,7 +261,8 @@
   }
   
   .tag-container {
-    margin-top: 10px;
+    margin-top: 15px;
+    margin-bottom: 30px;
     max-height: 200px;
     overflow-y: auto;
     border: 1px solid var(--border-color);
@@ -273,6 +274,157 @@
     margin: 2px;
     display: inline-block;
   }
+
+  /* RFID Reader Detail Specific Styles */
+.rfid-reader-detail {
+  background-color: var(--background-color);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+}
+
+.rfid-reader-detail__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.rfid-reader-detail__title {
+  color: var(--primary-color);
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.rfid-reader-detail__connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rfid-reader-detail__connection-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--danger-color);
+}
+
+.rfid-reader-detail__connection-indicator--connected {
+  background-color: var(--success-color);
+}
+
+.rfid-reader-tracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.rfid-reader-track {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+}
+
+.rfid-reader-track:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.rfid-reader-track__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.rfid-reader-track__title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-color);
+}
+
+.rfid-reader-track__distance {
+  color: var(--secondary-color);
+  font-size: 0.875rem;
+}
+
+.rfid-reader-track__manual-entry {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+}
+
+.rfid-reader-track__categories {
+  margin-top: 1rem;
+}
+
+.rfid-reader-track__categories-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rfid-reader-track__categories-item {
+  background-color: #f1f5f9;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  color: var(--secondary-color);
+}
+
+.rfid-reader-tags {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.rfid-reader-tags__title {
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.rfid-reader-tags__container {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  padding: 0.5rem;
+}
+
+.rfid-reader-tag {
+  display: inline-block;
+  margin: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: var(--border-radius);
+  font-size: 0.75rem;
+}
+
+.rfid-reader-tag--stored {
+  background-color: var(--success-color);
+}
+
+@media (max-width: 768px) {
+  .rfid-reader-detail__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .rfid-reader-tracks {
+    grid-template-columns: 1fr;
+  }
+}
   
   /* Loading State */
   .loading {

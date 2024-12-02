@@ -69,17 +69,13 @@ class AlienRFID:
         self.connected = False
 
     def connect(self):
-        try:
-            self.terminal = telnetlib.Telnet(self.hostname, self.port)
-            self.terminal.read_until(b'Username>', timeout=5)
-            self.terminal.write(b'alien\n')
-            self.terminal.read_until(b'Password>', timeout=5)
-            self.terminal.write(b'password\n')
-            self.terminal.read_until(b'>', timeout=5)
-            self.connected = True
-            return
-        except Exception as e:
-            print(f"Attempt failed: {e}")
+        self.terminal = telnetlib.Telnet(self.hostname, self.port)
+        self.terminal.read_until(b'Username>', timeout=3)
+        self.terminal.write(b'alien\n')
+        self.terminal.read_until(b'Password>', timeout=3)
+        self.terminal.write(b'password\n')
+        self.terminal.read_until(b'>', timeout=3)
+        self.connected = True
 
     def disconnect(self):
         if self.connected and self.terminal:
@@ -200,13 +196,33 @@ def index():
 def connect_reader():
     try:
         if alien.connected:
+            # Explicitní odpojení 
             alien.disconnect()
+            alien.connected = False
             return jsonify({"status": "disconnected"})
-        else:
+        
+        try:
+            # Explicitní připojení
             alien.connect()
+            alien.connected = True
             return jsonify({"status": "connected"})
+        
+        except Exception as e:
+            # Konzistentní error handling
+            alien.connected = False
+            error_logger.error(f'Failed to connect to RFID reader: {str(e)}')
+            return jsonify({
+                "status": "error", 
+                "message": str(e)
+            }), 400  # Použít 400 místo 500 pro client-side errors
+    
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        # Neočekávané systémové chyby
+        error_logger.critical(f'Unexpected connect error: {str(e)}')
+        return jsonify({
+            "status": "error", 
+            "message": "Unexpected system error"
+        }), 500
 
 @app.route('/fetch_taglist', methods=['GET'])
 def fetch_taglist():
@@ -290,7 +306,7 @@ def register():
             user_id=user.id,
             track_id=track_id,
             race_id=race_id,
-            registration_time=datetime.now()
+            registration_time=datetime.now() + timedelta(hours=1)
         )
         db.session.add(registration)
         db.session.commit()
@@ -325,12 +341,6 @@ def get_tags():
     except Exception as e:
         error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
-
-import re
-from datetime import datetime
-from flask import jsonify, request
-from sqlalchemy import text
-from database.race import db
 
 @app.route('/store_results', methods=['POST'])
 def store_results():
@@ -393,7 +403,7 @@ def store_results():
                     'number': number,
                     'tag_id': tag_id, 
                     'track_id': track_id,
-                    'timestamp': datetime.now(),
+                    'timestamp': datetime.now() + timedelta(hours=1),
                     'last_seen_time': last_seen_datetime,
                 })
                 
@@ -413,6 +423,78 @@ def store_results():
     except Exception as e:
         db.session.rollback()
         print(f"Error storing results: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+@app.route('/manual_result_store', methods=['POST'])
+def manual_result_store():
+    try:
+        data = request.json
+        number = data.get('number')
+        race_id = data.get('race_id')
+        track_id = data.get('track_id')
+        timestamp_str = data.get('timestamp')
+
+        if not number or not race_id or not track_id:
+            return jsonify({
+                "status": "error", 
+                "message": "Number, Race ID, and Track ID are required"
+            }), 400
+
+        if timestamp_str:
+            try:
+                timestamp = datetime.combine(
+                    datetime.now().date(), 
+                    datetime.strptime(timestamp_str, "%H:%M:%S").time()
+                )
+            except ValueError:
+                return jsonify({
+                    "status": "error",
+                    "message": "Invalid timestamp format. Use HH:MM:SS."
+                }), 400
+        else:
+            timestamp = datetime.now() + timedelta(hours=1)
+
+
+        table_name = f'race_results_{race_id}'
+        
+        insert_sql = text(f'''
+            INSERT INTO {table_name} (
+                number,
+                tag_id, 
+                track_id, 
+                timestamp,
+                last_seen_time 
+            ) 
+            VALUES (
+                :number,
+                :tag_id, 
+                :track_id, 
+                :timestamp,
+                :last_seen_time
+            )
+        ''')
+        
+        tag_id = f"manually added Tag: {number}"
+        
+        db.session.execute(insert_sql, {
+            'number': number,
+            'tag_id': tag_id, 
+            'track_id': track_id,
+            'timestamp': timestamp,
+            'last_seen_time': timestamp,
+        })
+        
+        db.session.commit()
+        
+        return jsonify({
+            "status": "success", 
+            "message": f"Manually stored result for race {race_id}, track {track_id}, number {number}",
+            "tag_id": tag_id
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error storing manual result: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/categories', methods=['GET'])
@@ -552,6 +634,53 @@ def get_race_detail(race_id):
     except Exception as e:
         error_logger.error(f'Error fetching race details: {str(e)}')
         return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500
+    
+@app.route('/set_track_start_time', methods=['POST'])
+def set_track_start_time():
+    try:
+        data = request.json
+        race_id = data.get('race_id')
+        track_id = data.get('track_id')
+        start_time = data.get('start_time')
+
+        if not all([race_id, track_id]):
+            return jsonify({'error': 'Missing required parameters'}), 400
+
+        # If 'auto' is passed, generate current time
+        if start_time == 'auto':
+            start_time = (timedelta(hours=1)+datetime.now()).strftime('%H:%M:%S')
+
+        else:
+            start_time = f"{start_time}:00"
+
+        # Find all categories associated with this track
+        categories = Category.query.filter_by(track_id=track_id).all()
+
+        if not categories:
+            return jsonify({'error': 'No categories found for this track'}), 404
+
+        # Update the actual_start_time for all categories
+        for category in categories:
+            category.actual_start_time = datetime.strptime(start_time, '%H:%M:%S').time()
+        
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Start time set successfully for all categories', 
+            'start_time': start_time,
+            'categories': [
+                {
+                    'id': cat.id, 
+                    'name': cat.category_name, 
+                    'gender': cat.gender
+                } for cat in categories
+            ]
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        error_logger.error(f'Error setting start time: {str(e)}')
+        return jsonify({'error': str(e)}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
