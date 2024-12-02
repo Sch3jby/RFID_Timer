@@ -429,7 +429,7 @@ def manual_result_store():
             # Combine current date with provided time
             timestamp = datetime.combine(
                 datetime.now().date(), 
-                datetime.strptime(timestamp_str, "%H:%M").time()
+                datetime.strptime(timestamp_str, "%H:%M:%S").time()
             )
         else:
             timestamp = datetime.now() + timedelta(hours=1)

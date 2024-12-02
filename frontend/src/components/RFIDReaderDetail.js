@@ -61,7 +61,7 @@ function RFIDReaderDetail() {
         const initialManualEntries = fetchedTracks.reduce((acc, track) => {
           acc[track.id] = {
             number: '',
-            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digits' })
           };
           return acc;
         }, {});
@@ -137,7 +137,7 @@ function RFIDReaderDetail() {
           ...prev,
           [trackId]: { 
             number: '', 
-            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) 
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
           }
         }));
       })
@@ -379,7 +379,7 @@ function RFIDReaderDetail() {
                           className="form-control" 
                           value={manualEntries[track.id]?.timestamp || ''}
                           onChange={(e) => handleManualTimestampChange(track.id, e.target.value)}
-                          placeholder="Enter time (HH:MM)"
+                          placeholder="Enter time (HH:MM:SS)"
                         />
                       </div>
                     </div>
