@@ -17,6 +17,8 @@ function RFIDReaderDetail() {
   const [startTimeInputs, setStartTimeInputs] = useState({});
   const [manualEntries, setManualEntries] = useState({});
 
+  const [draggedTrack, setDraggedTrack] = useState(null);
+
   useEffect(() => {
     axios.get('http://localhost:5001/categories')
       .then(categoriesResponse => {
@@ -303,6 +305,35 @@ function RFIDReaderDetail() {
     };
   }, [isConnected, trackStates, raceId, tracks]);
 
+  const handleDragStart = (e, track) => {
+    setDraggedTrack(track);
+    e.dataTransfer.effectAllowed = "move";
+    e.target.classList.add('dragging');
+  };
+  
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
+  const handleDragEnter = (e, targetTrack) => {
+    if (draggedTrack.id === targetTrack.id) return;
+    
+    const newTracks = [...tracks];
+    const draggedIndex = newTracks.findIndex(t => t.id === draggedTrack.id);
+    const targetIndex = newTracks.findIndex(t => t.id === targetTrack.id);
+    
+    newTracks.splice(draggedIndex, 1);
+    newTracks.splice(targetIndex, 0, draggedTrack);
+    
+    setTracks(newTracks);
+  };
+  
+  const handleDragEnd = (e) => {
+    e.target.classList.remove('dragging');
+    setDraggedTrack(null);
+  };
+
   const handleBack = () => {
     navigate('/rfid-reader');
   };
@@ -373,7 +404,15 @@ function RFIDReaderDetail() {
       {/* Tracks List */}
       <div className="rfid-reader-tracks">
         {tracks.map(track => (
-          <div key={track.id} className="rfid-reader-track">
+          <div 
+            key={track.id} 
+            className="rfid-reader-track"
+            draggable
+            onDragStart={(e) => handleDragStart(e, track)}
+            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, track)}
+            onDragEnd={handleDragEnd}
+          >
             <div className="rfid-reader-track__header">
               <div>
                 <h3 className="rfid-reader-track__title">{track.name}</h3>
@@ -473,8 +512,7 @@ function RFIDReaderDetail() {
                 <ul className="rfid-reader-track__categories-list">
                   {trackCategories[track.id].map(category => (
                     <li key={category.id} className="rfid-reader-track__categories-item">
-                      {category.name} ({category.gender}) 
-                      {category.min_age}-{category.max_age} years
+                      {category.name} ({category.gender})  |  age: {category.min_age}-{category.max_age}
                     </li>
                   ))}
                 </ul>

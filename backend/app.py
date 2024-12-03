@@ -161,32 +161,6 @@ def store_tags_to_database(tag_id, number, last_seen_time):
         error_logger.error(f'Error storing/updating tag {tag_id}: {str(e)}')
         raise
 
-def combine_times(time1: time, time2: time) -> time:
-    """
-    Combine two time objects by adding their hours, minutes, and seconds.
-    
-    Args:
-        time1: First time object
-        time2: Second time object
-        
-    Returns:
-        Combined time object
-    """
-    # Convert times to timedelta for arithmetic
-    delta1 = timedelta(hours=time1.hour, minutes=time1.minute, seconds=time1.second)
-    delta2 = timedelta(hours=time2.hour, minutes=time2.minute, seconds=time2.second)
-    
-    # Add the timedeltas
-    combined = delta1 + delta2
-    
-    # Convert back to time object
-    total_seconds = int(combined.total_seconds())
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-    
-    return time(hour=hours, minute=minutes, second=seconds)
-
 # Routes
 @app.route('/')
 def index():
