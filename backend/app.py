@@ -346,7 +346,7 @@ def get_tags():
 def store_results():
     try:
         data = request.json
-        tags_raw = data.get('tags', [])  # Nyní očekáváme list
+        tags_raw = data.get('tags', [])
         race_id = data.get('race_id')
         track_id = data.get('track_id')
 
@@ -361,7 +361,7 @@ def store_results():
         stored_results = 0
         tags_found = []
         
-        for line in tags_raw:  # Procházíme přímo list
+        for line in tags_raw:
             line = line.strip()
             if not line:
                 continue
@@ -509,7 +509,8 @@ def get_categories():
                 'name': category.category_name,
                 'gender': category.gender,
                 'min_age': category.min_age,
-                'max_age': category.max_age
+                'max_age': category.max_age,
+                'track_id': category.track_id
             })
         return jsonify({'categories': categories_list})
     except Exception as e:

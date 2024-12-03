@@ -137,8 +137,19 @@ function RFIDReaderDetail() {
     
     axios.post('http://localhost:5001/manual_result_store', resultData)
       .then(response => {
-        setMessage(`Successfully stored result for track ${trackId}: Number ${entry.number}`);
         
+        const tagWithNewline = `${response.data.tag_id}\n`;
+
+        // Use tag_id from backend response
+        setTrackStates(prev => ({
+          ...prev,
+          [trackId]: {
+            ...prev[trackId],
+            storedTags: [...new Set([...prev[trackId].storedTags, tagWithNewline])]
+          }
+        }));
+        
+        // Reset manual entry fields
         setManualEntries(prev => ({
           ...prev,
           [trackId]: { 
@@ -151,6 +162,7 @@ function RFIDReaderDetail() {
         setMessage(`Error storing result: ${error.response?.data?.message || error.message}`);
       });
   };
+
   const handleTrackStartStop = (trackId) => {
     if (!startTimeInputs[trackId].isLocked) {
       axios.post('http://localhost:5001/set_track_start_time', {
@@ -440,23 +452,6 @@ function RFIDReaderDetail() {
               </button>
             </div>
 
-            {/* Track Categories */}
-            <div className="rfid-reader-track__categories">
-              <h4>Categories</h4>
-              {trackCategories[track.id] ? (
-                <ul className="rfid-reader-track__categories-list">
-                  {trackCategories[track.id].map(category => (
-                    <li key={category.id} className="rfid-reader-track__categories-item">
-                      {category.name} ({category.gender}) 
-                      {category.min_age}-{category.max_age} years
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted text-center">No categories found</p>
-              )}
-            </div>
-
             {/* Stored Tags */}
             <div className="rfid-reader-tags mt-3">
               <h4 className="rfid-reader-tags__title">Stored Tags</h4>
@@ -469,6 +464,23 @@ function RFIDReaderDetail() {
                   ))
                 )}
               </div>
+            </div>
+
+            {/* Track Categories */}
+            <div className="rfid-reader-track__categories">
+              <h4 className="rfid-reader-categories__title">Categories</h4>
+              {trackCategories[track.id] ? (
+                <ul className="rfid-reader-track__categories-list">
+                  {trackCategories[track.id].map(category => (
+                    <li key={category.id} className="rfid-reader-track__categories-item">
+                      {category.name} ({category.gender}) 
+                      {category.min_age}-{category.max_age} years
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted text-center">No categories found</p>
+              )}
             </div>
           </div>
         ))}
