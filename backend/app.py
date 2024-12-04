@@ -351,9 +351,18 @@ def store_results():
                 number = tag_id.strip().split()[-1]
                 tag_id = tag_id.strip()
                 
+                # Determine lap number and lap count
+                # Check if this tag has been seen before for this race
+                last_entry = db.session.execute(
+                    text(f'SELECT lap_number FROM {table_name} WHERE number = :number ORDER BY timestamp DESC LIMIT 1'),
+                    {'number': number}
+                ).fetchone()
+
+                lap_number = last_entry.lap_number + 1 if last_entry else 1
+                
                 # Parsování časových údajů
-                # discovery_datetime = datetime.strptime(discovery_time, "%Y/%m/%d %H:%M:%S.%f")
                 last_seen_datetime = datetime.strptime(last_seen_time, "%Y/%m/%d %H:%M:%S.%f")
+                offset = last_seen_datetime - (datetime.now() + timedelta(hours=1))
                 
                 # Vložení dat do databáze
                 insert_sql = text(f'''
@@ -362,14 +371,16 @@ def store_results():
                         tag_id, 
                         track_id, 
                         timestamp,
-                        last_seen_time 
+                        last_seen_time,
+                        lap_number
                     ) 
                     VALUES (
                         :number,
                         :tag_id, 
                         :track_id, 
                         :timestamp,
-                        :last_seen_time
+                        :last_seen_time,
+                        :lap_number
                     )
                 ''')
                 
@@ -378,7 +389,8 @@ def store_results():
                     'tag_id': tag_id, 
                     'track_id': track_id,
                     'timestamp': datetime.now() + timedelta(hours=1),
-                    'last_seen_time': last_seen_datetime,
+                    'last_seen_time': last_seen_datetime - offset,
+                    'lap_number': lap_number
                 })
                 
                 stored_results += 1
