@@ -327,9 +327,19 @@ def store_results():
         if not race_id or not track_id:
             return jsonify({"status": "error", "message": "Race ID and Track ID are required"}), 400
 
+        # Fetch the track to get fastest_possible_time
+        track = Track.query.get(track_id)
+        if not track:
+            return jsonify({"status": "error", "message": "Track not found"}), 404
+
+        # Fetch the category associated with this track
+        category = Category.query.filter_by(track_id=track_id).first()
+        if not category:
+            return jsonify({"status": "error", "message": "Category not found for this track"}), 404
+
         table_name = f'race_results_{race_id}'
         
-        # Pattern pro extrakci dat
+        # Pattern for extracting data
         pattern = r"Tag:([\w\s]+), Disc:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Last:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Count:(\d+), Ant:(\d+), Proto:(\d+)"
         
         stored_results = 0
@@ -347,24 +357,49 @@ def store_results():
             try:
                 tag_id, discovery_time, last_seen_time, count, ant, proto = match.groups()
                 
-                # Extrakce čísla tagu
+                # Extract tag number
                 number = tag_id.strip().split()[-1]
                 tag_id = tag_id.strip()
                 
-                # Determine lap number and lap count
-                # Check if this tag has been seen before for this race
+                # Parse time data
+                last_seen_datetime = datetime.strptime(last_seen_time, "%Y/%m/%d %H:%M:%S.%f")
+                current_time = datetime.now()
+                
+                # Convert actual_start_time to datetime for comparison
+                if not category.actual_start_time:
+                    return jsonify({"status": "error", "message": "Actual start time not set for category"}), 400
+
+                # Combine date of last_seen_time with category's start time
+                start_datetime = datetime.combine(last_seen_datetime.date(), category.actual_start_time)
+
+                # Convert fastest_possible_time to timedelta
+                min_lap_duration = timedelta(
+                    hours=track.fastest_possible_time.hour, 
+                    minutes=track.fastest_possible_time.minute, 
+                    seconds=track.fastest_possible_time.second
+                )
+
+                # Check if this is the first entry for this tag
                 last_entry = db.session.execute(
-                    text(f'SELECT lap_number FROM {table_name} WHERE number = :number ORDER BY timestamp DESC LIMIT 1'),
+                    text(f'SELECT lap_number, timestamp, last_seen_time FROM {table_name} WHERE number = :number ORDER BY timestamp DESC LIMIT 1'),
                     {'number': number}
                 ).fetchone()
 
-                lap_number = last_entry.lap_number + 1 if last_entry else 1
-                
-                # Parsování časových údajů
-                last_seen_datetime = datetime.strptime(last_seen_time, "%Y/%m/%d %H:%M:%S.%f")
-                offset = last_seen_datetime - (datetime.now() + timedelta(hours=1))
-                
-                # Vložení dat do databáze
+                # For first entry, check if tag time is after start time + fastest possible time
+                if not last_entry:
+                    if last_seen_datetime <= start_datetime + min_lap_duration:
+                        continue
+                    lap_number = 1
+                else:
+                    # For subsequent entries, check if tag time is after last tag time + fastest possible time
+                    last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
+                    
+                    if last_seen_datetime <= last_tag_time + min_lap_duration:
+                        continue
+                    
+                    lap_number = last_entry.lap_number + 1
+
+                # Insert data into database
                 insert_sql = text(f'''
                     INSERT INTO {table_name} (
                         number,
@@ -388,8 +423,8 @@ def store_results():
                     'number': number,
                     'tag_id': tag_id, 
                     'track_id': track_id,
-                    'timestamp': datetime.now() + timedelta(hours=1),
-                    'last_seen_time': last_seen_datetime - offset,
+                    'timestamp': current_time,
+                    'last_seen_time': last_seen_datetime,
                     'lap_number': lap_number
                 })
                 
