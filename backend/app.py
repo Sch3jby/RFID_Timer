@@ -389,6 +389,10 @@ def store_results():
                     {'number': number}
                 ).fetchone()
 
+                if last_entry:
+                    if last_entry.lap_number >= track.number_of_laps:
+                        continue
+
                 # For first entry, check if tag time is after start time + fastest possible time
                 if not last_entry:
                     if last_seen_datetime <= start_datetime + min_lap_duration:
