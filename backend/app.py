@@ -363,7 +363,11 @@ def store_results():
                 
                 # Parse time data
                 last_seen_datetime = datetime.strptime(last_seen_time, "%Y/%m/%d %H:%M:%S.%f")
-                current_time = datetime.now()
+                current_time = (datetime.now() + timedelta(hours=1))
+
+                # Reader time offset
+                offset = last_seen_datetime - current_time
+                last_seen_datetime = last_seen_datetime - offset
                 
                 # Convert actual_start_time to datetime for comparison
                 if not category.actual_start_time:
