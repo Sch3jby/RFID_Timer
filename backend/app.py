@@ -629,12 +629,15 @@ def get_race_detail(race_id):
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
         
-        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
+        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).order_by(Registration.id).all()
         participants = []
 
-        # Group registrations by track, category, and gender
-        registration_groups = {}
-        for registration in registrations:
+        # Slovník pro sledování počítadla čísel pro každou kombinaci kategorie a pohlaví
+        category_number_counters = {}
+
+        plus_start_time = race.interval_time
+        
+        for idx, registration in enumerate(registrations):
             user = Users.query.get(registration.user_id)
             track = Track.query.get(registration.track_id)
             
@@ -643,53 +646,54 @@ def get_race_detail(race_id):
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
             
-            if user and category and track:
-                key = (track.id, category.id, user.gender)
-                if key not in registration_groups:
-                    registration_groups[key] = []
-                registration_groups[key].append((registration, user, track, category))
+            if not (user and category and track):
+                continue
 
-        plus_start_time = race.interval_time
-        
+            # Klíč kombinující ID kategorie a pohlaví
+            category_gender_key = (category.id, user.gender)
 
-        # Process each group separately
-        for (track_id, category_id, gender), group_registrations in registration_groups.items():
-            for idx, (registration, user, track, category) in enumerate(group_registrations):
-                if race.start == 'I':
-                    # Calculate start time
-                    category_seconds = (
-                        category.expected_start_time.hour * 3600 +
-                        category.expected_start_time.minute * 60 +
-                        category.expected_start_time.second
-                    )
-                    
-                    plus_seconds = (
-                        plus_start_time.hour * 3600 +
-                        plus_start_time.minute * 60 +
-                        plus_start_time.second
-                    )
-                    
-                    total_seconds = category_seconds + (plus_seconds * (idx + 1))
-                    
-                    hours = total_seconds // 3600
-                    minutes = (total_seconds % 3600) // 60
-                    seconds = total_seconds % 60
-                    
-                    actual_start = time(hour=hours, minute=minutes, second=seconds)
-                else:
-                    actual_start = category.expected_start_time
+            # Inicializace počítadla pro kategorii a pohlaví, pokud ještě neexistuje
+            if category_gender_key not in category_number_counters:
+                category_number_counters[category_gender_key] = 0
 
-                user_number = category.min_number + idx
+            # Zvýšení počítadla pro danou kategorii a pohlaví
+            category_number_counters[category_gender_key] += 1
+            
+            # Výpočet čísla závodníka pro danou kategorii a pohlaví
+            user_number = category.min_number + category_number_counters[category_gender_key] - 1
+
+            # Výpočet času startu (stejný jako v předchozím příkladu)
+            if race.start == 'I':
+                plus_seconds = (
+                    plus_start_time.hour * 3600 +
+                    plus_start_time.minute * 60 +
+                    plus_start_time.second
+                )
                 
-                participants.append({
-                    'forename': user.forename,
-                    'surname': user.surname,
-                    'club': user.club,
-                    'category': category.category_name,
-                    'track': track.name,
-                    'start_time': actual_start.strftime('%H:%M:%S'),
-                    'number': user_number
-                })
+                total_seconds = (
+                    category.expected_start_time.hour * 3600 +
+                    category.expected_start_time.minute * 60 +
+                    category.expected_start_time.second +
+                    (plus_seconds * idx)
+                )
+                
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                
+                actual_start = time(hour=hours, minute=minutes, second=seconds)
+            else:
+                actual_start = category.expected_start_time
+
+            participants.append({
+                'forename': user.forename,
+                'surname': user.surname,
+                'club': user.club,
+                'category': category.category_name,
+                'track': track.name,
+                'start_time': actual_start.strftime('%H:%M:%S'),
+                'number': user_number
+            })
                 
         race_detail = {
             'id': race.id,
