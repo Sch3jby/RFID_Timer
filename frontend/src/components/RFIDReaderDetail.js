@@ -16,7 +16,7 @@ function RFIDReaderDetail() {
   const [trackStates, setTrackStates] = useState({});
   const [startTimeInputs, setStartTimeInputs] = useState({});
   const [manualEntries, setManualEntries] = useState({});
-
+  const [lineupConfirmed, setLineupConfirmed] = useState(false);
   const [draggedTrack, setDraggedTrack] = useState(null);
 
   useEffect(() => {
@@ -211,6 +211,28 @@ function RFIDReaderDetail() {
     }
   };
 
+  const handleConfirmLineup = () => {
+    // Prepare the lineup data
+    const lineupData = {
+      race_id: raceId,
+      tracks: tracks.map(track => ({
+        id: track.id,
+        name: track.name,
+        start_time: startTimeInputs[track.id].time,
+        is_automatic_time: startTimeInputs[track.id].isAutomatic
+      }))
+    };
+
+    axios.post('http://localhost:5001/confirm_lineup', lineupData)
+      .then(response => {
+        setLineupConfirmed(true);
+        setMessage("Startovka byla úspěšně potvrzena");
+      })
+      .catch(error => {
+        setMessage(`Chyba při potvrzení startovky: ${error.response?.data?.message || error.message}`);
+      });
+  };
+
   const handleConnect = () => {
     axios.post("http://localhost:5001/connect")
       .then((response) => {
@@ -368,6 +390,16 @@ function RFIDReaderDetail() {
             {isConnected ? 'Disconnect' : 'Connect'} RFID Reader
           </button>
         </div>
+      </div>
+      {/* New Confirm Lineup Button */}
+      <div className="mb-3">
+        <button 
+          onClick={handleConfirmLineup} 
+          className={`btn ${lineupConfirmed ? 'btn-success' : 'btn-primary'} w-100`}
+          disabled={lineupConfirmed}
+        >
+          {lineupConfirmed ? 'Startovka potvrzena ✓' : 'Potvrdit startovku'}
+        </button>
       </div>
 
       {/* Back Button */}

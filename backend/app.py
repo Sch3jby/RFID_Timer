@@ -715,6 +715,91 @@ def set_track_start_time():
         db.session.rollback()
         error_logger.error(f'Error setting start time: {str(e)}')
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/confirm_lineup', methods=['POST'])
+def confirm_lineup():
+    try:
+        data = request.json
+        race_id = data.get('race_id')
+        
+        # Fetch the race
+        race = Race.query.get(race_id)
+        if not race:
+            return jsonify({'error': 'Race not found'}), 404
+        
+        # Fetch tracks for this race
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        track_ids = [track.id for track in tracks]
+        
+        # Fetch all registrations for these tracks
+        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
+        
+        # Group registrations by track, category, and gender
+        registration_groups = {}
+        for registration in registrations:
+            user = Users.query.get(registration.user_id)
+            track = Track.query.get(registration.track_id)
+            
+            # Find the matching category for the user
+            category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
+                                    filter(Category.min_age <= (datetime.now().year - user.year), 
+                                        Category.max_age >= (datetime.now().year - user.year)).\
+                                    first()
+            
+            if user and category and track:
+                key = (track.id, category.id, user.gender)
+                if key not in registration_groups:
+                    registration_groups[key] = []
+                registration_groups[key].append((registration, user, track, category))
+
+        # Process each group separately
+        for (track_id, category_id, gender), group_registrations in registration_groups.items():
+            for idx, (registration, user, track, category) in enumerate(group_registrations):
+                if race.start == 'I':
+                    # Calculate start time
+                    plus_start_time = race.interval_time
+                    category_seconds = (
+                        category.expected_start_time.hour * 3600 +
+                        category.expected_start_time.minute * 60 +
+                        category.expected_start_time.second
+                    )
+                    
+                    plus_seconds = (
+                        plus_start_time.hour * 3600 +
+                        plus_start_time.minute * 60 +
+                        plus_start_time.second
+                    )
+                    
+                    total_seconds = category_seconds + (plus_seconds * (idx + 1))
+                    
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    seconds = total_seconds % 60
+                    
+                    actual_start = time(hour=hours, minute=minutes, second=seconds)
+                else:
+                    actual_start = category.expected_start_time
+
+                # Calculate user number
+                user_number = category.min_number + idx
+                
+                # Update the existing registration
+                registration.number = user_number
+                registration.user_start_time = actual_start
+        
+        # Commit the changes
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Lineup confirmed successfully', 
+            'tracks': [{'id': track.id, 'name': track.name} for track in tracks]
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        error_logger.error(f'Error confirming lineup: {str(e)}')
+        return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
+
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
