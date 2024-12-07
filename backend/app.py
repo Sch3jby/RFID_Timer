@@ -368,13 +368,49 @@ def store_results():
                 # Reader time offset
                 offset = last_seen_datetime - current_time
                 last_seen_datetime = last_seen_datetime - offset
-                
-                # Convert actual_start_time to datetime for comparison
+
+                # Find the corresponding registration for this tag/race/track
+                registration = Registration.query.filter_by(
+                    race_id=race_id, 
+                    track_id=track_id, 
+                    number=number
+                ).first()
+
+                if not registration:
+                    continue
+
+                # Validate actual start time
                 if not category.actual_start_time:
                     return jsonify({"status": "error", "message": "Actual start time not set for category"}), 400
+                
+                # Convert time objects to timedeltas
+                user_start_delta = timedelta(
+                    hours=registration.user_start_time.hour, 
+                    minutes=registration.user_start_time.minute, 
+                    seconds=registration.user_start_time.second
+                )
+                category_start_delta = timedelta(
+                    hours=category.actual_start_time.hour, 
+                    minutes=category.actual_start_time.minute, 
+                    seconds=category.actual_start_time.second
+                )
 
-                # Combine date of last_seen_time with category's start time
-                start_datetime = datetime.combine(last_seen_datetime.date(), category.actual_start_time)
+                # Add the timedeltas and handle overflow
+                total_seconds = user_start_delta.seconds + category_start_delta.seconds
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+
+                user_start_time = time(
+                    hour=hours % 24,  # Ensure we don't exceed 24 hours
+                    minute=minutes,
+                    second=seconds
+                )
+
+                # Combine date of last_seen_time with category's actual start time
+                race_start_datetime = datetime.combine(
+                    last_seen_datetime.date(), 
+                    user_start_time
+                )
 
                 # Convert fastest_possible_time to timedelta
                 min_lap_duration = timedelta(
@@ -393,13 +429,13 @@ def store_results():
                     if last_entry.lap_number >= track.number_of_laps:
                         continue
 
-                # For first entry, check if tag time is after start time + fastest possible time
+                # For first entry, check if tag time is after race start + min lap duration
                 if not last_entry:
-                    if last_seen_datetime <= start_datetime + min_lap_duration:
+                    if last_seen_datetime <= race_start_datetime + min_lap_duration:
                         continue
                     lap_number = 1
                 else:
-                    # For subsequent entries, check if tag time is after last tag time + fastest possible time
+                    # For subsequent entries, check if tag time is after last tag time + min lap duration
                     last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
                     
                     if last_seen_datetime <= last_tag_time + min_lap_duration:
@@ -758,11 +794,6 @@ def confirm_lineup():
                 if race.start == 'I':
                     # Calculate start time
                     plus_start_time = race.interval_time
-                    category_seconds = (
-                        category.expected_start_time.hour * 3600 +
-                        category.expected_start_time.minute * 60 +
-                        category.expected_start_time.second
-                    )
                     
                     plus_seconds = (
                         plus_start_time.hour * 3600 +
@@ -770,7 +801,7 @@ def confirm_lineup():
                         plus_start_time.second
                     )
                     
-                    total_seconds = category_seconds + (plus_seconds * (idx + 1))
+                    total_seconds = (plus_seconds * (idx + 1))
                     
                     hours = total_seconds // 3600
                     minutes = (total_seconds % 3600) // 60
@@ -778,7 +809,7 @@ def confirm_lineup():
                     
                     actual_start = time(hour=hours, minute=minutes, second=seconds)
                 else:
-                    actual_start = category.expected_start_time
+                    actual_start = time(hour=0, minute=0, second=0)
 
                 # Calculate user number
                 user_number = category.min_number + idx
