@@ -122,6 +122,7 @@ function RaceDetail() {
         <table className="participants-table">
           <thead>
             <tr>
+              <th onClick={() => handleSort('number')}>{t('raceDetail.columns.number')}</th>
               <th onClick={() => handleSort('surname')}>{t('raceDetail.columns.name')}</th>
               <th onClick={() => handleSort('club')}>{t('raceDetail.columns.club')}</th>
               <th onClick={() => handleSort('category')}>{t('raceDetail.columns.category')}</th>
@@ -139,6 +140,7 @@ function RaceDetail() {
             ) : (
               sortedParticipants.map((participant, index) => (
                 <tr key={index}>
+                  <td>{participant.number}</td>
                   <td>{participant.forename} {participant.surname}</td>
                   <td>{participant.club}</td>
                   <td>{participant.category}</td>

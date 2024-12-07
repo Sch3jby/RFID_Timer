@@ -614,6 +614,7 @@ def get_race_detail(race_id):
                 registration_groups[key].append((registration, user, track, category))
 
         plus_start_time = race.interval_time
+        
 
         # Process each group separately
         for (track_id, category_id, gender), group_registrations in registration_groups.items():
@@ -641,6 +642,8 @@ def get_race_detail(race_id):
                     actual_start = time(hour=hours, minute=minutes, second=seconds)
                 else:
                     actual_start = category.expected_start_time
+
+                user_number = category.min_number + idx
                 
                 participants.append({
                     'forename': user.forename,
@@ -648,7 +651,8 @@ def get_race_detail(race_id):
                     'club': user.club,
                     'category': category.category_name,
                     'track': track.name,
-                    'start_time': actual_start.strftime('%H:%M:%S')
+                    'start_time': actual_start.strftime('%H:%M:%S'),
+                    'number': user_number
                 })
                 
         race_detail = {
