@@ -69,7 +69,8 @@ export const translations = {
           club: "Klub/Město",
           category: "Kategorie",
           track: "Trať",
-          startTime: "Čas startu"
+          startTime: "Čas startu",
+          number: "Číslo"
         }
       }
     },
@@ -140,7 +141,8 @@ export const translations = {
           club: "Club/City",
           category: "Category",
           track: "Track",
-          startTime: "Start time"
+          startTime: "Start time",
+          number: "Number"
         }
       }
     }

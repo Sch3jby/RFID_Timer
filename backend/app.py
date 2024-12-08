@@ -161,32 +161,6 @@ def store_tags_to_database(tag_id, number, last_seen_time):
         error_logger.error(f'Error storing/updating tag {tag_id}: {str(e)}')
         raise
 
-def combine_times(time1: time, time2: time) -> time:
-    """
-    Combine two time objects by adding their hours, minutes, and seconds.
-    
-    Args:
-        time1: First time object
-        time2: Second time object
-        
-    Returns:
-        Combined time object
-    """
-    # Convert times to timedelta for arithmetic
-    delta1 = timedelta(hours=time1.hour, minutes=time1.minute, seconds=time1.second)
-    delta2 = timedelta(hours=time2.hour, minutes=time2.minute, seconds=time2.second)
-    
-    # Add the timedeltas
-    combined = delta1 + delta2
-    
-    # Convert back to time object
-    total_seconds = int(combined.total_seconds())
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-    
-    return time(hour=hours, minute=minutes, second=seconds)
-
 # Routes
 @app.route('/')
 def index():
@@ -353,9 +327,19 @@ def store_results():
         if not race_id or not track_id:
             return jsonify({"status": "error", "message": "Race ID and Track ID are required"}), 400
 
+        # Fetch the track to get fastest_possible_time
+        track = Track.query.get(track_id)
+        if not track:
+            return jsonify({"status": "error", "message": "Track not found"}), 404
+
+        # Fetch the category associated with this track
+        category = Category.query.filter_by(track_id=track_id).first()
+        if not category:
+            return jsonify({"status": "error", "message": "Category not found for this track"}), 404
+
         table_name = f'race_results_{race_id}'
         
-        # Pattern pro extrakci dat
+        # Pattern for extracting data
         pattern = r"Tag:([\w\s]+), Disc:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Last:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Count:(\d+), Ant:(\d+), Proto:(\d+)"
         
         stored_results = 0
@@ -373,29 +357,109 @@ def store_results():
             try:
                 tag_id, discovery_time, last_seen_time, count, ant, proto = match.groups()
                 
-                # Extrakce čísla tagu
+                # Extract tag number
                 number = tag_id.strip().split()[-1]
                 tag_id = tag_id.strip()
                 
-                # Parsování časových údajů
-                # discovery_datetime = datetime.strptime(discovery_time, "%Y/%m/%d %H:%M:%S.%f")
+                # Parse time data
                 last_seen_datetime = datetime.strptime(last_seen_time, "%Y/%m/%d %H:%M:%S.%f")
+                current_time = (datetime.now() + timedelta(hours=1))
+
+                # Reader time offset
+                offset = last_seen_datetime - current_time
+                last_seen_datetime = last_seen_datetime - offset
+
+                # Find the corresponding registration for this tag/race/track
+                registration = Registration.query.filter_by(
+                    race_id=race_id, 
+                    track_id=track_id, 
+                    number=number
+                ).first()
+
+                if not registration:
+                    continue
+
+                # Validate actual start time
+                if not category.actual_start_time:
+                    return jsonify({"status": "error", "message": "Actual start time not set for category"}), 400
                 
-                # Vložení dat do databáze
+                # Convert time objects to timedeltas
+                user_start_delta = timedelta(
+                    hours=registration.user_start_time.hour, 
+                    minutes=registration.user_start_time.minute, 
+                    seconds=registration.user_start_time.second
+                )
+                category_start_delta = timedelta(
+                    hours=category.actual_start_time.hour, 
+                    minutes=category.actual_start_time.minute, 
+                    seconds=category.actual_start_time.second
+                )
+
+                # Add the timedeltas and handle overflow
+                total_seconds = user_start_delta.seconds + category_start_delta.seconds
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+
+                user_start_time = time(
+                    hour=hours % 24,  # Ensure we don't exceed 24 hours
+                    minute=minutes,
+                    second=seconds
+                )
+
+                # Combine date of last_seen_time with category's actual start time
+                race_start_datetime = datetime.combine(
+                    last_seen_datetime.date(), 
+                    user_start_time
+                )
+
+                # Convert fastest_possible_time to timedelta
+                min_lap_duration = timedelta(
+                    hours=track.fastest_possible_time.hour, 
+                    minutes=track.fastest_possible_time.minute, 
+                    seconds=track.fastest_possible_time.second
+                )
+
+                # Check if this is the first entry for this tag
+                last_entry = db.session.execute(
+                    text(f'SELECT lap_number, timestamp, last_seen_time FROM {table_name} WHERE number = :number ORDER BY timestamp DESC LIMIT 1'),
+                    {'number': number}
+                ).fetchone()
+
+                if last_entry:
+                    if last_entry.lap_number >= track.number_of_laps:
+                        continue
+
+                # For first entry, check if tag time is after race start + min lap duration
+                if not last_entry:
+                    if last_seen_datetime <= race_start_datetime + min_lap_duration:
+                        continue
+                    lap_number = 1
+                else:
+                    # For subsequent entries, check if tag time is after last tag time + min lap duration
+                    last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
+                    
+                    if last_seen_datetime <= last_tag_time + min_lap_duration:
+                        continue
+                    
+                    lap_number = last_entry.lap_number + 1
+
+                # Insert data into database
                 insert_sql = text(f'''
                     INSERT INTO {table_name} (
                         number,
                         tag_id, 
                         track_id, 
                         timestamp,
-                        last_seen_time 
+                        last_seen_time,
+                        lap_number
                     ) 
                     VALUES (
                         :number,
                         :tag_id, 
                         :track_id, 
                         :timestamp,
-                        :last_seen_time
+                        :last_seen_time,
+                        :lap_number
                     )
                 ''')
                 
@@ -403,8 +467,9 @@ def store_results():
                     'number': number,
                     'tag_id': tag_id, 
                     'track_id': track_id,
-                    'timestamp': datetime.now() + timedelta(hours=1),
+                    'timestamp': current_time,
                     'last_seen_time': last_seen_datetime,
+                    'lap_number': lap_number
                 })
                 
                 stored_results += 1
@@ -434,6 +499,8 @@ def manual_result_store():
         track_id = data.get('track_id')
         timestamp_str = data.get('timestamp')
 
+        table_name = f'race_results_{race_id}'
+
         if not number or not race_id or not track_id:
             return jsonify({
                 "status": "error", 
@@ -456,6 +523,17 @@ def manual_result_store():
 
 
         table_name = f'race_results_{race_id}'
+
+        # Check if this is the first entry for this tag
+        last_entry = db.session.execute(
+            text(f'SELECT lap_number, timestamp, last_seen_time FROM {table_name} WHERE number = :number ORDER BY timestamp DESC LIMIT 1'),
+            {'number': number}
+        ).fetchone()
+
+        if last_entry:
+            lap_number = last_entry.lap_number + 1
+        else:
+            lap_number = 1
         
         insert_sql = text(f'''
             INSERT INTO {table_name} (
@@ -463,14 +541,16 @@ def manual_result_store():
                 tag_id, 
                 track_id, 
                 timestamp,
-                last_seen_time 
+                last_seen_time,
+                lap_number
             ) 
             VALUES (
                 :number,
                 :tag_id, 
                 :track_id, 
                 :timestamp,
-                :last_seen_time
+                :last_seen_time,
+                :lap_number
             )
         ''')
         
@@ -482,6 +562,7 @@ def manual_result_store():
             'track_id': track_id,
             'timestamp': timestamp,
             'last_seen_time': timestamp,
+            'lap_number': lap_number
         })
         
         db.session.commit()
@@ -557,18 +638,26 @@ def get_tracks():
 @app.route('/race/<int:race_id>', methods=['GET'])
 def get_race_detail(race_id):
     try:
-        race = Race.query.get(race_id)
+        with db.session() as session:
+            race = session.get(Race, race_id)
         if not race:
             return jsonify({'error': 'Race not found'}), 404
             
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
         
+        # Fetch all registrations
         registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
-        participants = []
+        
+        # Prepare a list to store participant details
+        participant_details = []
 
-        # Group registrations by track, category, and gender
-        registration_groups = {}
+        # Dictionary to track number counters for each category and gender
+        category_number_counters = {}
+        
+        plus_start_time = race.interval_time
+        
+        # First pass: Assign numbers within categories
         for registration in registrations:
             user = Users.query.get(registration.user_id)
             track = Track.query.get(registration.track_id)
@@ -578,57 +667,91 @@ def get_race_detail(race_id):
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
             
-            if user and category and track:
-                key = (track.id, category.id, user.gender)
-                if key not in registration_groups:
-                    registration_groups[key] = []
-                registration_groups[key].append((registration, user, track, category))
+            if not (user and category and track):
+                continue
 
-        plus_start_time = race.interval_time
+            # Use a composite key combining category ID, gender, and min_number for sorting
+            category_gender_key = (category.id, user.gender)
 
-        # Process each group separately
-        for (track_id, category_id, gender), group_registrations in registration_groups.items():
-            for idx, (registration, user, track, category) in enumerate(group_registrations):
-                if race.start == 'I':
-                    # Calculate start time
-                    category_seconds = (
-                        category.expected_start_time.hour * 3600 +
-                        category.expected_start_time.minute * 60 +
-                        category.expected_start_time.second
-                    )
-                    
-                    plus_seconds = (
-                        plus_start_time.hour * 3600 +
-                        plus_start_time.minute * 60 +
-                        plus_start_time.second
-                    )
-                    
-                    total_seconds = category_seconds + (plus_seconds * (idx + 1))
-                    
-                    hours = total_seconds // 3600
-                    minutes = (total_seconds % 3600) // 60
-                    seconds = total_seconds % 60
-                    
-                    actual_start = time(hour=hours, minute=minutes, second=seconds)
-                else:
-                    actual_start = category.expected_start_time
+            # Initialize counter for category and gender if not exists
+            if category_gender_key not in category_number_counters:
+                category_number_counters[category_gender_key] = 0
+
+            # Increment counter for the category and gender
+            category_number_counters[category_gender_key] += 1
+            
+            # Calculate user's number within their category
+            user_number = category.min_number + category_number_counters[category_gender_key] - 1
+
+            participant_details.append({
+                'registration_id': registration.id,
+                'category_id': category.id,
+                'gender': user.gender,
+                'number': user_number,
+                'user_id': user.id,
+                'track_id': track.id
+            })
+        
+        # Sort participants by category and number
+        sorted_participants = sorted(
+            participant_details, 
+            key=lambda x: (x['category_id'], x['number'])
+        )
+        
+        # Second pass: Assign start times based on sorted order
+        final_participant_details = []
+        for idx, participant in enumerate(sorted_participants):
+            user = Users.query.get(participant['user_id'])
+            track = Track.query.get(participant['track_id'])
+            
+            category = Category.query.filter_by(
+                gender=participant['gender'], 
+                track_id=participant['track_id']
+            ).filter(
+                Category.min_age <= (datetime.now().year - user.year), 
+                Category.max_age >= (datetime.now().year - user.year)
+            ).first()
+            
+            # Calculate start time based on sorted order
+            if race.start == 'I':
+                plus_seconds = (
+                    plus_start_time.hour * 3600 +
+                    plus_start_time.minute * 60 +
+                    plus_start_time.second
+                )
                 
-                participants.append({
-                    'forename': user.forename,
-                    'surname': user.surname,
-                    'club': user.club,
-                    'category': category.category_name,
-                    'track': track.name,
-                    'start_time': actual_start.strftime('%H:%M:%S')
-                })
+                total_seconds = (
+                    category.expected_start_time.hour * 3600 +
+                    category.expected_start_time.minute * 60 +
+                    category.expected_start_time.second +
+                    (plus_seconds * idx)
+                )
                 
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                
+                actual_start = time(hour=hours, minute=minutes, second=seconds)
+            else:
+                actual_start = category.expected_start_time
+
+            final_participant_details.append({
+                'number': participant['number'],
+                'forename': user.forename,
+                'surname': user.surname,
+                'club': user.club,
+                'category': category.category_name,
+                'track': track.name,
+                'start_time': actual_start.strftime('%H:%M:%S')
+            })
+        
         race_detail = {
             'id': race.id,
             'name': race.name,
             'date': race.date.strftime('%Y-%m-%d'),
             'start': race.start,
             'description': race.description,
-            'participants': participants
+            'participants': final_participant_details
         }
         return jsonify({'race': race_detail})
         
@@ -682,6 +805,118 @@ def set_track_start_time():
         db.session.rollback()
         error_logger.error(f'Error setting start time: {str(e)}')
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/confirm_lineup', methods=['POST'])
+def confirm_lineup():
+    try:
+        data = request.json
+        race_id = data.get('race_id')
+        
+        # Fetch the race
+        race = Race.query.get(race_id)
+        if not race:
+            return jsonify({'error': 'Race not found'}), 404
+        
+        # Fetch tracks for this race
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        track_ids = [track.id for track in tracks]
+        
+        # Fetch all registrations for these tracks
+        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
+        
+        # Prepare a list to store participant details
+        participant_details = []
+
+        # Dictionary to track number counters for each category and gender
+        category_number_counters = {}
+        
+        # First pass: Assign numbers within categories
+        for registration in registrations:
+            user = Users.query.get(registration.user_id)
+            track = Track.query.get(registration.track_id)
+            
+            # Find the matching category for the user
+            category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
+                                    filter(Category.min_age <= (datetime.now().year - user.year), 
+                                        Category.max_age >= (datetime.now().year - user.year)).\
+                                    first()
+            
+            if not (user and category and track):
+                continue
+
+            # Use a composite key combining category ID, gender, and min_number for sorting
+            category_gender_key = (category.id, user.gender)
+
+            # Initialize counter for category and gender if not exists
+            if category_gender_key not in category_number_counters:
+                category_number_counters[category_gender_key] = 0
+
+            # Increment counter for the category and gender
+            category_number_counters[category_gender_key] += 1
+            
+            # Calculate user's number within their category
+            user_number = category.min_number + category_number_counters[category_gender_key] - 1
+
+            participant_details.append({
+                'registration_id': registration.id,
+                'category_id': category.id,
+                'gender': user.gender,
+                'number': user_number,
+                'user_id': user.id,
+                'track_id': track.id,
+                'category': category,
+                'user': user,
+                'track': track
+            })
+        
+        # Sort participants by category and number
+        sorted_participants = sorted(
+            participant_details, 
+            key=lambda x: (x['category_id'], x['number'])
+        )
+        
+        # Second pass: Assign start times based on sorted order
+        for idx, participant in enumerate(sorted_participants):
+            registration = Registration.query.get(participant['registration_id'])
+            
+            # Calculate start time based on sorted order
+            if race.start == 'I':  # Intervalový start
+                plus_start_time = race.interval_time
+                
+                plus_seconds = (
+                    plus_start_time.hour * 3600 +
+                    plus_start_time.minute * 60 +
+                    plus_start_time.second
+                )
+                
+                total_seconds = (
+                    plus_seconds * idx
+                )
+                
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                
+                actual_start = time(hour=hours, minute=minutes, second=seconds)
+            else:
+                actual_start = time(hour=0, minute=0, second=0)
+
+            # Update the existing registration
+            registration.number = participant['number']
+            registration.user_start_time = actual_start
+        
+        # Commit the changes
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Lineup confirmed successfully', 
+            'tracks': [{'id': track.id, 'name': track.name} for track in tracks]
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        error_logger.error(f'Error confirming lineup: {str(e)}')
+        return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')

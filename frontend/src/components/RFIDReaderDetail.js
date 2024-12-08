@@ -16,6 +16,8 @@ function RFIDReaderDetail() {
   const [trackStates, setTrackStates] = useState({});
   const [startTimeInputs, setStartTimeInputs] = useState({});
   const [manualEntries, setManualEntries] = useState({});
+  const [lineupConfirmed, setLineupConfirmed] = useState(false);
+  const [draggedTrack, setDraggedTrack] = useState(null);
 
   useEffect(() => {
     axios.get('http://localhost:5001/categories')
@@ -209,6 +211,28 @@ function RFIDReaderDetail() {
     }
   };
 
+  const handleConfirmLineup = () => {
+    // Prepare the lineup data
+    const lineupData = {
+      race_id: raceId,
+      tracks: tracks.map(track => ({
+        id: track.id,
+        name: track.name,
+        start_time: startTimeInputs[track.id].time,
+        is_automatic_time: startTimeInputs[track.id].isAutomatic
+      }))
+    };
+
+    axios.post('http://localhost:5001/confirm_lineup', lineupData)
+      .then(response => {
+        setLineupConfirmed(true);
+        setMessage("Startovka byla úspěšně potvrzena");
+      })
+      .catch(error => {
+        setMessage(`Chyba při potvrzení startovky: ${error.response?.data?.message || error.message}`);
+      });
+  };
+
   const handleConnect = () => {
     axios.post("http://localhost:5001/connect")
       .then((response) => {
@@ -303,6 +327,35 @@ function RFIDReaderDetail() {
     };
   }, [isConnected, trackStates, raceId, tracks]);
 
+  const handleDragStart = (e, track) => {
+    setDraggedTrack(track);
+    e.dataTransfer.effectAllowed = "move";
+    e.target.classList.add('dragging');
+  };
+  
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
+  const handleDragEnter = (e, targetTrack) => {
+    if (draggedTrack.id === targetTrack.id) return;
+    
+    const newTracks = [...tracks];
+    const draggedIndex = newTracks.findIndex(t => t.id === draggedTrack.id);
+    const targetIndex = newTracks.findIndex(t => t.id === targetTrack.id);
+    
+    newTracks.splice(draggedIndex, 1);
+    newTracks.splice(targetIndex, 0, draggedTrack);
+    
+    setTracks(newTracks);
+  };
+  
+  const handleDragEnd = (e) => {
+    e.target.classList.remove('dragging');
+    setDraggedTrack(null);
+  };
+
   const handleBack = () => {
     navigate('/rfid-reader');
   };
@@ -337,6 +390,16 @@ function RFIDReaderDetail() {
             {isConnected ? 'Disconnect' : 'Connect'} RFID Reader
           </button>
         </div>
+      </div>
+      {/* New Confirm Lineup Button */}
+      <div className="mb-3">
+        <button 
+          onClick={handleConfirmLineup} 
+          className={`btn ${lineupConfirmed ? 'btn-success' : 'btn-primary'} w-100`}
+          disabled={lineupConfirmed}
+        >
+          {lineupConfirmed ? 'Startovka potvrzena ✓' : 'Potvrdit startovku'}
+        </button>
       </div>
 
       {/* Back Button */}
@@ -373,7 +436,15 @@ function RFIDReaderDetail() {
       {/* Tracks List */}
       <div className="rfid-reader-tracks">
         {tracks.map(track => (
-          <div key={track.id} className="rfid-reader-track">
+          <div 
+            key={track.id} 
+            className="rfid-reader-track"
+            draggable
+            onDragStart={(e) => handleDragStart(e, track)}
+            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, track)}
+            onDragEnd={handleDragEnd}
+          >
             <div className="rfid-reader-track__header">
               <div>
                 <h3 className="rfid-reader-track__title">{track.name}</h3>
@@ -473,8 +544,7 @@ function RFIDReaderDetail() {
                 <ul className="rfid-reader-track__categories-list">
                   {trackCategories[track.id].map(category => (
                     <li key={category.id} className="rfid-reader-track__categories-item">
-                      {category.name} ({category.gender}) 
-                      {category.min_age}-{category.max_age} years
+                      {category.name} ({category.gender})  |  age: {category.min_age}-{category.max_age}
                     </li>
                   ))}
                 </ul>
