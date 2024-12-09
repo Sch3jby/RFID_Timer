@@ -917,6 +917,117 @@ def confirm_lineup():
         db.session.rollback()
         error_logger.error(f'Error confirming lineup: {str(e)}')
         return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
+    
+@app.route('/race_results/<int:race_id>', methods=['GET'])
+def get_race_results(race_id):
+    try:
+        with db.session() as session:
+            race = session.get(Race, race_id)
+        if not race:
+            return jsonify({'error': 'Race not found'}), 404
+            
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        track_ids = [track.id for track in tracks]
+        
+        # Fetch registrations for these tracks
+        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
+        
+        # Prepare a list to store result details
+        result_details = []
+        
+        for registration in registrations:
+            user = Users.query.get(registration.user_id)
+            track = Track.query.get(registration.track_id)
+            
+            category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
+                                    filter(Category.min_age <= (datetime.now().year - user.year), 
+                                        Category.max_age >= (datetime.now().year - user.year)).\
+                                    first()
+            
+            if not (user and category and track):
+                continue
+
+            # Dynamicky pojmenovaná tabulka výsledků
+            table_name = f'race_results_{race_id}'
+            
+            # SQL dotaz pro výpočet výsledků
+            result_query = text(f'''
+                SELECT 
+                    MAX(lap_number) as total_laps,
+                    MIN(timestamp) as first_lap_time,
+                    MAX(timestamp) as last_lap_time,
+                    TIMEDIFF(MAX(timestamp), MIN(timestamp)) as total_race_time
+                FROM {table_name}
+                WHERE number = :number AND track_id = :track_id
+                GROUP BY number
+            ''')
+            
+            # Provedení dotazu
+            result = db.session.execute(result_query, {
+                'number': registration.number, 
+                'track_id': track.id
+            }).fetchone()
+            
+            # Výpočet pozice
+            position_query = text(f'''
+                SELECT COUNT(DISTINCT number) + 1 as position
+                FROM {table_name}
+                WHERE track_id = :track_id 
+                  AND (
+                    MAX(lap_number) > (
+                        SELECT MAX(lap_number) 
+                        FROM {table_name} 
+                        WHERE number = :number AND track_id = :track_id
+                    ) OR 
+                    (MAX(lap_number) = (
+                        SELECT MAX(lap_number) 
+                        FROM {table_name} 
+                        WHERE number = :number AND track_id = :track_id
+                    ) AND MIN(timestamp) < (
+                        SELECT MIN(timestamp) 
+                        FROM {table_name} 
+                        WHERE number = :number AND track_id = :track_id
+                    ))
+            ''')
+            
+            position = db.session.execute(position_query, {
+                'number': registration.number, 
+                'track_id': track.id
+            }).scalar() or None
+
+            # Příprava detailů výsledku
+            result_details.append({
+                'number': registration.number,
+                'forename': user.forename,
+                'surname': user.surname,
+                'club': user.club,
+                'category': category.category_name,
+                'track': track.name,
+                'number_of_laps': result.total_laps if result else 0,
+                'total_time': str(result.total_race_time) if result else None,
+                'overall_position': position
+            })
+        
+        # Seřazení výsledků podle počtu kol a času
+        result_details.sort(
+            key=lambda x: (
+                -(x['number_of_laps'] or 0), 
+                x['total_time'] or datetime.max
+            )
+        )
+        
+        race_results = {
+            'id': race.id,
+            'name': race.name,
+            'date': race.date.strftime('%Y-%m-%d'),
+            'results': result_details
+        }
+        
+        return jsonify({'results': race_results})
+        
+    except Exception as e:
+        error_logger.error(f'Error fetching race results: {str(e)}')
+        return jsonify({'error': f'Error fetching race results: {str(e)}'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')

@@ -55,6 +55,8 @@ export const translations = {
         }
       },
       raceDetail: {
+        startList: "Startovní listina",
+        resultList: "Výsledková listina",
         date: "Datum",
         loading: "Načítání...",
         error: "Chyba při načítání závodů",
@@ -127,6 +129,8 @@ export const translations = {
         }
       },
       raceDetail: {
+        startList: "Start list",
+        resultList: "Result list",
         date: "Date",
         loading: "Loading...",
         error: "Error loading races",
