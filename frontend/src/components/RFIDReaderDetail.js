@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from '../contexts/LanguageContext';
 
 function RFIDReaderDetail() {
   const { raceId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [isConnected, setIsConnected] = useState(false);
   const [message, setMessage] = useState("");
@@ -226,10 +228,10 @@ function RFIDReaderDetail() {
     axios.post('http://localhost:5001/confirm_lineup', lineupData)
       .then(response => {
         setLineupConfirmed(true);
-        setMessage("Startovka byla úspěšně potvrzena");
+        setMessage("Starlist confirmed");
       })
       .catch(error => {
-        setMessage(`Chyba při potvrzení startovky: ${error.response?.data?.message || error.message}`);
+        setMessage(`Error when confirming the start list: ${error.response?.data?.message || error.message}`);
       });
   };
 
@@ -377,8 +379,8 @@ function RFIDReaderDetail() {
         <div>
           <h1 className="rfid-reader-detail__title">{raceDetail.name}</h1>
           <p>
-            <strong>Date:</strong> {raceDetail.date} | 
-            <strong> Start Type:</strong> {raceDetail.start}
+            <strong>   {t('rfidReader.date')}:</strong> {raceDetail.date} | 
+            <strong>   {t('rfidReader.startType')}:</strong> {raceDetail.start}
           </p>
         </div>
         <div className="rfid-reader-detail__connection-status">
@@ -387,7 +389,7 @@ function RFIDReaderDetail() {
             onClick={handleConnect} 
             className={`btn ${isConnected ? 'btn-danger' : 'btn-primary'}`}
           >
-            {isConnected ? 'Disconnect' : 'Connect'} RFID Reader
+            {isConnected ? t('rfidReader.disconnect') : t('rfidReader.connect')} RFID Reader
           </button>
         </div>
       </div>
@@ -398,17 +400,12 @@ function RFIDReaderDetail() {
           className={`btn ${lineupConfirmed ? 'btn-success' : 'btn-primary'} w-100`}
           disabled={lineupConfirmed}
         >
-          {lineupConfirmed ? 'Startovka potvrzena ✓' : 'Potvrdit startovku'}
+          {lineupConfirmed ? t('rfidReader.confirmed') : t('rfidReader.confirm')}
         </button>
       </div>
 
       {/* Back Button */}
-      <button 
-        onClick={handleBack} 
-        className="btn btn-secondary mb-3"
-      >
-        Back to Races
-      </button>
+      <button onClick={handleBack} className="btn btn-secondary mb-3">{t('rfidReader.back')}</button>
 
       {/* Message Display */}
       {message && (
@@ -421,10 +418,10 @@ function RFIDReaderDetail() {
 
       {/* Current Tags Section */}
       <div className="rfid-reader-tags">
-        <h4 className="rfid-reader-tags__title">Current Tags</h4>
+        <h4 className="rfid-reader-tags__title">{t('rfidReader.curTags')}</h4>
         <div className="rfid-reader-tags__container">
           {currentTags.length === 0 ? (
-            <p className="text-muted text-center">No tags detected</p>
+            <p className="text-muted text-center">{t('rfidReader.noTags')}</p>
           ) : (
             currentTags.map((tag, index) => (
               <span key={index} className="rfid-reader-tag">{tag}</span>
@@ -454,7 +451,7 @@ function RFIDReaderDetail() {
                 onClick={() => handleTrackStartStop(track.id)} 
                 className={`btn ${trackStates[track.id]?.isStarted ? 'btn-warning' : 'btn-success'}`}
               >
-                {trackStates[track.id]?.isStarted ? 'Stop' : 'Start'} Track
+                {trackStates[track.id]?.isStarted ? 'Stop' : 'Start'}
               </button>
             </div>
 
@@ -482,10 +479,10 @@ function RFIDReaderDetail() {
 
             {/* Manual Result Entry */}
             <div className="rfid-reader-track__manual-entry">
-              <h4>Manual Result Entry</h4>
+              <h4>{t('rfidReader.manual')}</h4>
               <div className="row">
                 <div className="col-md-6 mb-2">
-                  <label className="form-label">Number</label>
+                  <label className="form-label">{t('rfidReader.number')}:</label>
                   <input 
                     type="text" 
                     className="form-control" 
@@ -496,11 +493,11 @@ function RFIDReaderDetail() {
                         handleManualResultInsert(track.id);
                       }
                     }}
-                    placeholder="Enter participant number"
+                    placeholder={t('rfidReader.enterNumber')}
                   />
                 </div>
                 <div className="col-md-6 mb-2">
-                  <label className="form-label">Timestamp</label>
+                  <label className="form-label">{t('rfidReader.time')}</label>
                   <input 
                     type="text" 
                     className="form-control" 
@@ -515,20 +512,17 @@ function RFIDReaderDetail() {
                   />
                 </div>
               </div>
-              <button 
-                className="btn btn-primary mt-2 w-100"
-                onClick={() => handleManualResultInsert(track.id)}
-              >
-                Insert Result
+              <button className="btn btn-primary mt-2 w-100" onClick={() => handleManualResultInsert(track.id)}>
+                {t('rfidReader.insert')}
               </button>
             </div>
 
             {/* Stored Tags */}
             <div className="rfid-reader-tags mt-3">
-              <h4 className="rfid-reader-tags__title">Stored Tags</h4>
+              <h4 className="rfid-reader-tags__title">{t('rfidReader.stored')}</h4>
               <div className="rfid-reader-tags__container">
                 {trackStates[track.id]?.storedTags.length === 0 ? (
-                  <p className="text-muted text-center">No tags stored</p>
+                  <p className="text-muted text-center">{t('rfidReader.noStored')}</p>
                 ) : (
                   trackStates[track.id]?.storedTags.map((tag, index) => (
                     <span key={index} className="rfid-reader-tag rfid-reader-tag--stored">{tag}</span>
@@ -539,17 +533,17 @@ function RFIDReaderDetail() {
 
             {/* Track Categories */}
             <div className="rfid-reader-track__categories">
-              <h4 className="rfid-reader-categories__title">Categories</h4>
+              <h4 className="rfid-reader-categories__title">{t('rfidReader.categories')}</h4>
               {trackCategories[track.id] ? (
                 <ul className="rfid-reader-track__categories-list">
                   {trackCategories[track.id].map(category => (
                     <li key={category.id} className="rfid-reader-track__categories-item">
-                      {category.name} ({category.gender})  |  age: {category.min_age}-{category.max_age}
+                      {category.name} ({category.gender})  |  {t('rfidReader.age')}: {category.min_age}-{category.max_age}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-muted text-center">No categories found</p>
+                <p className="text-muted text-center">{t('rfidReader.noCat')}</p>
               )}
             </div>
           </div>
