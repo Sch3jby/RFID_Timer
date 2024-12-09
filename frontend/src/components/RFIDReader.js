@@ -38,12 +38,12 @@ function RFIDReader() {
               <div className="card-body">
                 <h5 className="card-title">{race.name}</h5>
                 <p className="card-text">
-                  <strong>Date:</strong> {race.date}
+                  <strong>{t('rfidReader.date')}:</strong> {race.date}
                   <br />
-                  <strong>Description:</strong> {race.description}
+                  <strong>{t('rfidReader.description')}:</strong> {race.description}
                 </p>
                 <button className="btn btn-primary">
-                  Select Race
+                  {t('rfidReader.selectRace')}
                 </button>
               </div>
             </div>
