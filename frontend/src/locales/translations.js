@@ -43,6 +43,10 @@ export const translations = {
         stop: "Stop",
         race: "Závod",
         select: "Vyberte...",
+        raceSelection: "Volba závodu",
+        date: "Datum",
+        description: "Popis",
+        selectRace: "Zvolit závod"
       },
       calendar: {
         title: "Kalendář",
@@ -117,6 +121,10 @@ export const translations = {
         stop: "Stop",
         race: "Race",
         select: "Select...",
+        raceSelection: "Select race",
+        date: "Date",
+        description: "Description",
+        selectRace: "Select race"
       },
       calendar: {
         title: "Calendar",
