@@ -9,6 +9,4 @@ class Category(db.Model):
     min_number = db.Column(db.Integer, nullable=False)
     max_number = db.Column(db.Integer, nullable=False)
     gender = db.Column(db.String(1), nullable=False)
-    expected_start_time = db.Column(db.Time, nullable=False)
-    actual_start_time = db.Column(db.Time)
     track_id = db.Column(db.Integer, db.ForeignKey('track.id'), nullable=False)
