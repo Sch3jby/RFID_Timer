@@ -194,9 +194,7 @@ function RFIDReaderDetail() {
           }
         }));
 
-        setMessage(`Start time set for track categories: ${
-          response.data.categories.map(cat => cat.name).join(', ')
-        }`);
+        setMessage('Start time set successfully');
       })
       .catch(error => {
         setMessage(`Error setting start time: ${error.message}`);

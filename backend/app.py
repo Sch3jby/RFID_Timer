@@ -328,7 +328,7 @@ def store_results():
             return jsonify({"status": "error", "message": "Race ID and Track ID are required"}), 400
 
         # Fetch the track to get fastest_possible_time
-        track = Track.query.get(track_id)
+        track = Track.query.get(id=track_id)
         if not track:
             return jsonify({"status": "error", "message": "Track not found"}), 404
 
@@ -380,7 +380,7 @@ def store_results():
                     continue
 
                 # Validate actual start time
-                if not category.actual_start_time:
+                if not track.actual_start_time:
                     return jsonify({"status": "error", "message": "Actual start time not set for category"}), 400
                 
                 # Convert time objects to timedeltas
@@ -390,9 +390,9 @@ def store_results():
                     seconds=registration.user_start_time.second
                 )
                 category_start_delta = timedelta(
-                    hours=category.actual_start_time.hour, 
-                    minutes=category.actual_start_time.minute, 
-                    seconds=category.actual_start_time.second
+                    hours=track.actual_start_time.hour, 
+                    minutes=track.actual_start_time.minute, 
+                    seconds=track.actual_start_time.second
                 )
 
                 # Add the timedeltas and handle overflow
@@ -721,9 +721,9 @@ def get_race_detail(race_id):
                 )
                 
                 total_seconds = (
-                    category.expected_start_time.hour * 3600 +
-                    category.expected_start_time.minute * 60 +
-                    category.expected_start_time.second +
+                    track.expected_start_time.hour * 3600 +
+                    track.expected_start_time.minute * 60 +
+                    track.expected_start_time.second +
                     (plus_seconds * idx)
                 )
                 
@@ -733,7 +733,7 @@ def get_race_detail(race_id):
                 
                 actual_start = time(hour=hours, minute=minutes, second=seconds)
             else:
-                actual_start = category.expected_start_time
+                actual_start = track.expected_start_time
 
             final_participant_details.append({
                 'number': participant['number'],
@@ -769,42 +769,36 @@ def set_track_start_time():
 
         if not all([race_id, track_id]):
             return jsonify({'error': 'Missing required parameters'}), 400
+        
+        track = Track.query.filter_by(id=track_id).first()
 
-        # If 'auto' is passed, generate current time
+        if not track:
+            return jsonify({
+                'success': False,
+                'error': 'No track found'
+            }), 404
+
         if start_time == 'auto':
             start_time = (timedelta(hours=1)+datetime.now()).strftime('%H:%M:%S')
-
         else:
             start_time = f"{start_time}:00"
 
-        # Find all categories associated with this track
-        categories = Category.query.filter_by(track_id=track_id).all()
-
-        if not categories:
-            return jsonify({'error': 'No categories found for this track'}), 404
-
-        # Update the actual_start_time for all categories
-        for category in categories:
-            category.actual_start_time = datetime.strptime(start_time, '%H:%M:%S').time()
-        
+        track.actual_start_time = datetime.strptime(start_time, '%H:%M:%S').time()
         db.session.commit()
 
         return jsonify({
-            'message': 'Start time set successfully for all categories', 
-            'start_time': start_time,
-            'categories': [
-                {
-                    'id': cat.id, 
-                    'name': cat.category_name, 
-                    'gender': cat.gender
-                } for cat in categories
-            ]
+            'success': True,
+            'message': 'Start time set successfully', 
+            'start_time': start_time
         }), 200
 
     except Exception as e:
         db.session.rollback()
         error_logger.error(f'Error setting start time: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
     
 @app.route('/confirm_lineup', methods=['POST'])
 def confirm_lineup():
