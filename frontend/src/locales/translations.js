@@ -86,13 +86,17 @@ export const translations = {
         description: "Popis",
         register: "Přihlásit se",
         noParticipants: "Nebyli nalezeni žádní uživatelé",
+        results: "Výsledková listina",
         columns: {
           name: "Jméno",
           club: "Klub/Město",
           category: "Kategorie",
           track: "Trať",
           startTime: "Čas startu",
-          number: "Číslo"
+          number: "Číslo",
+          position: "Pořadí",
+          totalTime: "Čas v cíli",
+          behindTime: "Ztráta"
         }
       }
     },
@@ -176,17 +180,21 @@ export const translations = {
         error: "Error loading races",
         search: "Search",
         startType: "Start type",
-        participants: "List of registered users",
+        participants: "Registered users",
         description: "Description",
         register: "Register",
         noParticipants: "No users found",
+        results: "Result list",
         columns: {
           name: "Name",
           club: "Club/City",
           category: "Category",
           track: "Track",
           startTime: "Start time",
-          number: "Number"
+          number: "Number",
+          position: "Position",
+          totalTime: "Finish time",
+          behindTime: "Loss"
         }
       }
     }
