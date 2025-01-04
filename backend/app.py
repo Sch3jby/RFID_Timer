@@ -997,7 +997,7 @@ def get_race_results(race_id):
         if not table_exists:
             return jsonify({'error': f'No results found for race {race_id}'}), 404
 
-        # Query to get latest results with race time
+        # Query to get latest results with race time and time behind leader
         query = text(f"""
             WITH latest_laps AS (
                 SELECT 
@@ -1049,6 +1049,12 @@ def get_race_results(race_id):
                     AND c.gender = u.gender 
                     AND EXTRACT(YEAR FROM CURRENT_DATE) - u.year 
                         BETWEEN c.min_age AND c.max_age
+            ),
+            results_with_min_time AS (
+                SELECT *,
+                    MIN(race_time_seconds) OVER () as min_race_time
+                FROM ranked_results
+                WHERE race_time_seconds IS NOT NULL
             )
             SELECT 
                 number,
@@ -1058,8 +1064,14 @@ def get_race_results(race_id):
                 category_name,
                 track_name,
                 race_time,
-                race_time_seconds
-            FROM ranked_results
+                CASE 
+                    WHEN race_time_seconds IS NULL THEN NULL
+                    ELSE TO_CHAR(
+                        ((race_time_seconds - min_race_time) || ' seconds')::interval,
+                        'HH24:MI:SS.MS'
+                    )
+                END as behind_time
+            FROM results_with_min_time
             ORDER BY 
                 CASE 
                     WHEN race_time_seconds IS NULL THEN 1 
@@ -1074,14 +1086,16 @@ def get_race_results(race_id):
             return jsonify({'results': []}), 200
 
         formatted_results = []
-        for row in results:
+        for i, row in enumerate(results, 1):
             formatted_results.append({
+                'position': '-' if row.race_time is None else i,
                 'number': row.number,
                 'name': f"{row.forename} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
-                'race_time': row.race_time or '--:--:--'
+                'race_time': row.race_time or '--:--:--',
+                'behind_time': row.behind_time or ' '
             })
         
         return jsonify({
