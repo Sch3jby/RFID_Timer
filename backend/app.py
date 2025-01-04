@@ -499,13 +499,26 @@ def manual_result_store():
         track_id = data.get('track_id')
         timestamp_str = data.get('timestamp')
 
-        table_name = f'race_results_{race_id}'
-
         if not number or not race_id or not track_id:
             return jsonify({
                 "status": "error", 
                 "message": "Number, Race ID, and Track ID are required"
             }), 400
+
+        # Fetch the track to get number_of_laps and fastest_possible_time
+        track = Track.query.get(track_id)
+        if not track:
+            return jsonify({"status": "error", "message": "Track not found"}), 404
+
+        # Fetch the registration to get user_start_time
+        registration = Registration.query.filter_by(
+            race_id=race_id, 
+            track_id=track_id, 
+            number=number
+        ).first()
+        
+        if not registration:
+            return jsonify({"status": "error", "message": "Registration not found"}), 404
 
         if timestamp_str:
             try:
@@ -521,7 +534,6 @@ def manual_result_store():
         else:
             timestamp = datetime.now() + timedelta(hours=1)
 
-
         table_name = f'race_results_{race_id}'
 
         # Check if this is the first entry for this tag
@@ -530,24 +542,77 @@ def manual_result_store():
             {'number': number}
         ).fetchone()
 
+        # Convert fastest_possible_time to timedelta
+        min_lap_duration = timedelta(
+            hours=track.fastest_possible_time.hour,
+            minutes=track.fastest_possible_time.minute,
+            seconds=track.fastest_possible_time.second
+        )
+
+        # Calculate race start time
+        user_start_delta = timedelta(
+            hours=registration.user_start_time.hour,
+            minutes=registration.user_start_time.minute,
+            seconds=registration.user_start_time.second
+        )
+        category_start_delta = timedelta(
+            hours=track.actual_start_time.hour,
+            minutes=track.actual_start_time.minute,
+            seconds=track.actual_start_time.second
+        )
+
+        # Add the timedeltas and handle overflow
+        total_seconds = user_start_delta.seconds + category_start_delta.seconds
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        user_start_time = time(
+            hour=hours % 24,
+            minute=minutes,
+            second=seconds
+        )
+
+        race_start_datetime = datetime.combine(timestamp.date(), user_start_time)
+
+        # Determine lap number and validate timing
         if last_entry:
+            if last_entry.lap_number >= track.number_of_laps:
+                return jsonify({
+                    "status": "error",
+                    "message": "Maximum number of laps already recorded"
+                }), 400
+
+            last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
+            
+            if timestamp <= last_tag_time + min_lap_duration:
+                return jsonify({
+                    "status": "error",
+                    "message": "Time between laps is less than minimum allowed"
+                }), 400
+                
             lap_number = last_entry.lap_number + 1
         else:
+            if timestamp <= race_start_datetime + min_lap_duration:
+                return jsonify({
+                    "status": "error",
+                    "message": "Time from race start is less than minimum allowed"
+                }), 400
             lap_number = 1
-        
+
+        # Insert data into database
         insert_sql = text(f'''
             INSERT INTO {table_name} (
                 number,
-                tag_id, 
-                track_id, 
+                tag_id,
+                track_id,
                 timestamp,
                 last_seen_time,
                 lap_number
             ) 
             VALUES (
                 :number,
-                :tag_id, 
-                :track_id, 
+                :tag_id,
+                :track_id,
                 :timestamp,
                 :last_seen_time,
                 :lap_number
@@ -558,13 +623,13 @@ def manual_result_store():
         
         db.session.execute(insert_sql, {
             'number': number,
-            'tag_id': tag_id, 
+            'tag_id': tag_id,
             'track_id': track_id,
             'timestamp': timestamp,
             'last_seen_time': timestamp,
             'lap_number': lap_number
         })
-        
+
         db.session.commit()
         
         return jsonify({
@@ -911,10 +976,6 @@ def confirm_lineup():
         db.session.rollback()
         error_logger.error(f'Error confirming lineup: {str(e)}')
         return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
-
-from flask import jsonify, current_app
-from sqlalchemy import text
-from database import db
 
 @app.route('/race/<int:race_id>/results', methods=['GET'])
 def get_race_results(race_id):
