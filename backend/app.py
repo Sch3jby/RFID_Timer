@@ -1003,7 +1003,8 @@ def get_race_results(race_id):
                 SELECT 
                     r.number,
                     r.tag_id,
-                    MAX(r.timestamp) as last_lap_timestamp
+                    MAX(r.timestamp) as last_lap_timestamp,
+                    MAX(r.lap_number) as lap_number
                 FROM {table_name} r
                 GROUP BY r.number, r.tag_id
             ),
@@ -1012,6 +1013,7 @@ def get_race_results(race_id):
                     r.number,
                     r.tag_id,
                     r.timestamp,
+                    ll.lap_number,
                     u.forename,
                     u.surname,
                     u.club,
@@ -1021,22 +1023,31 @@ def get_race_results(race_id):
                     reg.track_id,
                     c.category_name,
                     t.actual_start_time,
+                    t.number_of_laps,
                     reg.user_start_time,
-                    TO_CHAR(
-                        (EXTRACT(EPOCH FROM (
-                            ll.last_lap_timestamp - 
-                            (date_trunc('day', ll.last_lap_timestamp) + 
-                             t.actual_start_time::time + 
-                             reg.user_start_time::interval)
-                        )) || ' seconds')::interval,
-                        'HH24:MI:SS.MS'
-                    ) as race_time,
-                    EXTRACT(EPOCH FROM (
-                        ll.last_lap_timestamp - 
-                        (date_trunc('day', ll.last_lap_timestamp) + 
-                         t.actual_start_time::time + 
-                         reg.user_start_time::interval)
-                    )) as race_time_seconds
+                    CASE 
+                        WHEN ll.lap_number = t.number_of_laps THEN
+                            TO_CHAR(
+                                (EXTRACT(EPOCH FROM (
+                                    ll.last_lap_timestamp - 
+                                    (date_trunc('day', ll.last_lap_timestamp) + 
+                                     t.actual_start_time::time + 
+                                     reg.user_start_time::interval)
+                                )) || ' seconds')::interval,
+                                'HH24:MI:SS.MS'
+                            )
+                        ELSE NULL
+                    END as race_time,
+                    CASE 
+                        WHEN ll.lap_number = t.number_of_laps THEN
+                            EXTRACT(EPOCH FROM (
+                                ll.last_lap_timestamp - 
+                                (date_trunc('day', ll.last_lap_timestamp) + 
+                                 t.actual_start_time::time + 
+                                 reg.user_start_time::interval)
+                            ))
+                        ELSE NULL
+                    END as race_time_seconds
                 FROM {table_name} r
                 JOIN latest_laps ll ON r.number = ll.number 
                     AND r.tag_id = ll.tag_id 
@@ -1063,6 +1074,8 @@ def get_race_results(race_id):
                 club,
                 category_name,
                 track_name,
+                lap_number,
+                number_of_laps,
                 race_time,
                 CASE 
                     WHEN race_time_seconds IS NULL THEN NULL
