@@ -1,14 +1,7 @@
+// ResultList.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '../contexts/LanguageContext';
-
-const formatTime = (seconds) => {
-  if (!seconds) return '--:--:--';
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
 
 function ResultList({ raceId }) {
   const { t } = useTranslation();
@@ -25,7 +18,7 @@ function ResultList({ raceId }) {
         const response = await axios.get(`http://localhost:5001/race/${raceId}/results`);
         setResults(response.data.results);
       } catch (err) {
-        setError(t('resultList.error'));
+        setError(t('raceDetail.error'));
       } finally {
         setLoading(false);
       }
@@ -35,7 +28,8 @@ function ResultList({ raceId }) {
   }, [raceId, t]);
 
   const handleSearch = (e) => {
-    setSearchQuery(e.target.value.toLowerCase());
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
   };
 
   const handleSort = (column) => {
@@ -48,16 +42,20 @@ function ResultList({ raceId }) {
   };
 
   const filteredResults = results.filter((result) => {
-    const searchString = `${result.name} ${result.club} ${result.category} ${result.track}`.toLowerCase();
+    const searchString = `${result.name.toLowerCase()} ${result.club.toLowerCase()} ${result.category.toLowerCase()} ${result.track.toLowerCase()}`;
     return searchString.includes(searchQuery);
   });
 
   const sortedResults = [...filteredResults].sort((a, b) => {
     const modifier = sortDirection === 'asc' ? 1 : -1;
+    
     if (sortColumn === 'number') {
-      return (a[sortColumn] - b[sortColumn]) * modifier;
+      return (a.number - b.number) * modifier;
     }
-    return String(a[sortColumn]).localeCompare(String(b[sortColumn])) * modifier;
+    
+    const aValue = a[sortColumn] || '';
+    const bValue = b[sortColumn] || '';
+    return String(aValue).localeCompare(String(bValue)) * modifier;
   });
 
   if (loading) return <div className="loading">{t('common.loading')}</div>;
@@ -66,12 +64,12 @@ function ResultList({ raceId }) {
   return (
     <div className="start-list-container">
       <h2>
-        {t('resultList.title')} ({filteredResults.length})
+        {t('raceDetail.resultList')} ({filteredResults.length})
       </h2>
       <div className="search-container">
         <input
           type="text"
-          placeholder={t('resultList.search')}
+          placeholder={t('raceDetail.search')}
           value={searchQuery}
           onChange={handleSearch}
         />
@@ -80,21 +78,19 @@ function ResultList({ raceId }) {
       <table className="participants-table">
         <thead>
           <tr>
-            <th onClick={() => handleSort('number')}>{t('resultList.columns.number')}</th>
-            <th onClick={() => handleSort('name')}>{t('resultList.columns.name')}</th>
-            <th onClick={() => handleSort('club')}>{t('resultList.columns.club')}</th>
-            <th onClick={() => handleSort('category')}>{t('resultList.columns.category')}</th>
-            <th onClick={() => handleSort('track')}>{t('resultList.columns.track')}</th>
-            <th onClick={() => handleSort('start_time')}>{t('resultList.columns.startTime')}</th>
-            <th>{t('resultList.columns.laps')}</th>
-            <th>{t('resultList.columns.lastLapTime')}</th>
+            <th onClick={() => handleSort('number')}>{t('raceDetail.columns.number')}</th>
+            <th onClick={() => handleSort('name')}>{t('raceDetail.columns.name')}</th>
+            <th onClick={() => handleSort('club')}>{t('raceDetail.columns.club')}</th>
+            <th onClick={() => handleSort('category')}>{t('raceDetail.columns.category')}</th>
+            <th onClick={() => handleSort('track')}>{t('raceDetail.columns.track')}</th>
+            <th onClick={() => handleSort('race_time')}>{t('raceDetail.columns.totalTime')}</th>
           </tr>
         </thead>
         <tbody>
           {sortedResults.length === 0 ? (
             <tr>
-              <td colSpan="8" className="text-center">
-                {t('resultList.noResults')}
+              <td colSpan="6" className="text-center">
+                {t('raceDetail.noResults')}
               </td>
             </tr>
           ) : (
@@ -105,13 +101,7 @@ function ResultList({ raceId }) {
                 <td>{result.club}</td>
                 <td>{result.category}</td>
                 <td>{result.track}</td>
-                <td>{result.start_time}</td>
-                <td>{result.laps.length}</td>
-                <td>
-                  {result.laps.length > 0 ? 
-                    formatTime(result.laps[result.laps.length - 1].time) : 
-                    '--:--:--'}
-                </td>
+                <td>{result.race_time}</td>
               </tr>
             ))
           )}

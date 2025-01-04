@@ -2,7 +2,7 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, current_app
 from flask_cors import CORS
 import telnetlib
 import configparser
@@ -912,59 +912,123 @@ def confirm_lineup():
         error_logger.error(f'Error confirming lineup: {str(e)}')
         return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
 
+from flask import jsonify, current_app
+from sqlalchemy import text
+from database import db
+
 @app.route('/race/<int:race_id>/results', methods=['GET'])
 def get_race_results(race_id):
     try:
+        # First verify the race exists and the results table exists
         table_name = f'race_results_{race_id}'
         
-        query = f"""
+        # Check if table exists
+        table_exists_query = text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = :table_name
+            );
+        """)
+        table_exists = db.session.execute(table_exists_query, 
+            {'table_name': table_name}).scalar()
+            
+        if not table_exists:
+            return jsonify({'error': f'No results found for race {race_id}'}), 404
+
+        # Query to get latest results with race time
+        query = text(f"""
+            WITH latest_laps AS (
+                SELECT 
+                    r.number,
+                    r.tag_id,
+                    MAX(r.timestamp) as last_lap_timestamp
+                FROM {table_name} r
+                GROUP BY r.number, r.tag_id
+            ),
+            ranked_results AS (
+                SELECT 
+                    r.number,
+                    r.tag_id,
+                    r.timestamp,
+                    u.forename,
+                    u.surname,
+                    u.club,
+                    u.year,
+                    u.gender,
+                    t.name as track_name,
+                    reg.track_id,
+                    c.category_name,
+                    t.actual_start_time,
+                    reg.user_start_time,
+                    TO_CHAR(
+                        (EXTRACT(EPOCH FROM (
+                            ll.last_lap_timestamp - 
+                            (date_trunc('day', ll.last_lap_timestamp) + 
+                             t.actual_start_time::time + 
+                             reg.user_start_time::interval)
+                        )) || ' seconds')::interval,
+                        'HH24:MI:SS.MS'
+                    ) as race_time,
+                    EXTRACT(EPOCH FROM (
+                        ll.last_lap_timestamp - 
+                        (date_trunc('day', ll.last_lap_timestamp) + 
+                         t.actual_start_time::time + 
+                         reg.user_start_time::interval)
+                    )) as race_time_seconds
+                FROM {table_name} r
+                JOIN latest_laps ll ON r.number = ll.number 
+                    AND r.tag_id = ll.tag_id 
+                    AND r.timestamp = ll.last_lap_timestamp
+                JOIN registration reg ON reg.number = r.number 
+                    AND reg.race_id = :race_id
+                JOIN users u ON u.id = reg.user_id
+                JOIN track t ON t.id = reg.track_id
+                LEFT JOIN category c ON c.track_id = reg.track_id 
+                    AND c.gender = u.gender 
+                    AND EXTRACT(YEAR FROM CURRENT_DATE) - u.year 
+                        BETWEEN c.min_age AND c.max_age
+            )
             SELECT 
-                r.number,
-                r.tag_id,
-                r.timestamp,
-                r.lap_number,
-                r.last_seen_time,
-                reg.user_start_time,
-                u.forename,
-                u.surname,
-                u.club
-            FROM {table_name} r
-            JOIN registration reg ON reg.number = r.number 
-            JOIN users u ON u.id = reg.user_id
-            WHERE reg.race_id = :race_id
-            ORDER BY r.number, r.lap_number
-        """
+                number,
+                forename,
+                surname,
+                club,
+                category_name,
+                track_name,
+                race_time,
+                race_time_seconds
+            FROM ranked_results
+            ORDER BY 
+                CASE 
+                    WHEN race_time_seconds IS NULL THEN 1 
+                    ELSE 0 
+                END,
+                race_time_seconds;
+        """)
         
-        results = db.session.execute(text(query), {'race_id': race_id}).fetchall()
+        results = db.session.execute(query, {'race_id': race_id}).fetchall()
         
-        formatted_results = {}
+        if not results:
+            return jsonify({'results': []}), 200
+
+        formatted_results = []
         for row in results:
-            number = row.number
-            if number not in formatted_results:
-                formatted_results[number] = {
-                    'number': number,
-                    'name': f"{row.forename} {row.surname}",
-                    'club': row.club,
-                    'start_time': row.user_start_time.strftime('%H:%M:%S') if row.user_start_time else None,
-                    'laps': []
-                }
-            
-            lap_time = row.last_seen_time
-            if row.user_start_time:
-                lap_time = row.last_seen_time - datetime.combine(row.last_seen_time.date(), row.user_start_time)
-            
-            formatted_results[number]['laps'].append({
-                'lap': row.lap_number,
-                'time': lap_time.total_seconds() if isinstance(lap_time, timedelta) else None
+            formatted_results.append({
+                'number': row.number,
+                'name': f"{row.forename} {row.surname}",
+                'club': row.club,
+                'category': row.category_name or 'N/A',
+                'track': row.track_name,
+                'race_time': row.race_time or '--:--:--'
             })
         
         return jsonify({
-            'results': list(formatted_results.values())
+            'results': formatted_results
         })
         
     except Exception as e:
-        error_logger.error(f'Error fetching race results: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f'Error fetching race results: {str(e)}')
+        return jsonify({'error': 'Failed to fetch race results'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
