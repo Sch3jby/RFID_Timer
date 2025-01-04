@@ -2,7 +2,7 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, current_app
 from flask_cors import CORS
 import telnetlib
 import configparser
@@ -499,13 +499,26 @@ def manual_result_store():
         track_id = data.get('track_id')
         timestamp_str = data.get('timestamp')
 
-        table_name = f'race_results_{race_id}'
-
         if not number or not race_id or not track_id:
             return jsonify({
                 "status": "error", 
                 "message": "Number, Race ID, and Track ID are required"
             }), 400
+
+        # Fetch the track to get number_of_laps and fastest_possible_time
+        track = Track.query.get(track_id)
+        if not track:
+            return jsonify({"status": "error", "message": "Track not found"}), 404
+
+        # Fetch the registration to get user_start_time
+        registration = Registration.query.filter_by(
+            race_id=race_id, 
+            track_id=track_id, 
+            number=number
+        ).first()
+        
+        if not registration:
+            return jsonify({"status": "error", "message": "Registration not found"}), 404
 
         if timestamp_str:
             try:
@@ -521,7 +534,6 @@ def manual_result_store():
         else:
             timestamp = datetime.now() + timedelta(hours=1)
 
-
         table_name = f'race_results_{race_id}'
 
         # Check if this is the first entry for this tag
@@ -530,24 +542,77 @@ def manual_result_store():
             {'number': number}
         ).fetchone()
 
+        # Convert fastest_possible_time to timedelta
+        min_lap_duration = timedelta(
+            hours=track.fastest_possible_time.hour,
+            minutes=track.fastest_possible_time.minute,
+            seconds=track.fastest_possible_time.second
+        )
+
+        # Calculate race start time
+        user_start_delta = timedelta(
+            hours=registration.user_start_time.hour,
+            minutes=registration.user_start_time.minute,
+            seconds=registration.user_start_time.second
+        )
+        category_start_delta = timedelta(
+            hours=track.actual_start_time.hour,
+            minutes=track.actual_start_time.minute,
+            seconds=track.actual_start_time.second
+        )
+
+        # Add the timedeltas and handle overflow
+        total_seconds = user_start_delta.seconds + category_start_delta.seconds
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        user_start_time = time(
+            hour=hours % 24,
+            minute=minutes,
+            second=seconds
+        )
+
+        race_start_datetime = datetime.combine(timestamp.date(), user_start_time)
+
+        # Determine lap number and validate timing
         if last_entry:
+            if last_entry.lap_number >= track.number_of_laps:
+                return jsonify({
+                    "status": "error",
+                    "message": "Maximum number of laps already recorded"
+                }), 400
+
+            last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
+            
+            if timestamp <= last_tag_time + min_lap_duration:
+                return jsonify({
+                    "status": "error",
+                    "message": "Time between laps is less than minimum allowed"
+                }), 400
+                
             lap_number = last_entry.lap_number + 1
         else:
+            if timestamp <= race_start_datetime + min_lap_duration:
+                return jsonify({
+                    "status": "error",
+                    "message": "Time from race start is less than minimum allowed"
+                }), 400
             lap_number = 1
-        
+
+        # Insert data into database
         insert_sql = text(f'''
             INSERT INTO {table_name} (
                 number,
-                tag_id, 
-                track_id, 
+                tag_id,
+                track_id,
                 timestamp,
                 last_seen_time,
                 lap_number
             ) 
             VALUES (
                 :number,
-                :tag_id, 
-                :track_id, 
+                :tag_id,
+                :track_id,
                 :timestamp,
                 :last_seen_time,
                 :lap_number
@@ -558,13 +623,13 @@ def manual_result_store():
         
         db.session.execute(insert_sql, {
             'number': number,
-            'tag_id': tag_id, 
+            'tag_id': tag_id,
             'track_id': track_id,
             'timestamp': timestamp,
             'last_seen_time': timestamp,
             'lap_number': lap_number
         })
-        
+
         db.session.commit()
         
         return jsonify({
@@ -911,117 +976,120 @@ def confirm_lineup():
         db.session.rollback()
         error_logger.error(f'Error confirming lineup: {str(e)}')
         return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
-    
-@app.route('/race_results/<int:race_id>', methods=['GET'])
+
+@app.route('/race/<int:race_id>/results', methods=['GET'])
 def get_race_results(race_id):
     try:
-        with db.session() as session:
-            race = session.get(Race, race_id)
-        if not race:
-            return jsonify({'error': 'Race not found'}), 404
-            
-        tracks = Track.query.filter_by(race_id=race_id).all()
-        track_ids = [track.id for track in tracks]
+        # First verify the race exists and the results table exists
+        table_name = f'race_results_{race_id}'
         
-        # Fetch registrations for these tracks
-        registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
-        
-        # Prepare a list to store result details
-        result_details = []
-        
-        for registration in registrations:
-            user = Users.query.get(registration.user_id)
-            track = Track.query.get(registration.track_id)
+        # Check if table exists
+        table_exists_query = text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = :table_name
+            );
+        """)
+        table_exists = db.session.execute(table_exists_query, 
+            {'table_name': table_name}).scalar()
             
-            category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
-                                    filter(Category.min_age <= (datetime.now().year - user.year), 
-                                        Category.max_age >= (datetime.now().year - user.year)).\
-                                    first()
-            
-            if not (user and category and track):
-                continue
+        if not table_exists:
+            return jsonify({'error': f'No results found for race {race_id}'}), 404
 
-            # Dynamicky pojmenovaná tabulka výsledků
-            table_name = f'race_results_{race_id}'
-            
-            # SQL dotaz pro výpočet výsledků
-            result_query = text(f'''
+        # Query to get latest results with race time
+        query = text(f"""
+            WITH latest_laps AS (
                 SELECT 
-                    MAX(lap_number) as total_laps,
-                    MIN(timestamp) as first_lap_time,
-                    MAX(timestamp) as last_lap_time,
-                    TIMEDIFF(MAX(timestamp), MIN(timestamp)) as total_race_time
-                FROM {table_name}
-                WHERE number = :number AND track_id = :track_id
-                GROUP BY number
-            ''')
-            
-            # Provedení dotazu
-            result = db.session.execute(result_query, {
-                'number': registration.number, 
-                'track_id': track.id
-            }).fetchone()
-            
-            # Výpočet pozice
-            position_query = text(f'''
-                SELECT COUNT(DISTINCT number) + 1 as position
-                FROM {table_name}
-                WHERE track_id = :track_id 
-                  AND (
-                    MAX(lap_number) > (
-                        SELECT MAX(lap_number) 
-                        FROM {table_name} 
-                        WHERE number = :number AND track_id = :track_id
-                    ) OR 
-                    (MAX(lap_number) = (
-                        SELECT MAX(lap_number) 
-                        FROM {table_name} 
-                        WHERE number = :number AND track_id = :track_id
-                    ) AND MIN(timestamp) < (
-                        SELECT MIN(timestamp) 
-                        FROM {table_name} 
-                        WHERE number = :number AND track_id = :track_id
-                    ))
-            ''')
-            
-            position = db.session.execute(position_query, {
-                'number': registration.number, 
-                'track_id': track.id
-            }).scalar() or None
+                    r.number,
+                    r.tag_id,
+                    MAX(r.timestamp) as last_lap_timestamp
+                FROM {table_name} r
+                GROUP BY r.number, r.tag_id
+            ),
+            ranked_results AS (
+                SELECT 
+                    r.number,
+                    r.tag_id,
+                    r.timestamp,
+                    u.forename,
+                    u.surname,
+                    u.club,
+                    u.year,
+                    u.gender,
+                    t.name as track_name,
+                    reg.track_id,
+                    c.category_name,
+                    t.actual_start_time,
+                    reg.user_start_time,
+                    TO_CHAR(
+                        (EXTRACT(EPOCH FROM (
+                            ll.last_lap_timestamp - 
+                            (date_trunc('day', ll.last_lap_timestamp) + 
+                             t.actual_start_time::time + 
+                             reg.user_start_time::interval)
+                        )) || ' seconds')::interval,
+                        'HH24:MI:SS.MS'
+                    ) as race_time,
+                    EXTRACT(EPOCH FROM (
+                        ll.last_lap_timestamp - 
+                        (date_trunc('day', ll.last_lap_timestamp) + 
+                         t.actual_start_time::time + 
+                         reg.user_start_time::interval)
+                    )) as race_time_seconds
+                FROM {table_name} r
+                JOIN latest_laps ll ON r.number = ll.number 
+                    AND r.tag_id = ll.tag_id 
+                    AND r.timestamp = ll.last_lap_timestamp
+                JOIN registration reg ON reg.number = r.number 
+                    AND reg.race_id = :race_id
+                JOIN users u ON u.id = reg.user_id
+                JOIN track t ON t.id = reg.track_id
+                LEFT JOIN category c ON c.track_id = reg.track_id 
+                    AND c.gender = u.gender 
+                    AND EXTRACT(YEAR FROM CURRENT_DATE) - u.year 
+                        BETWEEN c.min_age AND c.max_age
+            )
+            SELECT 
+                number,
+                forename,
+                surname,
+                club,
+                category_name,
+                track_name,
+                race_time,
+                race_time_seconds
+            FROM ranked_results
+            ORDER BY 
+                CASE 
+                    WHEN race_time_seconds IS NULL THEN 1 
+                    ELSE 0 
+                END,
+                race_time_seconds;
+        """)
+        
+        results = db.session.execute(query, {'race_id': race_id}).fetchall()
+        
+        if not results:
+            return jsonify({'results': []}), 200
 
-            # Příprava detailů výsledku
-            result_details.append({
-                'number': registration.number,
-                'forename': user.forename,
-                'surname': user.surname,
-                'club': user.club,
-                'category': category.category_name,
-                'track': track.name,
-                'number_of_laps': result.total_laps if result else 0,
-                'total_time': str(result.total_race_time) if result else None,
-                'overall_position': position
+        formatted_results = []
+        for row in results:
+            formatted_results.append({
+                'number': row.number,
+                'name': f"{row.forename} {row.surname}",
+                'club': row.club,
+                'category': row.category_name or 'N/A',
+                'track': row.track_name,
+                'race_time': row.race_time or '--:--:--'
             })
         
-        # Seřazení výsledků podle počtu kol a času
-        result_details.sort(
-            key=lambda x: (
-                -(x['number_of_laps'] or 0), 
-                x['total_time'] or datetime.max
-            )
-        )
-        
-        race_results = {
-            'id': race.id,
-            'name': race.name,
-            'date': race.date.strftime('%Y-%m-%d'),
-            'results': result_details
-        }
-        
-        return jsonify({'results': race_results})
+        return jsonify({
+            'results': formatted_results
+        })
         
     except Exception as e:
-        error_logger.error(f'Error fetching race results: {str(e)}')
-        return jsonify({'error': f'Error fetching race results: {str(e)}'}), 500
+        current_app.logger.error(f'Error fetching race results: {str(e)}')
+        return jsonify({'error': 'Failed to fetch race results'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
