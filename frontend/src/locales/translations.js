@@ -87,6 +87,8 @@ export const translations = {
         register: "Přihlásit se",
         noParticipants: "Nebyli nalezeni žádní uživatelé",
         results: "Výsledková listina",
+        groupByTrack: "Tratě",
+        groupByCategory: "Kategorie",
         columns: {
           name: "Jméno",
           club: "Klub/Město",
@@ -185,6 +187,8 @@ export const translations = {
         register: "Register",
         noParticipants: "No users found",
         results: "Result list",
+        groupByTrack: "Tracks",
+        groupByCategory: "Categories",
         columns: {
           name: "Name",
           club: "Club/City",
