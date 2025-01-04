@@ -88,6 +88,8 @@ class AlienRFID:
         self.terminal.write(cmd.encode('utf-8') + b'\n')
         response = self.terminal.read_until(b'>', timeout=5)
         return response.decode('ascii')
+    
+
 
 alien = AlienRFID(hostname, port)
 
@@ -188,10 +190,9 @@ def connect_reader():
             return jsonify({
                 "status": "error", 
                 "message": str(e)
-            }), 400  # Použít 400 místo 500 pro client-side errors
+            }), 400
     
     except Exception as e:
-        # Neočekávané systémové chyby
         error_logger.critical(f'Unexpected connect error: {str(e)}')
         return jsonify({
             "status": "error", 
@@ -328,7 +329,7 @@ def store_results():
             return jsonify({"status": "error", "message": "Race ID and Track ID are required"}), 400
 
         # Fetch the track to get fastest_possible_time
-        track = Track.query.get(id=track_id)
+        track = Track.query.get(track_id)
         if not track:
             return jsonify({"status": "error", "message": "Track not found"}), 404
 
