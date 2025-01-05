@@ -1132,7 +1132,7 @@ def get_race_results(race_id):
             return jsonify({'results': []}), 200
 
         formatted_results = []
-        for row in results:  # Odstraněno enumerate
+        for row in results:
             formatted_results.append({
                 'number': row.number,
                 'name': f"{row.forename} {row.surname}",
