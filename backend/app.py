@@ -1031,8 +1031,8 @@ def get_race_results(race_id):
                                 (EXTRACT(EPOCH FROM (
                                     ll.last_lap_timestamp - 
                                     (date_trunc('day', ll.last_lap_timestamp) + 
-                                     t.actual_start_time::time + 
-                                     reg.user_start_time::interval)
+                                    t.actual_start_time::time + 
+                                    reg.user_start_time::interval)
                                 )) || ' seconds')::interval,
                                 'HH24:MI:SS.MS'
                             )
@@ -1043,8 +1043,8 @@ def get_race_results(race_id):
                             EXTRACT(EPOCH FROM (
                                 ll.last_lap_timestamp - 
                                 (date_trunc('day', ll.last_lap_timestamp) + 
-                                 t.actual_start_time::time + 
-                                 reg.user_start_time::interval)
+                                t.actual_start_time::time + 
+                                reg.user_start_time::interval)
                             ))
                         ELSE NULL
                     END as race_time_seconds
@@ -1061,11 +1061,34 @@ def get_race_results(race_id):
                     AND EXTRACT(YEAR FROM CURRENT_DATE) - u.year 
                         BETWEEN c.min_age AND c.max_age
             ),
-            results_with_min_time AS (
+            results_with_track_time AS (
                 SELECT *,
-                    MIN(race_time_seconds) OVER () as min_race_time
+                    MIN(race_time_seconds) OVER (PARTITION BY track_name) as min_track_time,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY track_name 
+                        ORDER BY 
+                            CASE 
+                                WHEN race_time_seconds IS NULL THEN 1 
+                                ELSE 0 
+                            END,
+                            race_time_seconds
+                    ) as position_track
                 FROM ranked_results
                 WHERE race_time_seconds IS NOT NULL
+            ),
+            results_with_category_time AS (
+                SELECT *,
+                    MIN(race_time_seconds) OVER (PARTITION BY category_name, track_name) as min_category_time,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY category_name, track_name
+                        ORDER BY 
+                            CASE 
+                                WHEN race_time_seconds IS NULL THEN 1 
+                                ELSE 0 
+                            END,
+                            race_time_seconds
+                    ) as position_category
+                FROM results_with_track_time
             )
             SELECT 
                 number,
@@ -1077,15 +1100,25 @@ def get_race_results(race_id):
                 lap_number,
                 number_of_laps,
                 race_time,
+                position_track,
+                position_category,
                 CASE 
                     WHEN race_time_seconds IS NULL THEN NULL
                     ELSE TO_CHAR(
-                        ((race_time_seconds - min_race_time) || ' seconds')::interval,
+                        ((race_time_seconds - min_track_time) || ' seconds')::interval,
                         'HH24:MI:SS.MS'
                     )
-                END as behind_time
-            FROM results_with_min_time
+                END as behind_time_track,
+                CASE 
+                    WHEN race_time_seconds IS NULL THEN NULL
+                    ELSE TO_CHAR(
+                        ((race_time_seconds - min_category_time) || ' seconds')::interval,
+                        'HH24:MI:SS.MS'
+                    )
+                END as behind_time_category
+            FROM results_with_category_time
             ORDER BY 
+                track_name,
                 CASE 
                     WHEN race_time_seconds IS NULL THEN 1 
                     ELSE 0 
@@ -1099,16 +1132,18 @@ def get_race_results(race_id):
             return jsonify({'results': []}), 200
 
         formatted_results = []
-        for i, row in enumerate(results, 1):
+        for row in results:  # Odstraněno enumerate
             formatted_results.append({
-                'position': '-' if row.race_time is None else i,
                 'number': row.number,
                 'name': f"{row.forename} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
                 'race_time': row.race_time or '--:--:--',
-                'behind_time': row.behind_time or ' '
+                'position_track': row.position_track if row.race_time is not None else '-',
+                'position_category': row.position_category if row.race_time is not None else '-',
+                'behind_time_track': row.behind_time_track or ' ',
+                'behind_time_category': row.behind_time_category or ' '
             })
         
         return jsonify({

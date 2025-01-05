@@ -8,7 +8,7 @@ const ResultList = ({ raceId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [groupBy, setGroupBy] = useState('track');
+  const [groupBy, setGroupBy] = useState('category');
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -80,9 +80,9 @@ const ResultList = ({ raceId }) => {
     });
   };
 
-  const groupedResults = groupBy === 'track' 
-    ? groupByTrack(filteredResults)
-    : groupByCategory(filteredResults);
+  const groupedResults = groupBy === 'category' 
+    ? groupByCategory(filteredResults)
+    : groupByTrack(filteredResults);
 
   if (loading) return <div className="results-loading">{t('common.loading')}</div>;
   if (error) return <div className="results-error">{error}</div>;
@@ -97,16 +97,16 @@ const ResultList = ({ raceId }) => {
         <div className="results-controls">
           <div className="view-toggle">
             <button
-              className={`view-toggle-button ${groupBy === 'track' ? 'active' : ''}`}
-              onClick={() => setGroupBy('track')}
-            >
-              {t('raceDetail.groupByTrack')}
-            </button>
-            <button
               className={`view-toggle-button ${groupBy === 'category' ? 'active' : ''}`}
               onClick={() => setGroupBy('category')}
             >
               {t('raceDetail.groupByCategory')}
+            </button>
+            <button
+              className={`view-toggle-button ${groupBy === 'track' ? 'active' : ''}`}
+              onClick={() => setGroupBy('track')}
+            >
+              {t('raceDetail.groupByTrack')}
             </button>
           </div>
           
@@ -145,13 +145,13 @@ const ResultList = ({ raceId }) => {
                     <tbody>
                       {results.map((result) => (
                         <tr key={result.number} className="results-row">
-                          <td className="results-cell">{result.position}</td>
+                          <td className="results-cell">{result.position_track}</td>
                           <td className="results-cell">{result.number}</td>
                           <td className="results-cell">{result.name}</td>
                           <td className="results-cell">{result.club}</td>
                           <td className="results-cell">{result.category}</td>
                           <td className="results-cell">{result.race_time}</td>
-                          <td className="results-cell">{result.behind_time}</td>
+                          <td className="results-cell">{result.behind_time_track}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -185,12 +185,12 @@ const ResultList = ({ raceId }) => {
                         <tbody>
                           {results.map((result) => (
                             <tr key={result.number} className="results-row">
-                              <td className="results-cell">{result.position}</td>
+                              <td className="results-cell">{result.position_category}</td>
                               <td className="results-cell">{result.number}</td>
                               <td className="results-cell">{result.name}</td>
                               <td className="results-cell">{result.club}</td>
                               <td className="results-cell">{result.race_time}</td>
-                              <td className="results-cell">{result.behind_time}</td>
+                              <td className="results-cell">{result.behind_time_category}</td>
                             </tr>
                           ))}
                         </tbody>

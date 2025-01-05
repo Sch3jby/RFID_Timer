@@ -14,6 +14,9 @@ export const translations = {
         welcome: "Vítejte v systému pro závody",
         selectOption: "Vítejte na úvodní stránce."
       },
+      common: {
+        loading: "Načítání"
+      },
       registration: {
         title: "Registrace",
         firstName: "Jméno",
@@ -113,6 +116,9 @@ export const translations = {
       home: {
         welcome: "Welcome to the Race System",
         selectOption: "Welcome on the homepage"
+      },
+      common: {
+        loading: "Loading"
       },
       registration: {
         title: "Registration",
