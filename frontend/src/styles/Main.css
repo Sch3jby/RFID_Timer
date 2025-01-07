@@ -82,6 +82,7 @@
   .home-container {
     text-align: center;
     padding: 3rem 1rem;
+    overflow: hidden;
   }
   
   .home-container h1 {
@@ -865,7 +866,7 @@
   }
 
   .video-background {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
