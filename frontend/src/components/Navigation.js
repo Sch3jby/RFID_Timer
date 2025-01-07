@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "../contexts/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
-import logo from '../styles/other/logo.png'
+import logo from '../styles/other/stopwatch.png'
 
 function Navigation() {
   const location = useLocation();
