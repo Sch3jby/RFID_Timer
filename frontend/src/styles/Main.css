@@ -863,3 +863,25 @@
       padding: 0.5rem 0.75rem;
     }
   }
+
+  .video-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Video bude za obsahem */
+  }
+  
+  video {
+    object-fit: cover; /* Video pokryje celé pozadí */
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Logo Styling */
+  #logo {
+    height: 40px;
+    width: auto;
+    margin-right: 20px;
+  }
