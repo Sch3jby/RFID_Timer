@@ -790,7 +790,7 @@ def get_race_detail(race_id):
                     track.expected_start_time.hour * 3600 +
                     track.expected_start_time.minute * 60 +
                     track.expected_start_time.second +
-                    (plus_seconds * idx)
+                    (plus_seconds * (idx+1))
                 )
                 
                 hours = total_seconds // 3600
@@ -950,7 +950,7 @@ def confirm_lineup():
                 )
                 
                 total_seconds = (
-                    plus_seconds * idx
+                    plus_seconds * (idx+1)
                 )
                 
                 hours = total_seconds // 3600
