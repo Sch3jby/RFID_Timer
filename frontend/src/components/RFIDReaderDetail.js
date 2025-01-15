@@ -65,7 +65,8 @@ function RFIDReaderDetail() {
         const initialManualEntries = fetchedTracks.reduce((acc, track) => {
           acc[track.id] = {
             number: '',
-            timestamp: ''
+            timestamp: '',
+            status: 'None'
           };
           return acc;
         }, {});
@@ -76,6 +77,16 @@ function RFIDReaderDetail() {
         setMessage(`Error: ${error.message}`);
       });
   }, [raceId]);
+
+  const handleManualStatusChange = (trackId, value) => {
+    setManualEntries(prev => ({
+      ...prev,
+      [trackId]: { 
+        ...prev[trackId], 
+        status: value
+      }
+    }));
+  };
 
   const handleStartTimeChange = (trackId, value) => {
     setStartTimeInputs(prev => ({
@@ -136,15 +147,15 @@ function RFIDReaderDetail() {
       race_id: raceId,
       track_id: trackId,
       number: entry.number,
-      timestamp: entry.timestamp || null
+      timestamp: entry.timestamp || null,
+      status: entry.status || 'None'
     };
     
     axios.post('http://localhost:5001/manual_result_store', resultData)
       .then(response => {
-        
-        const tagWithNewline = `${response.data.tag_id}\n`;
-
-        // Use tag_id from backend response
+        const statusDisplay = entry.status !== 'None' ? ` (${entry.status})` : '';
+        const tagWithNewline = `${response.data.tag_id}${statusDisplay}\n`;
+  
         setTrackStates(prev => ({
           ...prev,
           [trackId]: {
@@ -158,7 +169,8 @@ function RFIDReaderDetail() {
           ...prev,
           [trackId]: { 
             number: '', 
-            timestamp: '' 
+            timestamp: '',
+            status: 'None'
           }
         }));
       })
@@ -479,7 +491,7 @@ function RFIDReaderDetail() {
             <div className="rfid-reader-track__manual-entry">
               <h4>{t('rfidReader.manual')}</h4>
               <div className="row">
-                <div className="col-md-6 mb-2">
+                <div className="col-md-4 mb-2">
                   <label className="form-label">{t('rfidReader.number')}:</label>
                   <input 
                     type="text" 
@@ -494,7 +506,7 @@ function RFIDReaderDetail() {
                     placeholder={t('rfidReader.enterNumber')}
                   />
                 </div>
-                <div className="col-md-6 mb-2">
+                <div className="col-md-4 mb-2">
                   <label className="form-label">{t('rfidReader.time')}</label>
                   <input 
                     type="text" 
@@ -509,8 +521,24 @@ function RFIDReaderDetail() {
                     placeholder="HH:MM:SS"
                   />
                 </div>
+                <div className="col-md-4 mb-2">
+                  <label className="form-label">{t('rfidReader.status')}</label>
+                  <select 
+                    className="form-select"
+                    value={manualEntries[track.id]?.status || 'None'}
+                    onChange={(e) => handleManualStatusChange(track.id, e.target.value)}
+                  >
+                    <option value="None">None</option>
+                    <option value="DNF">DNF</option>
+                    <option value="DNS">DNS</option>
+                    <option value="DSQ">DSQ</option>
+                  </select>
+                </div>
               </div>
-              <button className="btn btn-primary mt-2 w-100" onClick={() => handleManualResultInsert(track.id)}>
+              <button 
+                className="btn btn-primary mt-2 w-100" 
+                onClick={() => handleManualResultInsert(track.id)}
+              >
                 {t('rfidReader.insert')}
               </button>
             </div>

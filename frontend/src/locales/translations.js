@@ -66,7 +66,8 @@ export const translations = {
         noStored: "Žádné uložené Tagy",
         categories: "Kategorie",
         age: "Věk",
-        noCat: "Nebyly nalezeny žádné kategorie"
+        noCat: "Nebyly nalezeny žádné kategorie",
+        status: "Status"
       },
       calendar: {
         title: "Kalendář",
@@ -173,7 +174,8 @@ export const translations = {
         noStored: "No stored Tags",
         categories: "Categories",
         age: "Age",
-        noCat: "No categories found"
+        noCat: "No categories found",
+        status: "Status"
       },
       calendar: {
         title: "Calendar",

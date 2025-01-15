@@ -18,7 +18,8 @@ def create_race_results_table(race_id):
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         lap_number INTEGER DEFAULT 1,
         track_id INTEGER NOT NULL,
-        last_seen_time TIMESTAMP
+        last_seen_time TIMESTAMP,
+        status VARCHAR(5)
     )
     ''')
     

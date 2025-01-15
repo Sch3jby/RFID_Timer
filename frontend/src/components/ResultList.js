@@ -37,7 +37,7 @@ const ResultList = ({ raceId }) => {
   const handleRunnerClick = async (number) => {
     setLoadingLaps(true);
     try {
-      const response = await axios.get(`http://localhost:5001/race/${raceId}/runner/${number}/laps`);
+      const response = await axios.get(`http://localhost:5001/race/${raceId}/racer/${number}/laps`);
       setLapTimes(response.data.laps);
       setSelectedRunner(number);
     } catch (err) {

@@ -39,27 +39,6 @@ db.init_app(app)
 hostname = config.get('alien_rfid', 'hostname')
 port = config.getint('alien_rfid', 'port')
 
-# Log directory setup
-log_dir = os.path.join(os.path.dirname(__file__), 'logs')
-os.makedirs(log_dir, exist_ok=True)
-
-# Log configuration
-info_handler = RotatingFileHandler(os.path.join(log_dir, 'info.log'), maxBytes=5102410, backupCount=5)
-info_handler.setLevel(logging.INFO)
-info_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-
-error_handler = RotatingFileHandler(os.path.join(log_dir, 'error.log'), maxBytes=5102410, backupCount=5)
-error_handler.setLevel(logging.ERROR)
-error_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-
-info_logger = logging.getLogger('info_logger')
-info_logger.setLevel(logging.INFO)
-info_logger.addHandler(info_handler)
-
-error_logger = logging.getLogger('error_logger')
-error_logger.setLevel(logging.ERROR)
-error_logger.addHandler(error_handler)
-
 # RFID reader connection state
 class AlienRFID:
     def __init__(self, hostname, port):
@@ -136,11 +115,11 @@ def parse_tags(data):
                 )
                 if result:
                     tags_found.append(result)
-                    info_logger.info(f'Successfully processed tag: {tag_id}')
+                    print(f'Successfully processed tag: {tag_id}')
             except Exception as e:
-                error_logger.error(f'Error processing line "{line}": {str(e)}')
+                print(f'Error processing line "{line}": {str(e)}')
         else:
-            error_logger.warning(f'Line did not match pattern: {line}')
+            print(f'Line did not match pattern: {line}')
     
     return tags_found
 
@@ -155,18 +134,18 @@ def store_tags_to_database(tag_id, number, last_seen_time):
         
         db.session.add(new_tag)
         db.session.commit()
-        info_logger.info(f'Stored new tag: {tag_id}')
+        print(f'Stored new tag: {tag_id}')
         return new_tag
     
     except Exception as e:
         db.session.rollback()
-        error_logger.error(f'Error storing/updating tag {tag_id}: {str(e)}')
+        print(f'Error storing/updating tag {tag_id}: {str(e)}')
         raise
 
 # Routes
 @app.route('/')
 def index():
-    return "Welcome to the RFID Reader API!"
+    return "Welcome to the RFID Reader API!", 200
 
 @app.route('/connect', methods=['POST'])
 def connect_reader():
@@ -186,14 +165,12 @@ def connect_reader():
         except Exception as e:
             # Konzistentní error handling
             alien.connected = False
-            error_logger.error(f'Failed to connect to RFID reader: {str(e)}')
             return jsonify({
                 "status": "error", 
                 "message": str(e)
             }), 400
     
     except Exception as e:
-        error_logger.critical(f'Unexpected connect error: {str(e)}')
         return jsonify({
             "status": "error", 
             "message": "Unexpected system error"
@@ -211,11 +188,9 @@ def fetch_taglist():
         tags = taglist_response.split("\n")
         middle_tags = tags[1:-1]
                     
-        info_logger.info('Reader successfully connected')
-        return jsonify({"status": "success", "taglist": middle_tags})
+        return jsonify({"status": "success", "taglist": middle_tags}), 200
     except Exception as e:
-        error_logger.error('Failed to connect to reader: %s', str(e))
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/registration', methods=['POST'])
 def register():
@@ -294,7 +269,6 @@ def register():
 
     except Exception as e:
         db.session.rollback()
-        error_logger.error(f'Error registering user: {str(e)}')
         return jsonify({'error': f'Error registering user: {str(e)}'}), 500
     
 @app.route('/tags', methods=['GET'])
@@ -312,9 +286,8 @@ def get_tags():
                 'antenna': tag.antenna,
                 'protocol': tag.protocol
             })
-        return jsonify({'tags': tags_list})
+        return jsonify({'tags': tags_list}), 200
     except Exception as e:
-        error_logger.error(f'Error fetching tags: {str(e)}')
         return jsonify({'error': 'Error fetching tags'}), 500
 
 @app.route('/store_results', methods=['POST'])
@@ -499,11 +472,20 @@ def manual_result_store():
         race_id = data.get('race_id')
         track_id = data.get('track_id')
         timestamp_str = data.get('timestamp')
+        status = data.get('status')  # New status parameter
 
         if not number or not race_id or not track_id:
             return jsonify({
                 "status": "error", 
                 "message": "Number, Race ID, and Track ID are required"
+            }), 400
+
+        # Validate status if provided
+        valid_statuses = ['None', 'DNF', 'DNS', 'DSQ']
+        if status and status not in valid_statuses:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid status. Must be one of: None, DNF, DNS, DSQ"
             }), 400
 
         # Fetch the track to get number_of_laps and fastest_possible_time
@@ -575,30 +557,34 @@ def manual_result_store():
 
         race_start_datetime = datetime.combine(timestamp.date(), user_start_time)
 
-        # Determine lap number and validate timing
-        if last_entry:
-            if last_entry.lap_number >= track.number_of_laps:
-                return jsonify({
-                    "status": "error",
-                    "message": "Maximum number of laps already recorded"
-                }), 400
+        # Skip time validation for DNS and DSQ statuses
+        if status not in ['DNS', 'DSQ', 'DNF']:
+            # Determine lap number and validate timing
+            if last_entry:
+                if last_entry.lap_number >= track.number_of_laps:
+                    return jsonify({
+                        "status": "error",
+                        "message": "Maximum number of laps already recorded"
+                    }), 400
 
-            last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
-            
-            if timestamp <= last_tag_time + min_lap_duration:
-                return jsonify({
-                    "status": "error",
-                    "message": "Time between laps is less than minimum allowed"
-                }), 400
+                last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
                 
-            lap_number = last_entry.lap_number + 1
+                if timestamp <= last_tag_time + min_lap_duration:
+                    return jsonify({
+                        "status": "error",
+                        "message": "Time between laps is less than minimum allowed"
+                    }), 400
+                    
+                lap_number = last_entry.lap_number + 1
+            else:
+                if timestamp <= race_start_datetime + min_lap_duration:
+                    return jsonify({
+                        "status": "error",
+                        "message": "Time from race start is less than minimum allowed"
+                    }), 400
+                lap_number = 1
         else:
-            if timestamp <= race_start_datetime + min_lap_duration:
-                return jsonify({
-                    "status": "error",
-                    "message": "Time from race start is less than minimum allowed"
-                }), 400
-            lap_number = 1
+            lap_number = 1  # Default to 1 for DNS and DSQ and DNF
 
         # Insert data into database
         insert_sql = text(f'''
@@ -608,7 +594,8 @@ def manual_result_store():
                 track_id,
                 timestamp,
                 last_seen_time,
-                lap_number
+                lap_number,
+                status
             ) 
             VALUES (
                 :number,
@@ -616,7 +603,8 @@ def manual_result_store():
                 :track_id,
                 :timestamp,
                 :last_seen_time,
-                :lap_number
+                :lap_number,
+                :status
             )
         ''')
         
@@ -628,7 +616,8 @@ def manual_result_store():
             'track_id': track_id,
             'timestamp': timestamp,
             'last_seen_time': timestamp,
-            'lap_number': lap_number
+            'lap_number': lap_number,
+            'status': status if status != 'None' else None
         })
 
         db.session.commit()
@@ -659,7 +648,7 @@ def get_categories():
                 'max_age': category.max_age,
                 'track_id': category.track_id
             })
-        return jsonify({'categories': categories_list})
+        return jsonify({'categories': categories_list}), 200
     except Exception as e:
         return jsonify({'error': f'Error fetching categories: {str(e)}'}), 500
 
@@ -676,9 +665,8 @@ def get_races():
                 'start': race.start,
                 'description': race.description
             })
-        return jsonify({'races': races_list})
+        return jsonify({'races': races_list}), 200
     except Exception as e:
-        error_logger.error('Error fetching races: %s', str(e))
         return jsonify({'error': 'Error fetching races'}), 500
 
 @app.route('/tracks', methods=['GET'])
@@ -696,9 +684,8 @@ def get_tracks():
                 'name': track.name,
                 'distance': track.distance
             })
-        return jsonify({'tracks': tracks_list})
+        return jsonify({'tracks': tracks_list}), 200
     except Exception as e:
-        error_logger.error('Error fetching tracks: %s', str(e))
         return jsonify({'error': 'Error fetching tracks'}), 500
     
 @app.route('/race/<int:race_id>', methods=['GET'])
@@ -819,10 +806,9 @@ def get_race_detail(race_id):
             'description': race.description,
             'participants': final_participant_details
         }
-        return jsonify({'race': race_detail})
+        return jsonify({'race': race_detail}), 200
         
     except Exception as e:
-        error_logger.error(f'Error fetching race details: {str(e)}')
         return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500
     
 @app.route('/set_track_start_time', methods=['POST'])
@@ -860,7 +846,6 @@ def set_track_start_time():
 
     except Exception as e:
         db.session.rollback()
-        error_logger.error(f'Error setting start time: {str(e)}')
         return jsonify({
             'success': False,
             'error': str(e)
@@ -975,7 +960,6 @@ def confirm_lineup():
     
     except Exception as e:
         db.session.rollback()
-        error_logger.error(f'Error confirming lineup: {str(e)}')
         return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
 
 @app.route('/race/<int:race_id>/results', methods=['GET'])
@@ -999,14 +983,37 @@ def get_race_results(race_id):
 
         # Query to get latest results with race time and time behind leader
         query = text(f"""
-            WITH latest_laps AS (
+            WITH status_laps AS (
                 SELECT 
                     r.number,
                     r.tag_id,
-                    MAX(r.timestamp) as last_lap_timestamp,
-                    MAX(r.lap_number) as lap_number
-                FROM {table_name} r
-                GROUP BY r.number, r.tag_id
+                    r.timestamp,
+                    r.lap_number,
+                    r.status
+                FROM race_results_{race_id} r
+                WHERE r.status IN ('DNF', 'DNS', 'DSQ')
+            ),
+            latest_laps AS (
+                SELECT 
+                    r.number,
+                    r.tag_id,
+                    CASE 
+                        WHEN sl.timestamp IS NOT NULL THEN sl.timestamp
+                        ELSE MAX(r.timestamp)
+                    END as last_lap_timestamp,
+                    CASE 
+                        WHEN sl.lap_number IS NOT NULL THEN sl.lap_number
+                        ELSE MAX(r.lap_number)
+                    END as lap_number,
+                    sl.status
+                FROM race_results_{race_id} r
+                LEFT JOIN (
+                    SELECT DISTINCT ON (number)
+                        number, tag_id, timestamp, lap_number, status
+                    FROM status_laps
+                    ORDER BY number, timestamp ASC
+                ) sl ON r.number = sl.number
+                GROUP BY r.number, r.tag_id, sl.timestamp, sl.lap_number, sl.status
             ),
             ranked_results AS (
                 SELECT 
@@ -1014,6 +1021,7 @@ def get_race_results(race_id):
                     r.tag_id,
                     r.timestamp,
                     ll.lap_number,
+                    ll.status,
                     u.forename,
                     u.surname,
                     u.club,
@@ -1026,6 +1034,7 @@ def get_race_results(race_id):
                     t.number_of_laps,
                     reg.user_start_time,
                     CASE 
+                        WHEN ll.status IS NOT NULL THEN ll.status  -- Použít status jako race_time
                         WHEN ll.lap_number = t.number_of_laps THEN
                             TO_CHAR(
                                 (EXTRACT(EPOCH FROM (
@@ -1036,10 +1045,10 @@ def get_race_results(race_id):
                                 )) || ' seconds')::interval,
                                 'HH24:MI:SS.MS'
                             )
-                        ELSE NULL
+                        ELSE '--:--:--'
                     END as race_time,
                     CASE 
-                        WHEN ll.lap_number = t.number_of_laps THEN
+                        WHEN ll.status IS NULL AND ll.lap_number = t.number_of_laps THEN
                             EXTRACT(EPOCH FROM (
                                 ll.last_lap_timestamp - 
                                 (date_trunc('day', ll.last_lap_timestamp) + 
@@ -1048,7 +1057,7 @@ def get_race_results(race_id):
                             ))
                         ELSE NULL
                     END as race_time_seconds
-                FROM {table_name} r
+                FROM race_results_{race_id} r
                 JOIN latest_laps ll ON r.number = ll.number 
                     AND r.tag_id = ll.tag_id 
                     AND r.timestamp = ll.last_lap_timestamp
@@ -1068,13 +1077,14 @@ def get_race_results(race_id):
                         PARTITION BY track_name 
                         ORDER BY 
                             CASE 
+                                WHEN status IS NOT NULL THEN 2
                                 WHEN race_time_seconds IS NULL THEN 1 
                                 ELSE 0 
                             END,
                             race_time_seconds
                     ) as position_track
                 FROM ranked_results
-                WHERE race_time_seconds IS NOT NULL
+                WHERE status IS NULL OR status IN ('DNF', 'DNS', 'DSQ')
             ),
             results_with_category_time AS (
                 SELECT *,
@@ -1083,6 +1093,7 @@ def get_race_results(race_id):
                         PARTITION BY category_name, track_name
                         ORDER BY 
                             CASE 
+                                WHEN status IS NOT NULL THEN 2
                                 WHEN race_time_seconds IS NULL THEN 1 
                                 ELSE 0 
                             END,
@@ -1097,12 +1108,20 @@ def get_race_results(race_id):
                 club,
                 category_name,
                 track_name,
+                status,
                 lap_number,
                 number_of_laps,
                 race_time,
-                position_track,
-                position_category,
                 CASE 
+                    WHEN status IS NOT NULL THEN status
+                    ELSE position_track::text 
+                END as position_track,
+                CASE 
+                    WHEN status IS NOT NULL THEN status
+                    ELSE position_category::text 
+                END as position_category,
+                CASE 
+                    WHEN status IS NOT NULL THEN NULL
                     WHEN race_time_seconds IS NULL THEN NULL
                     ELSE TO_CHAR(
                         ((race_time_seconds - min_track_time) || ' seconds')::interval,
@@ -1110,6 +1129,7 @@ def get_race_results(race_id):
                     )
                 END as behind_time_track,
                 CASE 
+                    WHEN status IS NOT NULL THEN NULL
                     WHEN race_time_seconds IS NULL THEN NULL
                     ELSE TO_CHAR(
                         ((race_time_seconds - min_category_time) || ' seconds')::interval,
@@ -1120,6 +1140,7 @@ def get_race_results(race_id):
             ORDER BY 
                 track_name,
                 CASE 
+                    WHEN status IS NOT NULL THEN 2
                     WHEN race_time_seconds IS NULL THEN 1 
                     ELSE 0 
                 END,
@@ -1129,7 +1150,7 @@ def get_race_results(race_id):
         results = db.session.execute(query, {'race_id': race_id}).fetchall()
         
         if not results:
-            return jsonify({'results': []}), 200
+            return jsonify({'results': []}), 204
 
         formatted_results = []
         for row in results:
@@ -1148,13 +1169,13 @@ def get_race_results(race_id):
         
         return jsonify({
             'results': formatted_results
-        })
+        }), 200
         
     except Exception as e:
         current_app.logger.error(f'Error fetching race results: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
     
-@app.route('/race/<int:race_id>/runner/<int:number>/laps', methods=['GET'])
+@app.route('/race/<int:race_id>/racer/<int:number>/laps', methods=['GET'])
 def get_runner_laps(race_id, number):
     try:
         table_name = f'race_results_{race_id}'
@@ -1202,14 +1223,17 @@ def get_runner_laps(race_id, number):
             'race_id': race_id,
             'number': number
         }).fetchall()
-        
+
+        if not results:
+            return jsonify({'error': 'No lap data found'}), 404
+
         laps = [{
             'lap_number': row.lap_number,
             'lap_time': row.lap_time,
             'total_time': row.total_time
         } for row in results]
         
-        return jsonify({'laps': laps})
+        return jsonify({'laps': laps}), 200
         
     except Exception as e:
         current_app.logger.error(f'Error fetching runner laps: {str(e)}')
@@ -1218,7 +1242,7 @@ def get_runner_laps(race_id, number):
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
 def catch_all(path):
-    return app.send_static_file('index.html')
+    return app.send_static_file('index.html'), 200
 
 # Create tables before first request
 def init_db():
@@ -1226,7 +1250,6 @@ def init_db():
     with app.app_context():
         db.create_all()
         setup_all_race_results_tables()
-        info_logger.info('Database tables and race results tables created successfully')
 
 if __name__ == '__main__':
     init_db()
