@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '../contexts/LanguageContext';
+import LapTimes from './LapTimes';
 
 const ResultList = ({ raceId }) => {
   const { t } = useTranslation();
@@ -9,6 +10,9 @@ const ResultList = ({ raceId }) => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState('category');
+  const [selectedRunner, setSelectedRunner] = useState(null);
+  const [lapTimes, setLapTimes] = useState([]);
+  const [loadingLaps, setLoadingLaps] = useState(false);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -28,6 +32,19 @@ const ResultList = ({ raceId }) => {
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
+  };
+
+  const handleRunnerClick = async (number) => {
+    setLoadingLaps(true);
+    try {
+      const response = await axios.get(`http://localhost:5001/race/${raceId}/runner/${number}/laps`);
+      setLapTimes(response.data.laps);
+      setSelectedRunner(number);
+    } catch (err) {
+      setError(t('raceDetail.errorLapTimes'));
+    } finally {
+      setLoadingLaps(false);
+    }
   };
 
   const filteredResults = results.filter((result) => {
@@ -144,7 +161,11 @@ const ResultList = ({ raceId }) => {
                     </thead>
                     <tbody>
                       {results.map((result) => (
-                        <tr key={result.number} className="results-row">
+                        <tr 
+                          key={result.number} 
+                          className="results-row cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleRunnerClick(result.number)}
+                        >
                           <td className="results-cell">{result.position_track}</td>
                           <td className="results-cell">{result.number}</td>
                           <td className="results-cell">{result.name}</td>
@@ -184,7 +205,11 @@ const ResultList = ({ raceId }) => {
                         </thead>
                         <tbody>
                           {results.map((result) => (
-                            <tr key={result.number} className="results-row">
+                            <tr 
+                              key={result.number}
+                              className="results-row cursor-pointer hover:bg-gray-50"
+                              onClick={() => handleRunnerClick(result.number)}
+                            >
                               <td className="results-cell">{result.position_category}</td>
                               <td className="results-cell">{result.number}</td>
                               <td className="results-cell">{result.name}</td>
@@ -209,6 +234,21 @@ const ResultList = ({ raceId }) => {
           </div>
         )}
       </div>
+
+      {selectedRunner && (
+        <LapTimes
+          lapTimes={lapTimes}
+          onClose={() => setSelectedRunner(null)}
+        />
+      )}
+
+      {loadingLaps && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="text-white">
+            {t('common.loading')}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -242,7 +242,7 @@
   }
   
   .race-detail-container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
   }
@@ -816,6 +816,7 @@
     padding: 0.75rem 1rem;
     white-space: nowrap;
     border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
   }
 
   .results-table thead .results-cell {
@@ -885,4 +886,60 @@
     height: 40px;
     width: auto;
     margin-right: 20px;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .modal-content {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    max-width: 42rem;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .modal-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+  
+  .close-button {
+    color: white;
+  }
+  
+  .close-button:hover {
+    color: white;
+  }
+  
+  .lap-times-table {
+    width: 100%;
+  }
+  
+  .lap-times-table th {
+    text-align: left;
+    padding: 0.5rem 0;
+  }
+  
+  .lap-times-table td {
+    padding: 0.5rem 0;
+  }
+  
+  .lap-times-table tbody tr {
+    border-top: 1px solid #e5e7eb;
   }

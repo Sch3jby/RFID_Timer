@@ -1153,6 +1153,67 @@ def get_race_results(race_id):
     except Exception as e:
         current_app.logger.error(f'Error fetching race results: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
+    
+@app.route('/race/<int:race_id>/runner/<int:number>/laps', methods=['GET'])
+def get_runner_laps(race_id, number):
+    try:
+        table_name = f'race_results_{race_id}'
+        
+        query = text(f"""
+            WITH runner_laps AS (
+                SELECT 
+                    r.lap_number,
+                    r.timestamp,
+                    reg.user_start_time,
+                    t.actual_start_time
+                FROM {table_name} r
+                JOIN registration reg ON reg.number = r.number 
+                    AND reg.race_id = :race_id
+                JOIN track t ON t.id = reg.track_id
+                WHERE r.number = :number
+                ORDER BY r.lap_number
+            ),
+            lap_times AS (
+                SELECT 
+                    lap_number,
+                    timestamp,
+                    CASE 
+                        WHEN lap_number = 1 THEN
+                            timestamp - (date_trunc('day', timestamp) + 
+                                actual_start_time::time + 
+                                user_start_time::interval)
+                        ELSE
+                            timestamp - LAG(timestamp) OVER (ORDER BY lap_number)
+                    END as lap_time,
+                    timestamp - (date_trunc('day', timestamp) + 
+                        actual_start_time::time + 
+                        user_start_time::interval) as total_time
+                FROM runner_laps
+            )
+            SELECT 
+                lap_number,
+                TO_CHAR(lap_time, 'HH24:MI:SS.MS') as lap_time,
+                TO_CHAR(total_time, 'HH24:MI:SS.MS') as total_time
+            FROM lap_times
+            ORDER BY lap_number;
+        """)
+        
+        results = db.session.execute(query, {
+            'race_id': race_id,
+            'number': number
+        }).fetchall()
+        
+        laps = [{
+            'lap_number': row.lap_number,
+            'lap_time': row.lap_time,
+            'total_time': row.total_time
+        } for row in results]
+        
+        return jsonify({'laps': laps})
+        
+    except Exception as e:
+        current_app.logger.error(f'Error fetching runner laps: {str(e)}')
+        return jsonify({'error': 'Failed to fetch runner laps'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')

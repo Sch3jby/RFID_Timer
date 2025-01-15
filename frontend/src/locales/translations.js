@@ -1,4 +1,5 @@
 import Calendar from "../components/Calendar";
+import LapTimes from "../components/LapTimes";
 import RaceDetail from "../components/RaceDetail";
 
 export const translations = {
@@ -92,6 +93,8 @@ export const translations = {
         results: "Výsledková listina",
         groupByTrack: "Celkové",
         groupByCategory: "Kategorie",
+        lapTimes: "Mezičasy",
+        noResults: "Výsledky nejsou dostupné",
         columns: {
           name: "Jméno",
           club: "Klub/Město",
@@ -100,6 +103,8 @@ export const translations = {
           startTime: "Čas startu",
           number: "Číslo",
           position: "Pořadí",
+          lapTime: "Čas na kolo",
+          lap: "Okruh",
           totalTime: "Čas v cíli",
           behindTime: "Ztráta"
         }
@@ -195,6 +200,8 @@ export const translations = {
         results: "Result list",
         groupByTrack: "Overall",
         groupByCategory: "Categories",
+        LapTimes: "Lap times",
+        noResults: "No results available",
         columns: {
           name: "Name",
           club: "Club/City",
@@ -203,6 +210,8 @@ export const translations = {
           startTime: "Start time",
           number: "Number",
           position: "Position",
+          lapTime: "Lap Time",
+          lap: "Lap",
           totalTime: "Finish time",
           behindTime: "Loss"
         }
