@@ -14,7 +14,6 @@ function RFIDReaderDetail() {
   const [currentTags, setCurrentTags] = useState([]);
   const [raceDetail, setRaceDetail] = useState(null);
   const [tracks, setTracks] = useState([]);
-  const [trackCategories, setTrackCategories] = useState({});
   
   const [trackStates, setTrackStates] = useState({});
   const [startTimeInputs, setStartTimeInputs] = useState({});
@@ -23,19 +22,7 @@ function RFIDReaderDetail() {
   const [draggedTrack, setDraggedTrack] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5001/categories')
-      .then(categoriesResponse => {
-        const categoriesByTrack = categoriesResponse.data.categories.reduce((acc, category) => {
-          if (!acc[category.track_id]) {
-            acc[category.track_id] = [];
-          }
-          acc[category.track_id].push(category);
-          return acc;
-        }, {});
-        setTrackCategories(categoriesByTrack);
-
-        return axios.get(`http://localhost:5001/race/${raceId}`);
-      })
+    axios.get(`http://localhost:5001/race/${raceId}`)
       .then(response => {
         setRaceDetail(response.data.race);
         return axios.get(`http://localhost:5001/tracks?race_id=${raceId}`);
@@ -46,8 +33,7 @@ function RFIDReaderDetail() {
         
         const initialTrackStates = fetchedTracks.reduce((acc, track) => {
           acc[track.id] = {
-            isStarted: false,
-            storedTags: []
+            isStarted: false
           };
           return acc;
         }, {});
@@ -121,13 +107,13 @@ function RFIDReaderDetail() {
   };
 
   const handleManualTimestampChange = (trackId, value) => {
-      setManualEntries(prev => ({
-        ...prev,
-        [trackId]: { 
-          ...prev[trackId], 
-          timestamp: value
-        }
-      }));
+    setManualEntries(prev => ({
+      ...prev,
+      [trackId]: { 
+        ...prev[trackId], 
+        timestamp: value
+      }
+    }));
   };
 
   const handleManualResultInsert = (trackId) => {
@@ -138,7 +124,6 @@ function RFIDReaderDetail() {
       return;
     }
   
-    // Optional timestamp validation
     if (entry.timestamp && !/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.test(entry.timestamp)) {
       setMessage(`Error: Invalid timestamp format for track ${trackId}. Use HH:MM:SS`);
       return;
@@ -153,18 +138,7 @@ function RFIDReaderDetail() {
     };
     
     axios.post('http://localhost:5001/manual_result_store', resultData)
-      .then(response => {
-        const statusDisplay = entry.status !== 'None' ? ` (${entry.status})` : '';
-        const tagWithNewline = `${response.data.tag_id}${statusDisplay}\n`;
-  
-        setTrackStates(prev => ({
-          ...prev,
-          [trackId]: {
-            ...prev[trackId],
-            storedTags: [...new Set([...prev[trackId].storedTags, tagWithNewline])]
-          }
-        }));
-        
+      .then(() => {
         // Reset manual entry fields
         setManualEntries(prev => ({
           ...prev,
@@ -189,7 +163,7 @@ function RFIDReaderDetail() {
           ? 'auto'
           : startTimeInputs[trackId].time
       })
-      .then((response) => {
+      .then(() => {
         setStartTimeInputs(prev => ({
           ...prev,
           [trackId]: { 
@@ -203,7 +177,6 @@ function RFIDReaderDetail() {
           [trackId]: {
             ...prev[trackId],
             isStarted: true,
-            storedTags: [],
             shouldReset: true
           }
         }));
@@ -220,15 +193,13 @@ function RFIDReaderDetail() {
         [trackId]: {
           ...prev[trackId],
           isStarted: !wasStarted,
-          storedTags: !wasStarted ? [] : prev[trackId].storedTags,
-          shouldReset: !wasStarted // Reset when starting again
+          shouldReset: !wasStarted
         }
       }));
     }
   };
 
   const handleConfirmLineup = () => {
-    // Prepare the lineup data
     const lineupData = {
       race_id: raceId,
       tracks: tracks.map(track => ({
@@ -240,7 +211,7 @@ function RFIDReaderDetail() {
     };
 
     axios.post('http://localhost:5001/confirm_lineup', lineupData)
-      .then(response => {
+      .then(() => {
         setLineupConfirmed(true);
         setMessage("Starlist confirmed");
       })
@@ -290,16 +261,9 @@ function RFIDReaderDetail() {
           .then((response) => {
             if (response.data.status === "success") {
               const fetchedTags = response.data.taglist;
-              
               const processedTags = fetchedTags.map(processTag);
-              
               setCurrentTags(processedTags);
               
-              axios.post("http://localhost:5001/store_tags", { 
-                tags: processedTags,
-                race_id: raceId
-              });
-  
               tracks.forEach(track => {
                 const trackState = trackStates[track.id];
                 if (trackState && trackState.isStarted) {
@@ -308,29 +272,18 @@ function RFIDReaderDetail() {
                     race_id: raceId,
                     track_id: track.id
                   })
-                  .then(() => {
-                    setTrackStates(prev => ({
-                      ...prev,
-                      [track.id]: {
-                        ...prev[track.id],
-                        storedTags: [...new Set([...prev[track.id].storedTags, ...processedTags])]
-                      }
-                    }));
-                  })
                   .catch(error => {
                     setMessage(`Error storing results: ${error.message}`);
                   });
                 }
               });
             } else {
-              // If status is not success, treat it as a disconnection
               setIsConnected(false);
               setMessage(`Connection lost: ${response.data.message}`);
               setCurrentTags([]);
             }
           })
           .catch((error) => {
-            // If there's a network error, disconnect
             setIsConnected(false);
             setMessage(`Connection error: ${error.message}`);
             setCurrentTags([]);
@@ -385,7 +338,7 @@ function RFIDReaderDetail() {
       </div>
     );
   }
-
+  
   return (
     <div className="container rfid-reader-detail">
       {/* Navigation and Race Info */}
@@ -545,36 +498,6 @@ function RFIDReaderDetail() {
               >
                 {t('rfidReader.insert')}
               </button>
-            </div>
-
-            {/* Stored Tags */}
-            <div className="rfid-reader-tags">
-              <h4 className="rfid-reader-tags__title">{t('rfidReader.stored')}</h4>
-              <div className="rfid-reader-tags__container">
-                {trackStates[track.id]?.storedTags.length === 0 ? (
-                  <p className="text-muted text-center">{t('rfidReader.noStored')}</p>
-                ) : (
-                  trackStates[track.id]?.storedTags.map((tag, index) => (
-                    <span key={index} className="rfid-reader-tag rfid-reader-tag--stored">{tag}</span>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Track Categories */}
-            <div className="rfid-reader-track__categories">
-              <h4 className="rfid-reader-categories__title">{t('rfidReader.categories')}</h4>
-              {trackCategories[track.id] ? (
-                <ul className="rfid-reader-track__categories-list">
-                  {trackCategories[track.id].map(category => (
-                    <li key={category.id} className="rfid-reader-track__categories-item">
-                      {category.name} ({category.gender})  |  {t('rfidReader.age')}: {category.min_age}-{category.max_age}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted text-center">{t('rfidReader.noCat')}</p>
-              )}
             </div>
           </div>
         ))}
