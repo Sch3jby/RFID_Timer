@@ -1037,3 +1037,21 @@
     border-bottom: 2px solid #2364ec;
     background: #2364ec1f;
   }
+
+  .messages-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+  }
+  
+  .messages-container .alert {
+    margin-bottom: 10px;
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }

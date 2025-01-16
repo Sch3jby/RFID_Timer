@@ -10,7 +10,7 @@ function RFIDReaderDetail() {
   const { t } = useTranslation();
 
   const [isConnected, setIsConnected] = useState(false);
-  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
   const [currentTags, setCurrentTags] = useState([]);
   const [raceDetail, setRaceDetail] = useState(null);
   const [tracks, setTracks] = useState([]);
@@ -61,9 +61,25 @@ function RFIDReaderDetail() {
       })
       .catch(error => {
         console.error("Error fetching data:", error);
-        setMessage(`Error: ${error.message}`);
+        showMessage(`Error: ${error.message}`, 'error');
       });
   }, [raceId]);
+
+  const showMessage = (text, type = 'success') => {
+    const id = Date.now(); // Create unique ID for message
+    const newMessage = {
+      id,
+      text,
+      type: text.includes('Error') ? 'error' : type
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setMessages(prev => prev.filter(msg => msg.id !== id));
+    }, 5000);
+  };
 
   const handleManualStatusChange = (trackId, value) => {
     setManualEntries(prev => ({
@@ -116,16 +132,22 @@ function RFIDReaderDetail() {
     }));
   };
 
+  const handleKeyPress = (e, trackId) => {
+    if (e.key === 'Enter') {
+      handleManualResultInsert(trackId);
+    }
+  };
+
   const handleManualResultInsert = (trackId) => {
     const entry = manualEntries[trackId];
     
     if (!entry.number) {
-      setMessage(`Error: Number is required for track ${trackId}`);
+      showMessage(`Error: Number is required for track ${trackId}`, 'error');
       return;
     }
   
     if (entry.timestamp && !/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.test(entry.timestamp)) {
-      setMessage(`Error: Invalid timestamp format for track ${trackId}. Use HH:MM:SS`);
+      showMessage(`Error: Invalid timestamp format for track ${trackId}. Use HH:MM:SS`, 'error');
       return;
     }
     
@@ -148,9 +170,10 @@ function RFIDReaderDetail() {
             status: 'None'
           }
         }));
+        showMessage('Result stored successfully');
       })
       .catch(error => {
-        setMessage(`Error storing result: ${error.response?.data?.message || error.message}`);
+        showMessage(`Error storing result: ${error.response?.data?.message || error.message}`, 'error');
       });
   };
 
@@ -181,10 +204,10 @@ function RFIDReaderDetail() {
           }
         }));
   
-        setMessage('Start time set successfully');
+        showMessage('Start time set successfully');
       })
       .catch(error => {
-        setMessage(`Error setting start time: ${error.message}`);
+        showMessage(`Error setting start time: ${error.message}`, 'error');
       });
     } else {
       const wasStarted = trackStates[trackId].isStarted;
@@ -213,10 +236,10 @@ function RFIDReaderDetail() {
     axios.post('http://localhost:5001/confirm_lineup', lineupData)
       .then(() => {
         setLineupConfirmed(true);
-        setMessage("Starlist confirmed");
+        showMessage("Starlist confirmed");
       })
       .catch(error => {
-        setMessage(`Error when confirming the start list: ${error.response?.data?.message || error.message}`);
+        showMessage(`Error when confirming the start list: ${error.response?.data?.message || error.message}`, 'error');
       });
   };
 
@@ -226,24 +249,24 @@ function RFIDReaderDetail() {
         switch(response.data.status) {
           case "connected":
             setIsConnected(true);
-            setMessage("RFID Reader connected successfully");
+            showMessage("RFID Reader connected successfully");
             break;
           case "disconnected":
             setIsConnected(false);
             setCurrentTags([]);
-            setMessage("RFID Reader disconnected");
+            showMessage("RFID Reader disconnected");
             break;
           case "error":
             setIsConnected(false);
-            setMessage(`Connection error: ${response.data.message}`);
+            showMessage(`Connection error: ${response.data.message}`, 'error');
             break;
           default:
-            setMessage("Unexpected response from server");
+            showMessage("Unexpected response from server");
         }
       })
       .catch((error) => {
         setIsConnected(false);
-        setMessage(`Connection failed: ${error.response?.data?.message || error.message}`);
+        showMessage(`Connection failed: ${error.response?.data?.message || error.message}`, 'error');
       });
   };
 
@@ -273,19 +296,19 @@ function RFIDReaderDetail() {
                     track_id: track.id
                   })
                   .catch(error => {
-                    setMessage(`Error storing results: ${error.message}`);
+                    showMessage(`Error storing results: ${error.message}`, 'error');
                   });
                 }
               });
             } else {
               setIsConnected(false);
-              setMessage(`Connection lost: ${response.data.message}`);
+              showMessage(`Connection lost: ${response.data.message}`, 'error');
               setCurrentTags([]);
             }
           })
           .catch((error) => {
             setIsConnected(false);
-            setMessage(`Connection error: ${error.message}`);
+            showMessage(`Connection error: ${error.message}`, 'error');
             setCurrentTags([]);
           });
       }, 500);
@@ -381,13 +404,17 @@ function RFIDReaderDetail() {
       </div>
 
       {/* Message Display */}
-      {message && (
-        <div className="alert">
-          <div className={`${message.includes('Error') ? 'alert-danger' : 'alert-success'}`}>
-            {message}
+      <div className="messages-container">
+        {messages.map(msg => (
+          <div 
+            key={msg.id}
+            className={`alert ${msg.type === 'error' ? 'alert-danger' : 'alert-success'} fade show`}
+            role="alert"
+          >
+            {msg.text}
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Current Tags Section */}
       <div className="rfid-reader-tags">
@@ -467,6 +494,7 @@ function RFIDReaderDetail() {
                     type="text" 
                     value={manualEntries[track.id]?.number || ''}
                     onChange={(e) => handleManualNumberChange(track.id, e.target.value)}
+                    onKeyDown={(e) => handleKeyPress(e, track.id)}
                     placeholder={t('rfidReader.enterNumber')}
                   />
                 </div>
@@ -476,6 +504,7 @@ function RFIDReaderDetail() {
                     type="text" 
                     value={manualEntries[track.id]?.timestamp || ''}
                     onChange={(e) => handleManualTimestampChange(track.id, e.target.value)}
+                    onKeyDown={(e) => handleKeyPress(e, track.id)}
                     placeholder="HH:MM:SS"
                   />
                 </div>
