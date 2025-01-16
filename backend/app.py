@@ -472,7 +472,7 @@ def manual_result_store():
         race_id = data.get('race_id')
         track_id = data.get('track_id')
         timestamp_str = data.get('timestamp')
-        status = data.get('status')  # New status parameter
+        status = data.get('status')
 
         if not number or not race_id or not track_id:
             return jsonify({
@@ -986,7 +986,6 @@ def get_race_results(race_id):
             WITH status_laps AS (
                 SELECT 
                     r.number,
-                    r.tag_id,
                     r.timestamp,
                     r.lap_number,
                     r.status
@@ -996,7 +995,6 @@ def get_race_results(race_id):
             latest_laps AS (
                 SELECT 
                     r.number,
-                    r.tag_id,
                     CASE 
                         WHEN sl.timestamp IS NOT NULL THEN sl.timestamp
                         ELSE MAX(r.timestamp)
@@ -1009,16 +1007,15 @@ def get_race_results(race_id):
                 FROM race_results_{race_id} r
                 LEFT JOIN (
                     SELECT DISTINCT ON (number)
-                        number, tag_id, timestamp, lap_number, status
+                        number, timestamp, lap_number, status
                     FROM status_laps
                     ORDER BY number, timestamp ASC
                 ) sl ON r.number = sl.number
-                GROUP BY r.number, r.tag_id, sl.timestamp, sl.lap_number, sl.status
+                GROUP BY r.number, sl.timestamp, sl.lap_number, sl.status
             ),
             ranked_results AS (
                 SELECT 
                     r.number,
-                    r.tag_id,
                     r.timestamp,
                     ll.lap_number,
                     ll.status,
@@ -1058,8 +1055,7 @@ def get_race_results(race_id):
                         ELSE NULL
                     END as race_time_seconds
                 FROM race_results_{race_id} r
-                JOIN latest_laps ll ON r.number = ll.number 
-                    AND r.tag_id = ll.tag_id 
+                JOIN latest_laps ll ON r.number = ll.number
                     AND r.timestamp = ll.last_lap_timestamp
                 JOIN registration reg ON reg.number = r.number 
                     AND reg.race_id = :race_id
