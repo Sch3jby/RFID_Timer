@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
+import Stopwatch from './Stopwatch.js';
 
 function RFIDReaderDetail() {
   const { raceId } = useParams();
@@ -202,22 +203,25 @@ function RFIDReaderDetail() {
           [trackId]: {
             ...prev[trackId],
             isStarted: true,
-            storedTags: []
+            storedTags: [],
+            shouldReset: true
           }
         }));
-
+  
         setMessage('Start time set successfully');
       })
       .catch(error => {
         setMessage(`Error setting start time: ${error.message}`);
       });
     } else {
+      const wasStarted = trackStates[trackId].isStarted;
       setTrackStates(prev => ({
         ...prev,
         [trackId]: {
           ...prev[trackId],
-          isStarted: !prev[trackId].isStarted,
-          storedTags: !prev[trackId].isStarted ? [] : prev[trackId].storedTags
+          isStarted: !wasStarted,
+          storedTags: !wasStarted ? [] : prev[trackId].storedTags,
+          shouldReset: !wasStarted // Reset when starting again
         }
       }));
     }
@@ -463,12 +467,18 @@ function RFIDReaderDetail() {
                 <h3 className="rfid-reader-track__title">{track.name}</h3>
                 <span className="rfid-reader-track__distance">{track.distance} km</span>
               </div>
-              <button 
-                onClick={() => handleTrackStartStop(track.id)} 
-                className={`btn ${trackStates[track.id]?.isStarted ? 'btn-warning' : 'btn-success'}`}
-              >
-                {trackStates[track.id]?.isStarted ? 'Stop' : 'Start'}
-              </button>
+              <div className="d-flex align-items-center">
+              <Stopwatch 
+                isRunning={trackStates[track.id]?.isStarted}
+                shouldReset={trackStates[track.id]?.shouldReset}
+              />
+                <button 
+                  onClick={() => handleTrackStartStop(track.id)} 
+                  className={`btn ${trackStates[track.id]?.isStarted ? 'btn-warning' : 'btn-success'}`}
+                >
+                  {trackStates[track.id]?.isStarted ? 'Stop' : 'Start'}
+                </button>
+              </div>
             </div>
 
             {/* Start Time Controls */}
