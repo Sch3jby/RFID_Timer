@@ -374,7 +374,7 @@ function RFIDReaderDetail() {
 
   if (!raceDetail) {
     return (
-      <div className="container mt-4">
+      <div className="container">
         <div className="spinner-border" role="status">
           <span className="sr-only">Loading...</span>
         </div>
@@ -403,23 +403,29 @@ function RFIDReaderDetail() {
           </button>
         </div>
       </div>
+
+      {/* Back Button */}
+      <button onClick={handleBack} className="btn btn-secondary">{t('rfidReader.back')}</button>
+
+      {/* Space */}
+      <div className="space">
+          <p> </p>
+      </div>
+
       {/* New Confirm Lineup Button */}
-      <div className="mb-3">
+      <div className="button">
         <button 
           onClick={handleConfirmLineup} 
-          className={`btn ${lineupConfirmed ? 'btn-success' : 'btn-primary'} w-100`}
+          className={`btn ${lineupConfirmed ? 'btn-success' : 'btn-primary'}`}
           disabled={lineupConfirmed}
         >
           {lineupConfirmed ? t('rfidReader.confirmed') : t('rfidReader.confirm')}
         </button>
       </div>
 
-      {/* Back Button */}
-      <button onClick={handleBack} className="btn btn-secondary mb-3">{t('rfidReader.back')}</button>
-
       {/* Message Display */}
       {message && (
-        <div className="alert mb-3 text-center">
+        <div className="alert">
           <div className={`${message.includes('Error') ? 'alert-danger' : 'alert-success'}`}>
             {message}
           </div>
@@ -465,9 +471,10 @@ function RFIDReaderDetail() {
               </button>
             </div>
 
-            {/* Start Time Input */}
-            <div className="mb-3">
-              <div className="input-group">
+            {/* Start Time Controls */}
+            <div className="rfid-reader-track__time-controls">
+              <div className="rfid-reader-track__time-input">
+                <label className="form-label">Start Time</label>
                 <input 
                   type="time" 
                   className="form-control" 
@@ -475,56 +482,43 @@ function RFIDReaderDetail() {
                   onChange={(e) => handleStartTimeChange(track.id, e.target.value)}
                   disabled={startTimeInputs[track.id]?.isLocked || startTimeInputs[track.id]?.isAutomatic}
                 />
-                <div className="input-group-text">
-                  <input
-                    type="checkbox"
-                    className="form-check-input mt-0"
-                    checked={startTimeInputs[track.id]?.isAutomatic || false}
-                    onChange={() => handleAutomaticTimeToggle(track.id)}
-                  />
-                  <label className="form-check-label ms-1">Auto</label>
-                </div>
+              </div>
+              <div className="rfid-reader-track__auto-checkbox">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={startTimeInputs[track.id]?.isAutomatic || false}
+                  onChange={() => handleAutomaticTimeToggle(track.id)}
+                />
+                <label className="form-check-label">Auto</label>
               </div>
             </div>
 
-            {/* Manual Result Entry */}
+            {/* Manual Entry */}
             <div className="rfid-reader-track__manual-entry">
               <h4>{t('rfidReader.manual')}</h4>
-              <div className="row">
-                <div className="col-md-4 mb-2">
-                  <label className="form-label">{t('rfidReader.number')}:</label>
+              <div className="rfid-reader-track__manual-fields">
+                <div className="rfid-reader-track__manual-field">
+                  <label>{t('rfidReader.number')}:</label>
                   <input 
                     type="text" 
-                    className="form-control" 
                     value={manualEntries[track.id]?.number || ''}
                     onChange={(e) => handleManualNumberChange(track.id, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleManualResultInsert(track.id);
-                      }
-                    }}
                     placeholder={t('rfidReader.enterNumber')}
                   />
                 </div>
-                <div className="col-md-4 mb-2">
-                  <label className="form-label">{t('rfidReader.time')}</label>
+                <div className="rfid-reader-track__manual-field">
+                  <label>{t('rfidReader.time')}:</label>
                   <input 
                     type="text" 
-                    className="form-control" 
                     value={manualEntries[track.id]?.timestamp || ''}
                     onChange={(e) => handleManualTimestampChange(track.id, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleManualResultInsert(track.id);
-                      }
-                    }}
                     placeholder="HH:MM:SS"
                   />
                 </div>
-                <div className="col-md-4 mb-2">
-                  <label className="form-label">{t('rfidReader.status')}</label>
+                <div className="rfid-reader-track__manual-field">
+                  <label>{t('rfidReader.status')}:</label>
                   <select 
-                    className="form-select"
                     value={manualEntries[track.id]?.status || 'None'}
                     onChange={(e) => handleManualStatusChange(track.id, e.target.value)}
                   >
@@ -536,7 +530,7 @@ function RFIDReaderDetail() {
                 </div>
               </div>
               <button 
-                className="btn btn-primary mt-2 w-100" 
+                className="btn btn-primary" 
                 onClick={() => handleManualResultInsert(track.id)}
               >
                 {t('rfidReader.insert')}
@@ -544,7 +538,7 @@ function RFIDReaderDetail() {
             </div>
 
             {/* Stored Tags */}
-            <div className="rfid-reader-tags mt-3">
+            <div className="rfid-reader-tags">
               <h4 className="rfid-reader-tags__title">{t('rfidReader.stored')}</h4>
               <div className="rfid-reader-tags__container">
                 {trackStates[track.id]?.storedTags.length === 0 ? (

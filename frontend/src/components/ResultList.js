@@ -3,6 +3,63 @@ import axios from 'axios';
 import { useTranslation } from '../contexts/LanguageContext';
 import LapTimes from './LapTimes';
 
+const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
+  const [lapTimes, setLapTimes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    const fetchLapTimes = async () => {
+      if (isExpanded && !lapTimes.length) {
+        setLoading(true);
+        try {
+          const response = await axios.get(`http://localhost:5001/race/${raceId}/racer/${result.number}/laps`);
+          setLapTimes(response.data.laps);
+        } catch (err) {
+          console.error('Failed to fetch lap times:', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchLapTimes();
+  }, [isExpanded, result.number, raceId]);
+
+  return (
+    <>
+      <tr className="results-row">
+        <td className="results-cell">{result.position_track || result.position_category}</td>
+        <td className="results-cell">{result.number}</td>
+        <td className="results-cell">{result.name}</td>
+        <td className="results-cell">{result.club}</td>
+        {result.track && <td className="results-cell">{result.category}</td>}
+        <td className="results-cell">{result.race_time}</td>
+        <td className="results-cell">{result.behind_time_track || result.behind_time_category}</td>
+        <td className="results-cell">
+          <button 
+            onClick={onToggle}
+            className="expand-button"
+            aria-label={isExpanded ? 'Hide lap times' : 'Show lap times'}
+          >
+            {isExpanded ? '▲' : '▼'}
+          </button>
+        </td>
+      </tr>
+      {isExpanded && (
+        <tr>
+          <td colSpan="8" className="expanded-content">
+            <LapTimes 
+              lapTimes={lapTimes} 
+              loading={loading} 
+            />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+};
+
 const ResultList = ({ raceId }) => {
   const { t } = useTranslation();
   const [results, setResults] = useState([]);
@@ -10,9 +67,7 @@ const ResultList = ({ raceId }) => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState('category');
-  const [selectedRunner, setSelectedRunner] = useState(null);
-  const [lapTimes, setLapTimes] = useState([]);
-  const [loadingLaps, setLoadingLaps] = useState(false);
+  const [expandedRunner, setExpandedRunner] = useState(null);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -34,17 +89,8 @@ const ResultList = ({ raceId }) => {
     setSearchQuery(query);
   };
 
-  const handleRunnerClick = async (number) => {
-    setLoadingLaps(true);
-    try {
-      const response = await axios.get(`http://localhost:5001/race/${raceId}/racer/${number}/laps`);
-      setLapTimes(response.data.laps);
-      setSelectedRunner(number);
-    } catch (err) {
-      setError(t('raceDetail.errorLapTimes'));
-    } finally {
-      setLoadingLaps(false);
-    }
+  const handleRowToggle = (number) => {
+    setExpandedRunner(expandedRunner === number ? null : number);
   };
 
   const filteredResults = results.filter((result) => {
@@ -145,7 +191,6 @@ const ResultList = ({ raceId }) => {
             {groupedResults.map(({ track, results }) => (
               <div key={track} className="track-section">
                 <h3 className="track-title">{track}</h3>
-                
                 <div className="results-table-wrapper">
                   <table className="results-table">
                     <thead>
@@ -157,23 +202,18 @@ const ResultList = ({ raceId }) => {
                         <th className="results-cell">{t('raceDetail.columns.category')}</th>
                         <th className="results-cell">{t('raceDetail.columns.totalTime')}</th>
                         <th className="results-cell">{t('raceDetail.columns.behindTime')}</th>
+                        <th className="results-cell"></th>
                       </tr>
                     </thead>
                     <tbody>
                       {results.map((result) => (
-                        <tr 
-                          key={result.number} 
-                          className="results-row cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleRunnerClick(result.number)}
-                        >
-                          <td className="results-cell">{result.position_track}</td>
-                          <td className="results-cell">{result.number}</td>
-                          <td className="results-cell">{result.name}</td>
-                          <td className="results-cell">{result.club}</td>
-                          <td className="results-cell">{result.category}</td>
-                          <td className="results-cell">{result.race_time}</td>
-                          <td className="results-cell">{result.behind_time_track}</td>
-                        </tr>
+                        <ResultRow
+                          key={result.number}
+                          result={result}
+                          raceId={raceId}
+                          isExpanded={expandedRunner === result.number}
+                          onToggle={() => handleRowToggle(result.number)}
+                        />
                       ))}
                     </tbody>
                   </table>
@@ -186,11 +226,9 @@ const ResultList = ({ raceId }) => {
             {groupedResults.map(({ category, tracks }) => (
               <div key={category} className="category-section">
                 <h3 className="category-title">{category}</h3>
-                
                 {tracks.map(({ track, results }) => (
                   <div key={`${category}-${track}`} className="track-subsection">
                     <h4 className="track-subtitle">{track}</h4>
-                    
                     <div className="results-table-wrapper">
                       <table className="results-table">
                         <thead>
@@ -199,24 +237,21 @@ const ResultList = ({ raceId }) => {
                             <th className="results-cell">{t('raceDetail.columns.number')}</th>
                             <th className="results-cell">{t('raceDetail.columns.name')}</th>
                             <th className="results-cell">{t('raceDetail.columns.club')}</th>
+                            <th className="results-cell">{t('raceDetail.columns.category')}</th>
                             <th className="results-cell">{t('raceDetail.columns.totalTime')}</th>
                             <th className="results-cell">{t('raceDetail.columns.behindTime')}</th>
+                            <th className="results-cell"></th>
                           </tr>
                         </thead>
                         <tbody>
                           {results.map((result) => (
-                            <tr 
+                            <ResultRow
                               key={result.number}
-                              className="results-row cursor-pointer hover:bg-gray-50"
-                              onClick={() => handleRunnerClick(result.number)}
-                            >
-                              <td className="results-cell">{result.position_category}</td>
-                              <td className="results-cell">{result.number}</td>
-                              <td className="results-cell">{result.name}</td>
-                              <td className="results-cell">{result.club}</td>
-                              <td className="results-cell">{result.race_time}</td>
-                              <td className="results-cell">{result.behind_time_category}</td>
-                            </tr>
+                              result={result}
+                              raceId={raceId}
+                              isExpanded={expandedRunner === result.number}
+                              onToggle={() => handleRowToggle(result.number)}
+                            />
                           ))}
                         </tbody>
                       </table>
@@ -234,21 +269,6 @@ const ResultList = ({ raceId }) => {
           </div>
         )}
       </div>
-
-      {selectedRunner && (
-        <LapTimes
-          lapTimes={lapTimes}
-          onClose={() => setSelectedRunner(null)}
-        />
-      )}
-
-      {loadingLaps && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="text-white">
-            {t('common.loading')}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
