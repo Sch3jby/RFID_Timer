@@ -507,7 +507,7 @@ def manual_result_store():
             try:
                 timestamp = datetime.combine(
                     datetime.now().date(), 
-                    datetime.strptime(timestamp_str, "%H:%M:%S").time()
+                    (datetime.strptime(timestamp_str, "%H:%M:%S") + timedelta(milliseconds=1)).time()
                 )
             except ValueError:
                 return jsonify({
@@ -557,34 +557,32 @@ def manual_result_store():
 
         race_start_datetime = datetime.combine(timestamp.date(), user_start_time)
 
-        # Skip time validation for DNS and DSQ statuses
-        if status not in ['DNS', 'DSQ', 'DNF']:
-            # Determine lap number and validate timing
-            if last_entry:
-                if last_entry.lap_number >= track.number_of_laps:
-                    return jsonify({
-                        "status": "error",
-                        "message": "Maximum number of laps already recorded"
-                    }), 400
+        # Determine lap number and validate timing
+        if last_entry:
+            if last_entry.lap_number >= track.number_of_laps:
+                return jsonify({
+                    "status": "error",
+                    "message": "Maximum number of laps already recorded"
+                }), 400
 
-                last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
-                
+            last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
+            
+            # Skip time validation for DNS and DSQ statuses
+            if status not in ['DNS', 'DSQ', 'DNF']:
                 if timestamp <= last_tag_time + min_lap_duration:
                     return jsonify({
                         "status": "error",
                         "message": "Time between laps is less than minimum allowed"
                     }), 400
                     
-                lap_number = last_entry.lap_number + 1
-            else:
-                if timestamp <= race_start_datetime + min_lap_duration:
-                    return jsonify({
-                        "status": "error",
-                        "message": "Time from race start is less than minimum allowed"
-                    }), 400
-                lap_number = 1
+            lap_number = last_entry.lap_number + 1
         else:
-            lap_number = 1  # Default to 1 for DNS and DSQ and DNF
+            if timestamp <= race_start_datetime + min_lap_duration:
+                return jsonify({
+                    "status": "error",
+                    "message": "Time from race start is less than minimum allowed"
+                }), 400
+            lap_number = 1
 
         # Insert data into database
         insert_sql = text(f'''
