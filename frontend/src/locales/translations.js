@@ -67,7 +67,8 @@ export const translations = {
         categories: "Kategorie",
         age: "Věk",
         noCat: "Nebyly nalezeny žádné kategorie",
-        status: "Status"
+        status: "Status",
+        editor: "Editor"
       },
       calendar: {
         title: "Kalendář",
@@ -175,7 +176,8 @@ export const translations = {
         categories: "Categories",
         age: "Age",
         noCat: "No categories found",
-        status: "Status"
+        status: "Status",
+        editor: "Editor"
       },
       calendar: {
         title: "Calendar",

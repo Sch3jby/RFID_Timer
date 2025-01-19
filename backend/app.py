@@ -979,15 +979,15 @@ def get_race_results(race_id):
         if not table_exists:
             return jsonify({'error': f'No results found for race {race_id}'}), 404
 
-        # Query to get latest results with race time and time behind leader
         query = text(f"""
             WITH status_laps AS (
                 SELECT 
                     r.number,
                     r.timestamp,
                     r.lap_number,
-                    r.status
-                FROM race_results_{race_id} r
+                    r.status,
+                    r.last_seen_time
+                FROM {table_name} r
                 WHERE r.status IN ('DNF', 'DNS', 'DSQ')
             ),
             latest_laps AS (
@@ -1001,11 +1001,12 @@ def get_race_results(race_id):
                         WHEN sl.lap_number IS NOT NULL THEN sl.lap_number
                         ELSE MAX(r.lap_number)
                     END as lap_number,
-                    sl.status
-                FROM race_results_{race_id} r
+                    sl.status,
+                    MAX(r.last_seen_time) as last_seen_time
+                FROM {table_name} r
                 LEFT JOIN (
                     SELECT DISTINCT ON (number)
-                        number, timestamp, lap_number, status
+                        number, timestamp, lap_number, status, last_seen_time
                     FROM status_laps
                     ORDER BY number, timestamp ASC
                 ) sl ON r.number = sl.number
@@ -1017,6 +1018,7 @@ def get_race_results(race_id):
                     r.timestamp,
                     ll.lap_number,
                     ll.status,
+                    ll.last_seen_time,
                     u.forename,
                     u.surname,
                     u.club,
@@ -1029,7 +1031,7 @@ def get_race_results(race_id):
                     t.number_of_laps,
                     reg.user_start_time,
                     CASE 
-                        WHEN ll.status IS NOT NULL THEN ll.status  -- Použít status jako race_time
+                        WHEN ll.status IS NOT NULL THEN ll.status
                         WHEN ll.lap_number = t.number_of_laps THEN
                             TO_CHAR(
                                 (EXTRACT(EPOCH FROM (
@@ -1052,7 +1054,7 @@ def get_race_results(race_id):
                             ))
                         ELSE NULL
                     END as race_time_seconds
-                FROM race_results_{race_id} r
+                FROM {table_name} r
                 JOIN latest_laps ll ON r.number = ll.number
                     AND r.timestamp = ll.last_lap_timestamp
                 JOIN registration reg ON reg.number = r.number 
@@ -1106,6 +1108,8 @@ def get_race_results(race_id):
                 lap_number,
                 number_of_laps,
                 race_time,
+                last_seen_time,
+                track_id,
                 CASE 
                     WHEN status IS NOT NULL THEN status
                     ELSE position_track::text 
@@ -1154,11 +1158,14 @@ def get_race_results(race_id):
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
+                'track_id': row.track_id,
                 'race_time': row.race_time or '--:--:--',
+                'last_seen_time': row.last_seen_time.strftime('%H:%M:%S') if row.last_seen_time else '--:--:--',
                 'position_track': row.position_track if row.race_time is not None else '-',
                 'position_category': row.position_category if row.race_time is not None else '-',
                 'behind_time_track': row.behind_time_track or ' ',
-                'behind_time_category': row.behind_time_category or ' '
+                'behind_time_category': row.behind_time_category or ' ',
+                'status': row.status
             })
         
         return jsonify({
@@ -1232,6 +1239,108 @@ def get_runner_laps(race_id, number):
     except Exception as e:
         current_app.logger.error(f'Error fetching runner laps: {str(e)}')
         return jsonify({'error': 'Failed to fetch runner laps'}), 500
+    
+from flask import jsonify, request, current_app
+from sqlalchemy import text
+from datetime import datetime
+
+@app.route('/race/<int:race_id>/result/update', methods=['POST'])
+def update_race_result(race_id):
+    try:
+        data = request.get_json()
+        number = data.get('number')
+        status = data.get('status')
+        timestamp = data.get('timestamp')
+        last_seen_time = data.get('last_seen_time')
+        track_id = data.get('track_id')
+        
+        table_name = f'race_results_{race_id}'
+
+        def time_to_timestamp(time_str):
+            if not time_str:
+                return None
+            # Get current date
+            today = datetime.now().strftime('%Y-%m-%d')
+            # Combine with time string
+            full_timestamp = f"{today} {time_str}"
+            try:
+                # Validate the combined timestamp
+                dt = datetime.strptime(full_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                return dt.strftime('%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                raise ValueError(f"Invalid time format: {time_str}. Expected format: HH:MM:SS.fff")
+        
+        if 'status' in data:
+            query = text(f"""
+                UPDATE {table_name}
+                SET status = :status
+                WHERE number = :number 
+                AND track_id = :track_id
+                AND timestamp = (
+                    SELECT MAX(timestamp)
+                    FROM {table_name}
+                    WHERE number = :number
+                    AND track_id = :track_id
+                )
+            """)
+            params = {
+                'status': status,
+                'number': number,
+                'track_id': track_id
+            }
+        elif last_seen_time:
+            full_timestamp = time_to_timestamp(last_seen_time)
+            query = text(f"""
+                UPDATE {table_name}
+                SET last_seen_time = :last_seen_time,
+                    timestamp = :last_seen_time
+                WHERE number = :number 
+                AND track_id = :track_id
+                AND timestamp = (
+                    SELECT MAX(timestamp)
+                    FROM {table_name}
+                    WHERE number = :number
+                    AND track_id = :track_id
+                )
+            """)
+            params = {
+                'last_seen_time': full_timestamp,
+                'number': number,
+                'track_id': track_id
+            }
+        else:
+            full_timestamp = time_to_timestamp(timestamp)
+            query = text(f"""
+                UPDATE {table_name}
+                SET timestamp = :timestamp
+                WHERE number = :number 
+                AND track_id = :track_id
+                AND timestamp = (
+                    SELECT MAX(timestamp)
+                    FROM {table_name}
+                    WHERE number = :number
+                    AND track_id = :track_id
+                )
+            """)
+            params = {
+                'timestamp': full_timestamp,
+                'number': number,
+                'track_id': track_id
+            }
+            
+        db.session.execute(query, params)
+        db.session.commit()
+        
+        return jsonify({'message': 'Result updated successfully'}), 200
+        
+    except ValueError as ve:
+        db.session.rollback()
+        current_app.logger.error(f"Validation error: {str(ve)}")
+        return jsonify({'error': str(ve)}), 400
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating result: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')

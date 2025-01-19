@@ -3,6 +3,7 @@ import axios from "axios";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import Stopwatch from './Stopwatch.js';
+import ResultEditor from './ResultEditor';
 
 function RFIDReaderDetail() {
   const { raceId } = useParams();
@@ -20,6 +21,7 @@ function RFIDReaderDetail() {
   const [manualEntries, setManualEntries] = useState({});
   const [lineupConfirmed, setLineupConfirmed] = useState(false);
   const [draggedTrack, setDraggedTrack] = useState(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   useEffect(() => {
     axios.get(`http://localhost:5001/race/${raceId}`)
@@ -79,6 +81,10 @@ function RFIDReaderDetail() {
     setTimeout(() => {
       setMessages(prev => prev.filter(msg => msg.id !== id));
     }, 5000);
+  };
+
+  const handleEditorToggle = () => {
+    setIsEditorOpen(!isEditorOpen);
   };
 
   const handleManualStatusChange = (trackId, value) => {
@@ -402,6 +408,24 @@ function RFIDReaderDetail() {
           {lineupConfirmed ? t('rfidReader.confirmed') : t('rfidReader.confirm')}
         </button>
       </div>
+
+      {/* Space */}
+      <div className="space">
+          <p> </p>
+      </div>
+
+      {/* Results Editor Modal */}
+      <div className="d-flex gap-2">
+        <button onClick={handleEditorToggle} className="btn btn-primary">
+          {t('rfidReader.editor')}
+        </button>
+      </div>
+      {isEditorOpen && (
+        <ResultEditor
+          raceId={raceId}
+          onClose={handleEditorToggle}
+        />
+      )}
 
       {/* Message Display */}
       <div className="messages-container">
