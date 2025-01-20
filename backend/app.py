@@ -1031,7 +1031,6 @@ def get_race_results(race_id):
                     t.number_of_laps,
                     reg.user_start_time,
                     CASE 
-                        WHEN ll.status IS NOT NULL THEN ll.status
                         WHEN ll.lap_number = t.number_of_laps THEN
                             TO_CHAR(
                                 (EXTRACT(EPOCH FROM (
@@ -1239,107 +1238,142 @@ def get_runner_laps(race_id, number):
     except Exception as e:
         current_app.logger.error(f'Error fetching runner laps: {str(e)}')
         return jsonify({'error': 'Failed to fetch runner laps'}), 500
-    
-from flask import jsonify, request, current_app
-from sqlalchemy import text
-from datetime import datetime
 
 @app.route('/race/<int:race_id>/result/update', methods=['POST'])
 def update_race_result(race_id):
     try:
         data = request.get_json()
         number = data.get('number')
-        status = data.get('status')
-        timestamp = data.get('timestamp')
-        last_seen_time = data.get('last_seen_time')
         track_id = data.get('track_id')
-        
-        table_name = f'race_results_{race_id}'
+        new_time = data.get('time')
+        status = data.get('status')
+        last_seen_time = data.get('last_seen_time')
 
-        def time_to_timestamp(time_str):
-            if not time_str:
-                return None
-            # Get current date
-            today = datetime.now().strftime('%Y-%m-%d')
-            # Combine with time string
-            full_timestamp = f"{today} {time_str}"
+        if not number or not track_id:
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Fetch track and registration information
+        track = Track.query.get(track_id)
+        registration = Registration.query.filter_by(
+            track_id=track_id, 
+            number=number
+        ).first()
+
+        if not track or not registration:
+            return jsonify({'error': 'Track or registration not found'}), 404
+
+        table_name = f'race_results_{race_id}'
+        updates = []
+        params = {'number': number}
+
+        def parse_time_with_ms(time_str):
+            """Parse time string with optional milliseconds"""
+            if '.' in time_str:
+                time_part, ms_part = time_str.split('.')
+                # Pad milliseconds to exactly 3 digits
+                ms_part = ms_part.ljust(3, '0')[:3]
+            else:
+                time_part = time_str
+                ms_part = '000'
+                
             try:
-                # Validate the combined timestamp
-                dt = datetime.strptime(full_timestamp, '%Y-%m-%d %H:%M:%S.%f')
-                return dt.strftime('%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                raise ValueError(f"Invalid time format: {time_str}. Expected format: HH:MM:SS.fff")
+                base_time = datetime.strptime(time_part, '%H:%M:%S').time()
+                # Create a new time object with microseconds (ms * 1000)
+                return time(base_time.hour, base_time.minute, base_time.second, 
+                          int(ms_part) * 1000)
+            except ValueError as e:
+                raise ValueError(f"Invalid time format: {str(e)}")
+
+        # Build update clauses for each field that needs to be updated
+        if status is not None or 'status' in data:
+            updates.append("status = :status")
+            params['status'] = status
+
+        if last_seen_time:
+            try:
+                time_obj = parse_time_with_ms(last_seen_time)
+                full_last_seen = datetime.combine(datetime.now().date(), time_obj)
+                
+                updates.append("last_seen_time = :last_seen_time")
+                params['last_seen_time'] = full_last_seen
+                
+                # Only update timestamp if new_time isn't provided
+                if not new_time:
+                    updates.append("timestamp = :timestamp")
+                    params['timestamp'] = full_last_seen
+                    
+            except ValueError as e:
+                return jsonify({'error': f'Invalid time format for last_seen_time: {str(e)}'}), 400
+
+        if new_time:
+            try:
+                time_obj = parse_time_with_ms(new_time)  # 00:27:00.000
+                
+                actual_start_time = track.actual_start_time
+                user_start_time = registration.user_start_time
+                
+                if not actual_start_time or not user_start_time:
+                    return jsonify({'error': 'Missing start time information'}), 400
+
+                # Převedeme všechny časy na timedelta
+                actual_delta = timedelta(hours=actual_start_time.hour,
+                                    minutes=actual_start_time.minute,
+                                    seconds=actual_start_time.second,
+                                    microseconds=actual_start_time.microsecond)
+                
+                user_delta = timedelta(hours=user_start_time.hour,
+                                    minutes=user_start_time.minute,
+                                    seconds=user_start_time.second,
+                                    microseconds=user_start_time.microsecond)
+                
+                time_delta = timedelta(hours=time_obj.hour,
+                                    minutes=time_obj.minute,
+                                    seconds=time_obj.second,
+                                    microseconds=time_obj.microsecond)
+                
+                # Sečteme všechny tři časy
+                total_time = actual_delta + user_delta + time_delta
+                
+                # Převedeme výsledek zpět na datetime
+                current_date = datetime.now().date()
+                final_timestamp = datetime.combine(current_date, datetime.min.time()) + total_time
+                
+                updates.append("timestamp = :new_timestamp")
+                params['new_timestamp'] = final_timestamp
+                
+                updates.append("last_seen_time = :new_last_seen_time")
+                params['new_last_seen_time'] = final_timestamp
+                
+            except ValueError as e:
+                return jsonify({'error': f'Invalid time format for new_time: {str(e)}'}), 400
+
+        if not updates:
+            return jsonify({'error': 'No updates provided'}), 400
+
+        # Combine all updates into a single query
+        update_query = text(f"""
+            UPDATE {table_name}
+            SET {', '.join(updates)}
+            WHERE number = :number
+            AND lap_number = (
+                SELECT MAX(lap_number)
+                FROM {table_name}
+                WHERE number = :number
+            )
+        """)
         
-        if 'status' in data:
-            query = text(f"""
-                UPDATE {table_name}
-                SET status = :status
-                WHERE number = :number 
-                AND track_id = :track_id
-                AND timestamp = (
-                    SELECT MAX(timestamp)
-                    FROM {table_name}
-                    WHERE number = :number
-                    AND track_id = :track_id
-                )
-            """)
-            params = {
-                'status': status,
-                'number': number,
-                'track_id': track_id
-            }
-        elif last_seen_time:
-            full_timestamp = time_to_timestamp(last_seen_time)
-            query = text(f"""
-                UPDATE {table_name}
-                SET last_seen_time = :last_seen_time,
-                    timestamp = :last_seen_time
-                WHERE number = :number 
-                AND track_id = :track_id
-                AND timestamp = (
-                    SELECT MAX(timestamp)
-                    FROM {table_name}
-                    WHERE number = :number
-                    AND track_id = :track_id
-                )
-            """)
-            params = {
-                'last_seen_time': full_timestamp,
-                'number': number,
-                'track_id': track_id
-            }
-        else:
-            full_timestamp = time_to_timestamp(timestamp)
-            query = text(f"""
-                UPDATE {table_name}
-                SET timestamp = :timestamp
-                WHERE number = :number 
-                AND track_id = :track_id
-                AND timestamp = (
-                    SELECT MAX(timestamp)
-                    FROM {table_name}
-                    WHERE number = :number
-                    AND track_id = :track_id
-                )
-            """)
-            params = {
-                'timestamp': full_timestamp,
-                'number': number,
-                'track_id': track_id
-            }
-            
-        db.session.execute(query, params)
+        db.session.execute(update_query, params)
         db.session.commit()
         
-        return jsonify({'message': 'Result updated successfully'}), 200
-        
-    except ValueError as ve:
-        db.session.rollback()
-        current_app.logger.error(f"Validation error: {str(ve)}")
-        return jsonify({'error': str(ve)}), 400
+        return jsonify({
+            'message': 'Update successful',
+            'timestamp': params.get('new_timestamp') or params.get('timestamp'),
+            'last_seen_time': params.get('new_last_seen_time') or params.get('last_seen_time')
+        }), 200
+
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error updating result: {str(e)}")
+        current_app.logger.error(f'Error updating result: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 # Catch-all route to serve React frontend

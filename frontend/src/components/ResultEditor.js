@@ -37,13 +37,12 @@ const ResultEditor = ({ raceId, onClose }) => {
   };
 
   const validateTime = (timeStr) => {
-    // Validate HH:MM:SS format only
-    const regex = /^([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
+    // Validate HH:MM:SS or HH:MM:SS.MS format
+    const regex = /^([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\.(\d{1,3}))?$/;
     return regex.test(timeStr);
   };
 
   const addMilliseconds = (timeStr) => {
-    // Add .000 if no milliseconds are present
     return timeStr.includes('.') ? timeStr : timeStr + '.000';
   };
 
@@ -51,39 +50,35 @@ const ResultEditor = ({ raceId, onClose }) => {
     if (!editingResult) return;
 
     try {
+      // Create an update object with all changed fields
+      const updates = {};
+      
       if (editedStatus !== (editingResult.status || '')) {
-        const statusToSend = editedStatus === "" ? null : editedStatus;
-        
-        await axios.post(`http://localhost:5001/race/${raceId}/result/update`, {
-          number: editingResult.number,
-          track_id: editingResult.track_id,
-          status: statusToSend
-        });
+        updates.status = editedStatus === "" ? null : editedStatus;
       }
-      else if (editedLastSeenTime !== editingResult.last_seen_time) {
+      
+      if (editedLastSeenTime !== (editingResult.last_seen_time || '')) {
         if (!validateTime(editedLastSeenTime)) {
           setError('Invalid time format. Use HH:MM:SS');
           return;
         }
-
-        await axios.post(`http://localhost:5001/race/${raceId}/result/update`, {
-          number: editingResult.number,
-          track_id: editingResult.track_id,
-          last_seen_time: addMilliseconds(editedLastSeenTime)
-        });
+        updates.last_seen_time = addMilliseconds(editedLastSeenTime);
       }
-      else if (editedTime !== editingResult.race_time) {
+      
+      if (editedTime !== (editingResult.race_time || '')) {
         if (!validateTime(editedTime)) {
           setError('Invalid time format. Use HH:MM:SS');
           return;
         }
-
-        await axios.post(`http://localhost:5001/race/${raceId}/result/update`, {
-          number: editingResult.number,
-          track_id: editingResult.track_id,
-          timestamp: addMilliseconds(editedTime)
-        });
+        updates.time = addMilliseconds(editedTime);
       }
+
+      // Send all updates in a single request
+      await axios.post(`http://localhost:5001/race/${raceId}/result/update`, {
+        number: editingResult.number,
+        track_id: editingResult.track_id,
+        ...updates
+      });
 
       setSuccessMessage('Changes saved successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
