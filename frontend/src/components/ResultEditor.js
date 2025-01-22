@@ -3,13 +3,17 @@ import axios from 'axios';
 
 const ResultEditor = ({ raceId, onClose }) => {
   const [results, setResults] = useState([]);
+  const [laps, setLaps] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingResult, setEditingResult] = useState(null);
+  const [editingLap, setEditingLap] = useState(null);
   const [editedTime, setEditedTime] = useState('');
   const [editedLastSeenTime, setEditedLastSeenTime] = useState('');
   const [editedStatus, setEditedStatus] = useState('');
+  const [editedLapTime, setEditedLapTime] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [expandedRunner, setExpandedRunner] = useState(null);
 
   useEffect(() => {
     fetchResults();
@@ -29,6 +33,16 @@ const ResultEditor = ({ raceId, onClose }) => {
     }
   };
 
+  const fetchRunnerLaps = async (number) => {
+    try {
+      const response = await axios.get(`http://localhost:5001/race/${raceId}/racer/${number}/laps`);
+      setLaps(prev => ({ ...prev, [number]: response.data.laps }));
+    } catch (err) {
+      setError(`Failed to load laps for runner ${number}`);
+      console.error('Error fetching laps:', err);
+    }
+  };
+
   const handleEditClick = (result) => {
     setEditingResult(result);
     setEditedTime(result.race_time || '');
@@ -36,8 +50,12 @@ const ResultEditor = ({ raceId, onClose }) => {
     setEditedStatus(result.status || '');
   };
 
+  const handleEditLapClick = (lap) => {
+    setEditingLap(lap);
+    setEditedLapTime(lap.lap_time || '');
+  };
+
   const validateTime = (timeStr) => {
-    // Validate HH:MM:SS or HH:MM:SS.MS format
     const regex = /^([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\.(\d{1,3}))?$/;
     return regex.test(timeStr);
   };
@@ -46,11 +64,37 @@ const ResultEditor = ({ raceId, onClose }) => {
     return timeStr.includes('.') ? timeStr : timeStr + '.000';
   };
 
+  const handleSaveLapEdit = async () => {
+    if (!editingLap || !expandedRunner) return;
+
+    try {
+      if (!validateTime(editedLapTime)) {
+        setError('Invalid time format. Use HH:MM:SS');
+        return;
+      }
+
+      await axios.post(`http://localhost:5001/race/${raceId}/lap/update`, {
+        number: expandedRunner,
+        lap_number: editingLap.lap_number,
+        lap_time: addMilliseconds(editedLapTime)
+      });
+
+      setSuccessMessage('Lap time updated successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      await fetchRunnerLaps(expandedRunner);
+      setEditingLap(null);
+      setEditedLapTime('');
+      setError(null);
+    } catch (err) {
+      setError('Failed to save lap time: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!editingResult) return;
 
     try {
-      // Create an update object with all changed fields
       const updates = {};
       
       if (editedStatus !== (editingResult.status || '')) {
@@ -73,7 +117,6 @@ const ResultEditor = ({ raceId, onClose }) => {
         updates.time = addMilliseconds(editedTime);
       }
 
-      // Send all updates in a single request
       await axios.post(`http://localhost:5001/race/${raceId}/result/update`, {
         number: editingResult.number,
         track_id: editingResult.track_id,
@@ -102,132 +145,229 @@ const ResultEditor = ({ raceId, onClose }) => {
     setError(null);
   };
 
-  if (loading) return (
-    <div className="fixed inset-0 bg-white z-50 p-6 shadow-lg">
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  const handleCancelLapEdit = () => {
+    setEditingLap(null);
+    setEditedLapTime('');
+    setError(null);
+  };
+
+  const toggleRunner = async (number) => {
+    if (expandedRunner === number) {
+      setExpandedRunner(null);
+    } else {
+      setExpandedRunner(number);
+      await fetchRunnerLaps(number);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="result-editor">
+        <div className="result-editor__loading">
+          <div className="result-editor__spinner" />
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="fixed inset-0 bg-white z-50 p-6 shadow-lg overflow-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Edit Race Results</h2>
+    <div className="result-editor">
+      <div className="result-editor__header">
+        <h2 className="result-editor__title">Edit Race Results</h2>
         <button 
           onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+          className="result-editor__close"
         >
           ✕
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4">
-          {error}
-        </div>
-      )}
+      <div className="result-editor__content">
+        {error && (
+          <div className="result-editor__message result-editor__message--error">
+            {error}
+          </div>
+        )}
 
-      {successMessage && (
-        <div className="bg-green-50 text-green-700 p-4 rounded-md mb-4">
-          {successMessage}
-        </div>
-      )}
+        {successMessage && (
+          <div className="result-editor__message result-editor__message--success">
+            {successMessage}
+          </div>
+        )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-full border-collapse">
-          <thead>
-            <tr className="border-b bg-gray-50">
-              <th className="p-2 text-left">Position</th>
-              <th className="p-2 text-left">Number</th>
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2 text-left">Track</th>
-              <th className="p-2 text-left">Category</th>
-              <th className="p-2 text-left">Time</th>
-              <th className="p-2 text-left">Last Seen</th>
-              <th className="p-2 text-left">Status</th>
-              <th className="p-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((result) => (
-              <tr key={result.number} className="border-b hover:bg-gray-50">
-                <td className="p-2">{result.position_track}</td>
-                <td className="p-2">{result.number}</td>
-                <td className="p-2">{result.name}</td>
-                <td className="p-2">{result.track}</td>
-                <td className="p-2">{result.category}</td>
-                <td className="p-2">
-                  {editingResult?.number === result.number ? (
-                    <input
-                      type="text"
-                      value={editedTime}
-                      onChange={(e) => setEditedTime(e.target.value)}
-                      className="border rounded p-1 w-32"
-                      placeholder="HH:MM:SS"
-                    />
-                  ) : (
-                    result.race_time
-                  )}
-                </td>
-                <td className="p-2">
-                  {editingResult?.number === result.number ? (
-                    <input
-                      type="text"
-                      value={editedLastSeenTime}
-                      onChange={(e) => setEditedLastSeenTime(e.target.value)}
-                      className="border rounded p-1 w-32"
-                      placeholder="HH:MM:SS"
-                    />
-                  ) : (
-                    result.last_seen_time
-                  )}
-                </td>
-                <td className="p-2">
-                  {editingResult?.number === result.number ? (
-                    <select
-                      value={editedStatus}
-                      onChange={(e) => setEditedStatus(e.target.value)}
-                      className="border rounded p-1"
-                    >
-                      <option value="">None</option>
-                      <option value="DNF">DNF</option>
-                      <option value="DNS">DNS</option>
-                      <option value="DSQ">DSQ</option>
-                    </select>
-                  ) : (
-                    result.status || 'None'
-                  )}
-                </td>
-                <td className="p-2">
-                  {editingResult?.number === result.number ? (
-                    <div className="space-x-2">
-                      <button
-                        onClick={handleSaveEdit}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleEditClick(result)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Edit
-                    </button>
-                  )}
-                </td>
+        <div>
+          <table className="result-editor__table">
+            <thead>
+              <tr>
+                <th>Position</th>
+                <th>Number</th>
+                <th>Name</th>
+                <th>Track</th>
+                <th>Category</th>
+                <th>Time</th>
+                <th>Last Seen</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {results.map((result) => (
+                <React.Fragment key={result.number}>
+                  <tr>
+                    <td>{result.position_track}</td>
+                    <td>{result.number}</td>
+                    <td>{result.name}</td>
+                    <td>{result.track}</td>
+                    <td>{result.category}</td>
+                    <td>
+                      {editingResult?.number === result.number ? (
+                        <input
+                          type="text"
+                          value={editedTime}
+                          onChange={(e) => setEditedTime(e.target.value)}
+                          className="result-editor__input"
+                          placeholder="HH:MM:SS"
+                        />
+                      ) : (
+                        result.race_time
+                      )}
+                    </td>
+                    <td>
+                      {editingResult?.number === result.number ? (
+                        <input
+                          type="text"
+                          value={editedLastSeenTime}
+                          onChange={(e) => setEditedLastSeenTime(e.target.value)}
+                          className="result-editor__input"
+                          placeholder="HH:MM:SS"
+                        />
+                      ) : (
+                        result.last_seen_time
+                      )}
+                    </td>
+                    <td>
+                      {editingResult?.number === result.number ? (
+                        <select
+                          value={editedStatus}
+                          onChange={(e) => setEditedStatus(e.target.value)}
+                          className="result-editor__select"
+                        >
+                          <option value="">None</option>
+                          <option value="DNF">DNF</option>
+                          <option value="DNS">DNS</option>
+                          <option value="DSQ">DSQ</option>
+                        </select>
+                      ) : (
+                        result.status || 'None'
+                      )}
+                    </td>
+                    <td>
+                      <div className="result-editor__actions">
+                        {editingResult?.number === result.number ? (
+                          <>
+                            <button
+                              onClick={handleSaveEdit}
+                              className="result-editor__button result-editor__button--save"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="result-editor__button result-editor__button--cancel"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleEditClick(result)}
+                              className="result-editor__button result-editor__button--edit"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => toggleRunner(result.number)}
+                              className="result-editor__button result-editor__button--edit"
+                            >
+                              {expandedRunner === result.number ? 'Hide Laps' : 'Show Laps'}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {expandedRunner === result.number && (
+                    <tr>
+                      <td colSpan="9">
+                        <table className="result-editor__table">
+                          <thead>
+                            <tr>
+                              <th>Lap</th>
+                              <th>Timestamp</th>
+                              <th>Lap Time</th>
+                              <th>Total Time</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {laps[result.number]?.map((lap) => (
+                              <tr key={lap.lap_number}>
+                                <td>{lap.lap_number}</td>
+                                <td>{lap.timestamp}</td>
+                                <td>
+                                  {editingLap?.lap_number === lap.lap_number ? (
+                                    <input
+                                      type="text"
+                                      value={editedLapTime}
+                                      onChange={(e) => setEditedLapTime(e.target.value)}
+                                      className="result-editor__input"
+                                      placeholder="HH:MM:SS"
+                                    />
+                                  ) : (
+                                    lap.lap_time
+                                  )}
+                                </td>
+                                <td>{lap.total_time}</td>
+                                <td>
+                                  <div className="result-editor__actions">
+                                    {editingLap?.lap_number === lap.lap_number ? (
+                                      <>
+                                        <button
+                                          onClick={handleSaveLapEdit}
+                                          className="result-editor__button result-editor__button--save"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={handleCancelLapEdit}
+                                          className="result-editor__button result-editor__button--cancel"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleEditLapClick(lap)}
+                                        className="result-editor__button result-editor__button--edit"
+                                      >
+                                        Edit
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
