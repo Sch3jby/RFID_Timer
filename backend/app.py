@@ -1385,19 +1385,16 @@ def update_lap_time(race_id):
         number = data.get('number')
         lap_number = data.get('lap_number')
         lap_time = data.get('lap_time')
+        timestamp = data.get('timestamp')
 
-        if not all([number, lap_number, lap_time]):
+        if not number or not lap_number:
             return jsonify({'error': 'Missing required fields'}), 400
 
-        # Parse the lap time
-        try:
-            time_obj = parse_time_with_ms(lap_time)
-        except ValueError as e:
-            return jsonify({'error': f'Invalid time format: {str(e)}'}), 400
+        if not lap_time and not timestamp:
+            return jsonify({'error': 'Either lap_time or timestamp must be provided'}), 400
 
         table_name = f'race_results_{race_id}'
 
-        # Get the runner's information
         registration = Registration.query.filter_by(
             race_id=race_id,
             number=number
@@ -1410,7 +1407,6 @@ def update_lap_time(race_id):
         if not track:
             return jsonify({'error': 'Track not found'}), 404
 
-        # Get all laps for this runner ordered by lap number
         query = text(f"""
             SELECT 
                 lap_number,
@@ -1422,7 +1418,6 @@ def update_lap_time(race_id):
         
         laps = db.session.execute(query, {'number': number}).fetchall()
         
-        # Find the target lap and calculate new timestamp
         target_lap = None
         for lap in laps:
             if lap.lap_number == lap_number:
@@ -1432,62 +1427,91 @@ def update_lap_time(race_id):
         if not target_lap:
             return jsonify({'error': 'Lap not found'}), 404
 
-        # For first lap, calculate from start time
-        if lap_number == 1:
-            actual_start = datetime.combine(target_lap.timestamp.date(), track.actual_start_time)
-            user_start_delta = timedelta(
-                hours=registration.user_start_time.hour,
-                minutes=registration.user_start_time.minute,
-                seconds=registration.user_start_time.second,
-                microseconds=registration.user_start_time.microsecond
-            )
-            
-            time_delta = timedelta(
-                hours=time_obj.hour,
-                minutes=time_obj.minute,
-                seconds=time_obj.second,
-                microseconds=time_obj.microsecond
-            )
-            
-            new_timestamp = actual_start + user_start_delta + time_delta
+        if timestamp:
+            try:
+                time_obj = parse_time_with_ms(timestamp)
+                update_query = text(f"""
+                    UPDATE {table_name}
+                    SET 
+                        timestamp = DATE(timestamp) + time :time_obj,
+                        last_seen_time = DATE(timestamp) + time :time_obj
+                    WHERE number = :number
+                    AND lap_number = :lap_number
+                    RETURNING timestamp
+                """)
+                result = db.session.execute(update_query, {
+                    'time_obj': time_obj,
+                    'number': number,
+                    'lap_number': lap_number
+                }).first()
+                
+                if not result:
+                    return jsonify({'error': 'Failed to update timestamp'}), 500
+                
+                new_timestamp = result[0]
+
+            except ValueError as e:
+                return jsonify({'error': f'Invalid time format: {str(e)}'}), 400
+
         else:
-            # For other laps, calculate from previous lap's timestamp
-            prev_lap = None
-            for lap in laps:
-                if lap.lap_number == lap_number - 1:
-                    prev_lap = lap
-                    break
+            try:
+                time_obj = parse_time_with_ms(lap_time)
+            except ValueError as e:
+                return jsonify({'error': f'Invalid time format: {str(e)}'}), 400
+
+            if lap_number == 1:
+                actual_start = datetime.combine(target_lap.timestamp.date(), track.actual_start_time)
+                user_start_delta = timedelta(
+                    hours=registration.user_start_time.hour,
+                    minutes=registration.user_start_time.minute,
+                    seconds=registration.user_start_time.second,
+                    microseconds=registration.user_start_time.microsecond
+                )
+                
+                time_delta = timedelta(
+                    hours=time_obj.hour,
+                    minutes=time_obj.minute,
+                    seconds=time_obj.second,
+                    microseconds=time_obj.microsecond
+                )
+                
+                new_timestamp = actual_start + user_start_delta + time_delta
+            else:
+                prev_lap = None
+                for lap in laps:
+                    if lap.lap_number == lap_number - 1:
+                        prev_lap = lap
+                        break
+                
+                if not prev_lap:
+                    return jsonify({'error': 'Previous lap not found'}), 404
+
+                time_delta = timedelta(
+                    hours=time_obj.hour,
+                    minutes=time_obj.minute,
+                    seconds=time_obj.second,
+                    microseconds=time_obj.microsecond
+                )
+                
+                new_timestamp = prev_lap.timestamp + time_delta
+
+            update_query = text(f"""
+                UPDATE {table_name}
+                SET 
+                    timestamp = :new_timestamp,
+                    last_seen_time = :new_timestamp
+                WHERE number = :number
+                AND lap_number = :lap_number
+            """)
             
-            if not prev_lap:
-                return jsonify({'error': 'Previous lap not found'}), 404
+            db.session.execute(update_query, {
+                'new_timestamp': new_timestamp,
+                'number': number,
+                'lap_number': lap_number
+            })
 
-            time_delta = timedelta(
-                hours=time_obj.hour,
-                minutes=time_obj.minute,
-                seconds=time_obj.second,
-                microseconds=time_obj.microsecond
-            )
-            
-            new_timestamp = prev_lap.timestamp + time_delta
-
-        # Update the lap timestamp
-        update_query = text(f"""
-            UPDATE {table_name}
-            SET timestamp = :new_timestamp
-            WHERE number = :number
-            AND lap_number = :lap_number
-        """)
-        
-        db.session.execute(update_query, {
-            'new_timestamp': new_timestamp,
-            'number': number,
-            'lap_number': lap_number
-        })
-
-        # Update subsequent laps if any exist
         subsequent_laps = [lap for lap in laps if lap.lap_number > lap_number]
         for next_lap in subsequent_laps:
-            # Get the time difference from the previous lap
             query = text(f"""
                 SELECT 
                     timestamp - LAG(timestamp) OVER (ORDER BY lap_number) as lap_time
@@ -1502,15 +1526,21 @@ def update_lap_time(race_id):
             }).first()
             
             if result and result.lap_time:
-                # Update the next lap's timestamp based on the current lap's new time
                 update_query = text(f"""
                     UPDATE {table_name}
-                    SET timestamp = (
-                        SELECT timestamp + :lap_time
-                        FROM {table_name}
-                        WHERE number = :number
-                        AND lap_number = :prev_lap_number
-                    )
+                    SET 
+                        timestamp = (
+                            SELECT timestamp + :lap_time
+                            FROM {table_name}
+                            WHERE number = :number
+                            AND lap_number = :prev_lap_number
+                        ),
+                        last_seen_time = (
+                            SELECT timestamp + :lap_time
+                            FROM {table_name}
+                            WHERE number = :number
+                            AND lap_number = :prev_lap_number
+                        )
                     WHERE number = :number
                     AND lap_number = :lap_number
                 """)
@@ -1522,10 +1552,11 @@ def update_lap_time(race_id):
                     'lap_number': next_lap.lap_number
                 })
 
-        # Update the last_seen_time in the final lap record
         final_lap_query = text(f"""
             UPDATE {table_name}
-            SET last_seen_time = timestamp
+            SET 
+                last_seen_time = timestamp,
+                timestamp = timestamp
             WHERE number = :number
             AND lap_number = (
                 SELECT MAX(lap_number)
@@ -1539,20 +1570,19 @@ def update_lap_time(race_id):
         db.session.commit()
         
         return jsonify({
-            'message': 'Lap time updated successfully',
+            'message': 'Lap updated successfully',
             'new_timestamp': new_timestamp.strftime('%H:%M:%S.%f')[:-3]
         }), 200
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f'Error updating lap time: {str(e)}')
+        current_app.logger.error(f'Error updating lap: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 def parse_time_with_ms(time_str):
     """Parse time string with optional milliseconds"""
     if '.' in time_str:
         time_part, ms_part = time_str.split('.')
-        # Pad milliseconds to exactly 3 digits
         ms_part = ms_part.ljust(3, '0')[:3]
     else:
         time_part = time_str
@@ -1560,7 +1590,6 @@ def parse_time_with_ms(time_str):
         
     try:
         base_time = datetime.strptime(time_part, '%H:%M:%S').time()
-        # Create a new time object with microseconds (ms * 1000)
         return time(base_time.hour, base_time.minute, base_time.second, 
                    int(ms_part) * 1000)
     except ValueError as e:
