@@ -1059,7 +1059,7 @@
   /* Result Editor Modal Styles */
   .result-editor {
     position: fixed;
-    inset: 0;
+    inset: 64px 0 0 0;
     background-color: #ffffff;
     z-index: 50;
     overflow-y: auto;
@@ -1217,11 +1217,11 @@
   .result-editor__button--edit {
     background: none;
     border: none;
-    color: #3b82f6;
+    color: #000000;
   }
 
   .result-editor__button--edit:hover {
-    color: #2563eb;
+    color: white;
   }
 
   .result-editor__actions {

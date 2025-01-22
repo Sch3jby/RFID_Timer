@@ -16,16 +16,17 @@ const ResultEditor = ({ raceId, onClose }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [expandedRunner, setExpandedRunner] = useState(null);
 
-  useEffect(() => {
-    fetchResults();
-  }, [raceId]);
-
   const fetchResults = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:5001/race/${raceId}/results`);
       setResults(response.data.results);
       setError(null);
+      
+      // Refresh laps data if a runner is expanded
+      if (expandedRunner) {
+        await fetchRunnerLaps(expandedRunner);
+      }
     } catch (err) {
       setError('Failed to load results');
       console.error('Error fetching results:', err);
@@ -33,6 +34,10 @@ const ResultEditor = ({ raceId, onClose }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchResults();
+  }, [raceId]);
 
   const fetchRunnerLaps = async (number) => {
     try {
@@ -92,11 +97,12 @@ const ResultEditor = ({ raceId, onClose }) => {
       }
 
       await axios.post(`http://localhost:5001/race/${raceId}/lap/update`, payload);
-
+      
       setSuccessMessage('Lap updated successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
       
-      await fetchRunnerLaps(expandedRunner);
+      // Refresh both results and laps
+      await fetchResults();
       setEditingLap(null);
       setEditedLapTime('');
       setEditedTimestamp('');
@@ -141,6 +147,7 @@ const ResultEditor = ({ raceId, onClose }) => {
       setSuccessMessage('Changes saved successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
       
+      // Refresh data after save
       await fetchResults();
       setEditingResult(null);
       setEditedTime('');
