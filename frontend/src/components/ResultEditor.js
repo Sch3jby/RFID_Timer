@@ -196,7 +196,7 @@ const ResultEditor = ({ raceId, onClose }) => {
   return (
     <div className="result-editor">
       <div className="result-editor__header">
-        <h2 className="result-editor__title">Edit Race Results</h2>
+        <h2 className="result-editor__title">Edit Result List</h2>
         <button onClick={onClose} className="result-editor__close">✕</button>
       </div>
 

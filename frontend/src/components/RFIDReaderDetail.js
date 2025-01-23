@@ -3,7 +3,7 @@ import axios from "axios";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import Stopwatch from './Stopwatch.js';
-import ResultEditor from './ResultEditor';
+import Editor from './Editor';
 
 function RFIDReaderDetail() {
   const { raceId } = useParams();
@@ -414,14 +414,14 @@ function RFIDReaderDetail() {
           <p> </p>
       </div>
 
-      {/* Results Editor Modal */}
+      {/* Editor Modal */}
       <div className="d-flex gap-2">
         <button onClick={handleEditorToggle} className="btn btn-primary">
           {t('rfidReader.editor')}
         </button>
       </div>
       {isEditorOpen && (
-        <ResultEditor
+        <Editor
           raceId={raceId}
           onClose={handleEditorToggle}
         />

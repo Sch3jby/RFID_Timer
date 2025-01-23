@@ -1594,6 +1594,89 @@ def parse_time_with_ms(time_str):
                    int(ms_part) * 1000)
     except ValueError as e:
         raise ValueError(f"Invalid time format: {str(e)}")
+    
+@app.route('/race/<int:race_id>/startlist', methods=['GET'])
+def get_race_startlist(race_id):
+    try:
+        # Fetch tracks for this race
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        track_ids = [track.id for track in tracks]
+        
+        # Fetch registrations with user details
+        registrations = (
+            db.session.query(Registration, Users, Track)
+            .join(Users, Registration.user_id == Users.id)
+            .join(Track, Registration.track_id == Track.id)
+            .filter(Registration.race_id == race_id)
+            .all()
+        )
+        
+        start_list = []
+        for reg, user, track in registrations:
+            start_list.append({
+                'registration_id': reg.id,
+                'user_id': user.id,
+                'forename': user.forename,
+                'surname': user.surname,
+                'club': user.club,
+                'number': reg.number,
+                'track_id': track.id,
+                'track_name': track.name,
+                'user_start_time': reg.user_start_time.strftime('%H:%M:%S') if reg.user_start_time else None
+            })
+        
+        # Sort the start list by number
+        start_list.sort(key=lambda x: x['number'])
+        
+        return jsonify({'startList': start_list}), 200
+    except Exception as e:
+        return jsonify({'error': f'Error fetching start list: {str(e)}'}), 500
+
+@app.route('/race/<int:race_id>/startlist/update/user', methods=['POST'])
+def update_startlist_user(race_id):
+    try:
+        data = request.json
+        user = Users.query.get(data['user_id'])
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        user.forename = data['forename']
+        user.surname = data['surname']
+        user.club = data['club']
+        
+        db.session.commit()
+        return jsonify({'message': 'User updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error updating user: {str(e)}'}), 500
+
+@app.route('/race/<int:race_id>/startlist/update/registration', methods=['POST'])
+def update_startlist_registration(race_id):
+    try:
+        data = request.json
+        registration = Registration.query.get(data['registration_id'])
+        
+        if not registration:
+            return jsonify({'error': 'Registration not found'}), 404
+        
+        # Update number if provided
+        if 'number' in data:
+            registration.number = data['number']
+        
+        # Update track if provided
+        if 'track_id' in data:
+            registration.track_id = data['track_id']
+        
+        # Update start time if provided
+        if 'user_start_time' in data:
+            registration.user_start_time = datetime.strptime(data['user_start_time'], '%H:%M:%S').time()
+        
+        db.session.commit()
+        return jsonify({'message': 'Registration updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error updating registration: {str(e)}'}), 500
 
 # Catch-all route to serve React frontend
 @app.route('/<path:path>')
