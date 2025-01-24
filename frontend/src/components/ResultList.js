@@ -34,8 +34,12 @@ const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
         <td className="results-cell">{result.name}</td>
         <td className="results-cell">{result.club}</td>
         {result.track && <td className="results-cell">{result.category}</td>}
-        <td className="results-cell">{result.race_time}</td>
-        <td className="results-cell">{result.behind_time_track || result.behind_time_category}</td>
+        <td className="results-cell">
+          {result.status ? '--:--:--' : result.race_time}
+        </td>
+        <td className="results-cell">
+          {result.status ? '--:--:--' : (result.behind_time_track || result.behind_time_category)}
+        </td>
         <td className="results-cell">
           <button 
             onClick={onToggle}

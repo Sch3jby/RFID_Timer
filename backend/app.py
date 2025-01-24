@@ -1039,7 +1039,7 @@ def get_race_results(race_id):
                                     t.actual_start_time::time + 
                                     reg.user_start_time::interval)
                                 )) || ' seconds')::interval,
-                                'HH24:MI:SS.MS'
+                                'HH24:MI:SS'
                             )
                         ELSE '--:--:--'
                     END as race_time,
@@ -1122,7 +1122,7 @@ def get_race_results(race_id):
                     WHEN race_time_seconds IS NULL THEN NULL
                     ELSE TO_CHAR(
                         ((race_time_seconds - min_track_time) || ' seconds')::interval,
-                        'HH24:MI:SS.MS'
+                        'HH24:MI:SS'
                     )
                 END as behind_time_track,
                 CASE 
@@ -1130,7 +1130,7 @@ def get_race_results(race_id):
                     WHEN race_time_seconds IS NULL THEN NULL
                     ELSE TO_CHAR(
                         ((race_time_seconds - min_category_time) || ' seconds')::interval,
-                        'HH24:MI:SS.MS'
+                        'HH24:MI:SS'
                     )
                 END as behind_time_category
             FROM results_with_category_time
