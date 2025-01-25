@@ -1145,6 +1145,221 @@ def get_race_results_by_category(race_id):
     except Exception as e:
         current_app.logger.error(f'Error fetching race results by category: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
+
+@app.route('/race/<int:race_id>/results', methods=['GET'])
+def get_race_results(race_id):
+    try:
+        # First verify the race exists and the results table exists
+        table_name = f'race_results_{race_id}'
+        
+        # Check if table exists
+        table_exists_query = text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = :table_name
+            );
+        """)
+        table_exists = db.session.execute(table_exists_query, 
+            {'table_name': table_name}).scalar()
+            
+        if not table_exists:
+            return jsonify({'error': f'No results found for race {race_id}'}), 404
+
+        query = text(f"""
+            WITH status_laps AS (
+                SELECT 
+                    r.number,
+                    r.timestamp,
+                    r.lap_number,
+                    r.status,
+                    r.last_seen_time
+                FROM {table_name} r
+                WHERE r.status IN ('DNF', 'DNS', 'DSQ')
+            ),
+            latest_laps AS (
+                SELECT 
+                    r.number,
+                    CASE 
+                        WHEN sl.timestamp IS NOT NULL THEN sl.timestamp
+                        ELSE MAX(r.timestamp)
+                    END as last_lap_timestamp,
+                    CASE 
+                        WHEN sl.lap_number IS NOT NULL THEN sl.lap_number
+                        ELSE MAX(r.lap_number)
+                    END as lap_number,
+                    sl.status,
+                    MAX(r.last_seen_time) as last_seen_time
+                FROM {table_name} r
+                LEFT JOIN (
+                    SELECT DISTINCT ON (number)
+                        number, timestamp, lap_number, status, last_seen_time
+                    FROM status_laps
+                    ORDER BY number, timestamp ASC
+                ) sl ON r.number = sl.number
+                GROUP BY r.number, sl.timestamp, sl.lap_number, sl.status
+            ),
+            ranked_results AS (
+                SELECT 
+                    r.number,
+                    r.timestamp,
+                    ll.lap_number,
+                    ll.status,
+                    ll.last_seen_time,
+                    u.forename,
+                    u.surname,
+                    u.club,
+                    u.year,
+                    u.gender,
+                    t.name as track_name,
+                    reg.track_id,
+                    c.category_name,
+                    t.actual_start_time,
+                    t.number_of_laps,
+                    reg.user_start_time,
+                    CASE 
+                        WHEN ll.lap_number = t.number_of_laps THEN
+                            TO_CHAR(
+                                (EXTRACT(EPOCH FROM (
+                                    ll.last_lap_timestamp - 
+                                    (date_trunc('day', ll.last_lap_timestamp) + 
+                                    t.actual_start_time::time + 
+                                    reg.user_start_time::interval)
+                                )) || ' seconds')::interval,
+                                'HH24:MI:SS.MS'
+                            )
+                        ELSE '--:--:--'
+                    END as race_time,
+                    CASE 
+                        WHEN ll.status IS NULL AND ll.lap_number = t.number_of_laps THEN
+                            EXTRACT(EPOCH FROM (
+                                ll.last_lap_timestamp - 
+                                (date_trunc('day', ll.last_lap_timestamp) + 
+                                t.actual_start_time::time + 
+                                reg.user_start_time::interval)
+                            ))
+                        ELSE NULL
+                    END as race_time_seconds
+                FROM {table_name} r
+                JOIN latest_laps ll ON r.number = ll.number
+                    AND r.timestamp = ll.last_lap_timestamp
+                JOIN registration reg ON reg.number = r.number 
+                    AND reg.race_id = :race_id
+                JOIN users u ON u.id = reg.user_id
+                JOIN track t ON t.id = reg.track_id
+                LEFT JOIN category c ON c.track_id = reg.track_id 
+                    AND c.gender = u.gender 
+                    AND EXTRACT(YEAR FROM CURRENT_DATE) - u.year 
+                        BETWEEN c.min_age AND c.max_age
+            ),
+            results_with_track_time AS (
+                SELECT *,
+                    MIN(race_time_seconds) OVER (PARTITION BY track_name) as min_track_time,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY track_name 
+                        ORDER BY 
+                            CASE 
+                                WHEN status IS NOT NULL THEN 2
+                                WHEN race_time_seconds IS NULL THEN 1 
+                                ELSE 0 
+                            END,
+                            race_time_seconds
+                    ) as position_track
+                FROM ranked_results
+                WHERE status IS NULL OR status IN ('DNF', 'DNS', 'DSQ')
+            ),
+            results_with_category_time AS (
+                SELECT *,
+                    MIN(race_time_seconds) OVER (PARTITION BY category_name, track_name) as min_category_time,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY category_name, track_name
+                        ORDER BY 
+                            CASE 
+                                WHEN status IS NOT NULL THEN 2
+                                WHEN race_time_seconds IS NULL THEN 1 
+                                ELSE 0 
+                            END,
+                            race_time_seconds
+                    ) as position_category
+                FROM results_with_track_time
+            )
+            SELECT 
+                number,
+                forename,
+                surname,
+                club,
+                category_name,
+                track_name,
+                status,
+                lap_number,
+                number_of_laps,
+                race_time,
+                last_seen_time,
+                track_id,
+                CASE 
+                    WHEN status IS NOT NULL THEN status
+                    ELSE position_track::text 
+                END as position_track,
+                CASE 
+                    WHEN status IS NOT NULL THEN status
+                    ELSE position_category::text 
+                END as position_category,
+                CASE 
+                    WHEN status IS NOT NULL THEN NULL
+                    WHEN race_time_seconds IS NULL THEN NULL
+                    ELSE TO_CHAR(
+                        ((race_time_seconds - min_track_time) || ' seconds')::interval,
+                        'HH24:MI:SS.MS'
+                    )
+                END as behind_time_track,
+                CASE 
+                    WHEN status IS NOT NULL THEN NULL
+                    WHEN race_time_seconds IS NULL THEN NULL
+                    ELSE TO_CHAR(
+                        ((race_time_seconds - min_category_time) || ' seconds')::interval,
+                        'HH24:MI:SS.MS'
+                    )
+                END as behind_time_category
+            FROM results_with_category_time
+            ORDER BY 
+                track_name,
+                CASE 
+                    WHEN status IS NOT NULL THEN 2
+                    WHEN race_time_seconds IS NULL THEN 1 
+                    ELSE 0 
+                END,
+                race_time_seconds;
+        """)
+        
+        results = db.session.execute(query, {'race_id': race_id}).fetchall()
+        
+        if not results:
+            return jsonify({'results': []}), 204
+
+        formatted_results = []
+        for row in results:
+            formatted_results.append({
+                'number': row.number,
+                'name': f"{row.forename} {row.surname}",
+                'club': row.club,
+                'category': row.category_name or 'N/A',
+                'track': row.track_name,
+                'track_id': row.track_id,
+                'race_time': row.race_time or '--:--:--',
+                'last_seen_time': row.last_seen_time.strftime('%H:%M:%S') if row.last_seen_time else '--:--:--',
+                'position_track': row.position_track if row.race_time is not None else '-',
+                'position_category': row.position_category if row.race_time is not None else '-',
+                'behind_time_track': row.behind_time_track or ' ',
+                'behind_time_category': row.behind_time_category or ' ',
+                'status': row.status
+            })
+        
+        return jsonify({
+            'results': formatted_results
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f'Error fetching race results: {str(e)}')
+        return jsonify({'error': 'Failed to fetch race results'}), 500
     
 @app.route('/race/<int:race_id>/results/by-track', methods=['GET'])
 def get_race_results_by_track(race_id):
@@ -1422,24 +1637,6 @@ def update_race_result(race_id):
         table_name = f'race_results_{race_id}'
         updates = []
         params = {'number': number}
-
-        def parse_time_with_ms(time_str):
-            """Parse time string with optional milliseconds"""
-            if '.' in time_str:
-                time_part, ms_part = time_str.split('.')
-                # Pad milliseconds to exactly 3 digits
-                ms_part = ms_part.ljust(3, '0')[:3]
-            else:
-                time_part = time_str
-                ms_part = '000'
-                
-            try:
-                base_time = datetime.strptime(time_part, '%H:%M:%S').time()
-                # Create a new time object with microseconds (ms * 1000)
-                return time(base_time.hour, base_time.minute, base_time.second, 
-                          int(ms_part) * 1000)
-            except ValueError as e:
-                raise ValueError(f"Invalid time format: {str(e)}")
 
         # Build update clauses for each field that needs to be updated
         if status is not None or 'status' in data:
@@ -1739,9 +1936,6 @@ def parse_time_with_ms(time_str):
     if '.' in time_str:
         time_part, ms_part = time_str.split('.')
         ms_part = ms_part.ljust(3, '0')[:3]
-    else:
-        time_part = time_str
-        ms_part = '000'
         
     try:
         base_time = datetime.strptime(time_part, '%H:%M:%S').time()

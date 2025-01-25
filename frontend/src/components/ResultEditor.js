@@ -68,7 +68,7 @@ const ResultEditor = ({ raceId, onClose }) => {
   };
 
   const addMilliseconds = (timeStr) => {
-    return timeStr.includes('.') ? timeStr : timeStr + '.000';
+    return timeStr.includes('.') ? timeStr : timeStr + '.001';
   };
 
   const handleSaveLapEdit = async () => {
