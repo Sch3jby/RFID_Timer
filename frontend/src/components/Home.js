@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from '../contexts/LanguageContext';
-import video from '../styles/other/video.mp4'
+import video from '../styles/other/video2.mp4'
 
 function Home() {
   const { t } = useTranslation();

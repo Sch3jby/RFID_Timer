@@ -34,12 +34,8 @@ const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
         <td className="results-cell">{result.name}</td>
         <td className="results-cell">{result.club}</td>
         {result.track && <td className="results-cell">{result.category}</td>}
-        <td className="results-cell">
-          {result.status ? '--:--:--' : result.race_time}
-        </td>
-        <td className="results-cell">
-          {result.status ? '--:--:--' : (result.behind_time_track || result.behind_time_category)}
-        </td>
+        <td className="results-cell">{result.race_time}</td>
+        <td className="results-cell">{result.behind_time_track || result.behind_time_category}</td>
         <td className="results-cell">
           <button 
             onClick={onToggle}
@@ -73,20 +69,27 @@ const ResultList = ({ raceId }) => {
   const [groupBy, setGroupBy] = useState('category');
   const [expandedRunner, setExpandedRunner] = useState(null);
 
-  useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        const response = await axios.get(`http://localhost:5001/race/${raceId}/results`);
-        setResults(response.data.results);
-      } catch (err) {
-        setError(t('raceDetail.error'));
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchResults = async () => {
+    setLoading(true);
+    try {
+      const endpoint = groupBy === 'category' 
+        ? `http://localhost:5001/race/${raceId}/results/by-category`
+        : `http://localhost:5001/race/${raceId}/results/by-track`;
+      
+      const response = await axios.get(endpoint);
+      setResults(response.data.results);
+      setError('');
+    } catch (err) {
+      setError(t('raceDetail.error'));
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchResults();
-  }, [raceId, t]);
+  }, [raceId, groupBy, t]);
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
@@ -113,7 +116,11 @@ const ResultList = ({ raceId }) => {
       }, {})
     ).map(([track, trackResults]) => ({
       track,
-      results: trackResults.sort((a, b) => a.position - b.position)
+      results: trackResults.sort((a, b) => {
+        const posA = a.position_track ? parseInt(a.position_track) : Infinity;
+        const posB = b.position_track ? parseInt(b.position_track) : Infinity;
+        return posA - posB;
+      })
     }));
   };
 
@@ -137,7 +144,11 @@ const ResultList = ({ raceId }) => {
         }, {})
       ).map(([track, trackResults]) => ({
         track,
-        results: trackResults.sort((a, b) => a.position - b.position)
+        results: trackResults.sort((a, b) => {
+          const posA = a.position_category ? parseInt(a.position_category) : Infinity;
+          const posB = b.position_category ? parseInt(b.position_category) : Infinity;
+          return posA - posB;
+        })
       }));
 
       return {
