@@ -3,6 +3,13 @@ import axios from 'axios';
 import { useTranslation } from '../contexts/LanguageContext';
 import LapTimes from './LapTimes';
 
+const formatRaceTime = (raceTime, status) => {
+  if (status && ['DNF', 'DNS', 'DSQ'].includes(status.toUpperCase())) {
+    return '--:--:--';
+  }
+  return raceTime;
+};
+
 const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
   const [lapTimes, setLapTimes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,8 +41,8 @@ const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
         <td className="results-cell">{result.name}</td>
         <td className="results-cell">{result.club}</td>
         {result.track && <td className="results-cell">{result.category}</td>}
-        <td className="results-cell">{result.race_time}</td>
-        <td className="results-cell">{result.behind_time_track || result.behind_time_category}</td>
+        <td className="results-cell">{formatRaceTime(result.race_time, result.status)}</td>
+        <td className="results-cell">{formatRaceTime(result.behind_time_track || result.behind_time_category, result.status)}</td>
         <td className="results-cell">
           <button 
             onClick={onToggle}

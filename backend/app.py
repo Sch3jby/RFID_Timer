@@ -1588,7 +1588,6 @@ def update_race_result(race_id):
         params = {'number': number}
 
         if status is not None or 'status' in data:
-            # Update status for all laps
             status_update_query = text(f"""
                 UPDATE {table_name}
                 SET status = :status
