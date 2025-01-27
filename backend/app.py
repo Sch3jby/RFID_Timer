@@ -1588,8 +1588,16 @@ def update_race_result(race_id):
         params = {'number': number}
 
         if status is not None or 'status' in data:
-            updates.append("status = :status")
-            params['status'] = status
+            # Update status for all laps
+            status_update_query = text(f"""
+                UPDATE {table_name}
+                SET status = :status
+                WHERE number = :number
+            """)
+            db.session.execute(status_update_query, {
+                'status': status,
+                'number': number
+            })
 
         if last_seen_time:
             try:
@@ -1645,21 +1653,20 @@ def update_race_result(race_id):
             except ValueError as e:
                 return jsonify({'error': f'Invalid time format for new_time: {str(e)}'}), 400
 
-        if not updates:
-            return jsonify({'error': 'No updates provided'}), 400
-
-        update_query = text(f"""
-            UPDATE {table_name}
-            SET {', '.join(updates)}
-            WHERE number = :number
-            AND lap_number = (
-                SELECT MAX(lap_number)
-                FROM {table_name}
+        if updates:
+            update_query = text(f"""
+                UPDATE {table_name}
+                SET {', '.join(updates)}
                 WHERE number = :number
-            )
-        """)
+                AND lap_number = (
+                    SELECT MAX(lap_number)
+                    FROM {table_name}
+                    WHERE number = :number
+                )
+            """)
+            
+            db.session.execute(update_query, params)
         
-        db.session.execute(update_query, params)
         db.session.commit()
         
         return jsonify({
