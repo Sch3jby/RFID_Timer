@@ -2000,6 +2000,90 @@ def delete_lap(race_id):
         current_app.logger.error(f'Error deleting lap: {str(e)}')
         return jsonify({'error': str(e)}), 500
     
+@app.route('/race/<int:race_id>/lap/add', methods=['POST'])
+def add_manual_lap(race_id):
+    try:
+        data = request.json
+        number = data.get('number')
+        track_id = data.get('track_id')
+        timestamp_str = data.get('timestamp')
+        lap_number = data.get('lap_number')
+
+        if not all([number, track_id, timestamp_str, lap_number]):
+            return jsonify({
+                "status": "error", 
+                "message": "Number, Track ID, Timestamp and Lap Number are required"
+            }), 400
+
+        track = Track.query.get(track_id)
+        if not track:
+            return jsonify({"status": "error", "message": "Track not found"}), 404
+
+        registration = Registration.query.filter_by(
+            race_id=race_id, 
+            track_id=track_id, 
+            number=number
+        ).first()
+        
+        if not registration:
+            return jsonify({"status": "error", "message": "Registration not found"}), 404
+
+        try:
+            timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            try:
+                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return jsonify({
+                    "status": "error",
+                    "message": "Invalid timestamp format. Use YYYY-MM-DD HH:MM:SS or YYYY-MM-DD HH:MM:SS.fff"
+                }), 400
+
+        table_name = f'race_results_{race_id}'
+
+        insert_sql = text(f'''
+            INSERT INTO {table_name} (
+                number,
+                tag_id,
+                track_id,
+                timestamp,
+                last_seen_time,
+                lap_number
+            ) 
+            VALUES (
+                :number,
+                :tag_id,
+                :track_id,
+                :timestamp,
+                :last_seen_time,
+                :lap_number
+            )
+        ''')
+        
+        tag_id = f"manually added Tag: {number}"
+        
+        db.session.execute(insert_sql, {
+            'number': number,
+            'tag_id': tag_id,
+            'track_id': track_id,
+            'timestamp': timestamp,
+            'last_seen_time': timestamp,
+            'lap_number': lap_number
+        })
+
+        db.session.commit()
+        
+        return jsonify({
+            "status": "success", 
+            "message": f"Manually stored result for race {race_id}, track {track_id}, number {number}",
+            "tag_id": tag_id
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error storing manual result: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 @app.route('/race/<int:race_id>/startlist', methods=['GET'])
 def get_race_startlist(race_id):
     try:

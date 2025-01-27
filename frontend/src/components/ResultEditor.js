@@ -17,6 +17,11 @@ const ResultEditor = ({ raceId, onClose }) => {
   const [expandedRunner, setExpandedRunner] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [lapToDelete, setLapToDelete] = useState(null);
+  const [quickAdd, setQuickAdd] = useState({
+    number: '',
+    lapNumber: '',
+    timestamp: ''
+  });
 
   const fetchResults = async () => {
     try {
@@ -215,6 +220,55 @@ const ResultEditor = ({ raceId, onClose }) => {
     }
   };
 
+  const handleQuickAddSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const runner = results.find(r => r.number === parseInt(quickAdd.number));
+      if (!runner) {
+        setError('Runner number not found');
+        return;
+      }
+
+      if (!validateTime(quickAdd.time)) {
+        setError('Invalid time format. Use HH:MM:SS');
+        return;
+      }
+
+      // Combine date and time into full timestamp
+      const timestamp = `${quickAdd.date} ${addMilliseconds(quickAdd.time)}`;
+
+      const payload = {
+        number: parseInt(quickAdd.number),
+        race_id: raceId,
+        track_id: runner.track_id,
+        timestamp: timestamp,
+        lap_number: parseInt(quickAdd.lapNumber)
+      };
+
+      await axios.post(`http://localhost:5001/race/${raceId}/lap/add`, payload);
+      
+      setSuccessMessage('Lap added successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      setQuickAdd({
+        number: '',
+        lapNumber: '',
+        date: new Date().toISOString().split('T')[0],
+        time: ''
+      });
+
+      await fetchResults();
+      if (expandedRunner === parseInt(quickAdd.number)) {
+        await fetchRunnerLaps(parseInt(quickAdd.number));
+      }
+      
+      setError(null);
+    } catch (err) {
+      setError('Failed to add lap: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   if (loading) {
     return (
       <div className="result-editor">
@@ -231,7 +285,46 @@ const ResultEditor = ({ raceId, onClose }) => {
         <h2 className="result-editor__title">Edit Result List</h2>
         <button onClick={onClose} className="result-editor__close">✕</button>
       </div>
-
+      <div className="result-editor__quick-add">
+        <form onSubmit={handleQuickAddSubmit} className="result-editor__quick-add-form">
+          <div className="result-editor__quick-add-fields">
+            <input
+              type="number"
+              value={quickAdd.number}
+              onChange={(e) => setQuickAdd(prev => ({ ...prev, number: e.target.value }))}
+              placeholder="Runner Number"
+              className="result-editor__input"
+              required
+            />
+            <input
+              type="number"
+              value={quickAdd.lapNumber}
+              onChange={(e) => setQuickAdd(prev => ({ ...prev, lapNumber: e.target.value }))}
+              placeholder="Lap Number"
+              className="result-editor__input"
+              required
+            />
+            <input 
+              type="date"
+              value={quickAdd.date}
+              onChange={(e) => setQuickAdd(prev => ({ ...prev, date: e.target.value }))}
+              className="result-editor__input"
+              required
+            />
+            <input
+              type="text"
+              value={quickAdd.time}
+              onChange={(e) => setQuickAdd(prev => ({ ...prev, time: e.target.value }))}
+              placeholder="Time (HH:MM:SS)"
+              className="result-editor__input"
+              required
+            />
+            <button type="submit" className="result-editor__button result-editor__button--add">
+              Add Lap
+            </button>
+          </div>
+        </form>
+      </div>
       <div className="result-editor__content">
         {error && (
           <div className="result-editor__message result-editor__message--error">
