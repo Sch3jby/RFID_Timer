@@ -2012,14 +2012,18 @@ def add_manual_lap(race_id):
         data = request.json
         number = data.get('number')
         track_id = data.get('track_id')
-        timestamp_str = data.get('timestamp')
         lap_number = data.get('lap_number')
+        timestamp_str = data.get('timestamp')
+        time_str = data.get('time')
 
-        if not all([number, track_id, timestamp_str, lap_number]):
+        if not number or not track_id or not lap_number:
             return jsonify({
                 "status": "error", 
-                "message": "Number, Track ID, Timestamp and Lap Number are required"
+                "message": "Number, Track ID, and Lap Number are required"
             }), 400
+
+        if not time_str and not timestamp_str:
+            return jsonify({'error': 'Either time or timestamp must be provided'}), 400
 
         track = Track.query.get(track_id)
         if not track:
@@ -2034,19 +2038,78 @@ def add_manual_lap(race_id):
         if not registration:
             return jsonify({"status": "error", "message": "Registration not found"}), 404
 
-        try:
-            timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
-        except ValueError:
-            try:
-                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                return jsonify({
-                    "status": "error",
-                    "message": "Invalid timestamp format. Use YYYY-MM-DD HH:MM:SS or YYYY-MM-DD HH:MM:SS.fff"
-                }), 400
-
         table_name = f'race_results_{race_id}'
 
+        # Query existing laps
+        query = text(f"""
+            SELECT 
+                lap_number,
+                timestamp
+            FROM {table_name}
+            WHERE number = :number
+            ORDER BY lap_number
+        """)
+        
+        laps = db.session.execute(query, {'number': number}).fetchall()
+
+        if timestamp_str:
+            try:
+                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+            except ValueError:
+                try:
+                    timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    return jsonify({
+                        "status": "error",
+                        "message": "Invalid timestamp format. Use YYYY-MM-DD HH:MM:SS or YYYY-MM-DD HH:MM:SS.fff"
+                    }), 400
+        else:
+            try:
+                time_obj = parse_time_with_ms(time_str)
+            except ValueError as e:
+                return jsonify({'error': f'Invalid time format: {str(e)}'}), 400
+
+            if lap_number == 1:
+                actual_start = datetime.combine(
+                    datetime.strptime(data.get('date'), "%Y-%m-%d").date(),
+                    track.actual_start_time
+                )
+                user_start_delta = timedelta(
+                    hours=registration.user_start_time.hour,
+                    minutes=registration.user_start_time.minute,
+                    seconds=registration.user_start_time.second,
+                    microseconds=registration.user_start_time.microsecond
+                )
+                
+                time_delta = timedelta(
+                    hours=time_obj.hour,
+                    minutes=time_obj.minute,
+                    seconds=time_obj.second,
+                    microseconds=time_obj.microsecond
+                )
+                
+                timestamp = actual_start + user_start_delta + time_delta
+            else:
+                prev_lap = None
+                for lap in laps:
+                    if lap.lap_number == lap_number - 1:
+                        prev_lap = lap
+                        break
+                
+                if not prev_lap:
+                    return jsonify({'error': 'Previous lap not found'}), 404
+
+                time_delta = timedelta(
+                    hours=time_obj.hour,
+                    minutes=time_obj.minute,
+                    seconds=time_obj.second,
+                    microseconds=time_obj.microsecond
+                )
+                
+                timestamp = prev_lap.timestamp + time_delta
+
+        tag_id = f"manually added Tag: {number}"
+        
         insert_sql = text(f'''
             INSERT INTO {table_name} (
                 number,
@@ -2066,8 +2129,6 @@ def add_manual_lap(race_id):
             )
         ''')
         
-        tag_id = f"manually added Tag: {number}"
-        
         db.session.execute(insert_sql, {
             'number': number,
             'tag_id': tag_id,
@@ -2082,7 +2143,8 @@ def add_manual_lap(race_id):
         return jsonify({
             "status": "success", 
             "message": f"Manually stored result for race {race_id}, track {track_id}, number {number}",
-            "tag_id": tag_id
+            "tag_id": tag_id,
+            "timestamp": timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         })
     
     except Exception as e:

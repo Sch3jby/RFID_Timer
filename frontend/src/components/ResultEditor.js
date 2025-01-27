@@ -20,7 +20,10 @@ const ResultEditor = ({ raceId, onClose }) => {
   const [quickAdd, setQuickAdd] = useState({
     number: '',
     lapNumber: '',
-    timestamp: ''
+    inputType: '',
+    date: new Date().toISOString().split('T')[0],
+    timestamp: '',
+    time: ''
   });
 
   const fetchResults = async () => {
@@ -229,23 +232,29 @@ const ResultEditor = ({ raceId, onClose }) => {
         setError('Runner number not found');
         return;
       }
-
-      if (!validateTime(quickAdd.time)) {
-        setError('Invalid time format. Use HH:MM:SS');
-        return;
-      }
-
-      // Combine date and time into full timestamp
-      const timestamp = `${quickAdd.date} ${addMilliseconds(quickAdd.time)}`;
-
+  
       const payload = {
         number: parseInt(quickAdd.number),
         race_id: raceId,
         track_id: runner.track_id,
-        timestamp: timestamp,
-        lap_number: parseInt(quickAdd.lapNumber)
+        lap_number: parseInt(quickAdd.lapNumber),
+        date: quickAdd.date
       };
-
+  
+      if (quickAdd.inputType === 'timestamp') {
+        if (!validateTime(quickAdd.timestamp)) {
+          setError('Invalid time format. Use HH:MM:SS');
+          return;
+        }
+        payload.timestamp = `${quickAdd.date} ${addMilliseconds(quickAdd.timestamp)}`;
+      } else {
+        if (!validateTime(quickAdd.time)) {
+          setError('Invalid time format. Use HH:MM:SS');
+          return;
+        }
+        payload.time = addMilliseconds(quickAdd.time);
+      }
+  
       await axios.post(`http://localhost:5001/race/${raceId}/lap/add`, payload);
       
       setSuccessMessage('Lap added successfully');
@@ -254,10 +263,12 @@ const ResultEditor = ({ raceId, onClose }) => {
       setQuickAdd({
         number: '',
         lapNumber: '',
+        inputType: '',
         date: new Date().toISOString().split('T')[0],
+        timestamp: '',
         time: ''
       });
-
+  
       await fetchResults();
       if (expandedRunner === parseInt(quickAdd.number)) {
         await fetchRunnerLaps(parseInt(quickAdd.number));
@@ -304,21 +315,53 @@ const ResultEditor = ({ raceId, onClose }) => {
               className="result-editor__input"
               required
             />
-            <input 
-              type="date"
-              value={quickAdd.date}
-              onChange={(e) => setQuickAdd(prev => ({ ...prev, date: e.target.value }))}
-              className="result-editor__input"
+            <select
+              value={quickAdd.inputType}
+              onChange={(e) => setQuickAdd(prev => ({ ...prev, inputType: e.target.value }))}
+              className="result-editor__select"
               required
-            />
-            <input
-              type="text"
-              value={quickAdd.time}
-              onChange={(e) => setQuickAdd(prev => ({ ...prev, time: e.target.value }))}
-              placeholder="Time (HH:MM:SS)"
-              className="result-editor__input"
-              required
-            />
+            >
+              <option value="">Select Input Type</option>
+              <option value="timestamp">Timestamp</option>
+              <option value="laptime">Lap Time</option>
+            </select>
+            {quickAdd.inputType === 'timestamp' ? (
+              <>
+                <input 
+                  type="date"
+                  value={quickAdd.date}
+                  onChange={(e) => setQuickAdd(prev => ({ ...prev, date: e.target.value }))}
+                  className="result-editor__input"
+                  required
+                />
+                <input
+                  type="text"
+                  value={quickAdd.timestamp}
+                  onChange={(e) => setQuickAdd(prev => ({ ...prev, timestamp: e.target.value }))}
+                  placeholder="Time (HH:MM:SS)"
+                  className="result-editor__input"
+                  required
+                />
+              </>
+            ) : quickAdd.inputType === 'laptime' ? (
+              <>
+                <input 
+                  type="date"
+                  value={quickAdd.date}
+                  onChange={(e) => setQuickAdd(prev => ({ ...prev, date: e.target.value }))}
+                  className="result-editor__input"
+                  required
+                />
+                <input
+                  type="text"
+                  value={quickAdd.time}
+                  onChange={(e) => setQuickAdd(prev => ({ ...prev, time: e.target.value }))}
+                  placeholder="Lap Time (HH:MM:SS)"
+                  className="result-editor__input"
+                  required
+                />
+              </>
+            ) : null}
             <button type="submit" className="result-editor__button result-editor__button--add">
               Add Lap
             </button>
