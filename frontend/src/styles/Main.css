@@ -1231,22 +1231,22 @@
   }
 
   .result-editor__button--save, .start-editor__button--save {
-    background-color: rgb(0, 95, 0);
+    background-color: #0ab601;
     color: white;
     border: none;
   }
 
   .result-editor__button--save:hover, .start-editor__button--save:hover {
-    background-color: #0ab601;
+    background-color: #089c00;
   }
 
   .result-editor__button--cancel, .start-editor__button--cancel {
-    background-color: rgb(135, 39, 39);
+    background-color: #dc3545;
     border: none;
   }
 
   .result-editor__button--cancel:hover, .start-editor__button--cancel:hover {
-    background-color: #dc2626;
+    background-color: #c82333;
   }
 
   .result-editor__button--edit, .start-editor__button--edit {
@@ -1303,4 +1303,40 @@
     .result-editor__header, .start-editor__header {
       padding: 16px;
     }
+  }
+
+  .result-editor__modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .result-editor__modal {
+    background-color: white;
+    padding: 20px;
+    border-radius: 4px;
+    min-width: 300px;
+  }
+  
+  .result-editor__modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .result-editor__button--delete {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .result-editor__button--delete:hover {
+    background-color: #c82333;
   }

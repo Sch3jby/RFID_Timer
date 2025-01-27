@@ -15,6 +15,8 @@ const ResultEditor = ({ raceId, onClose }) => {
   const [editedTimestamp, setEditedTimestamp] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [expandedRunner, setExpandedRunner] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [lapToDelete, setLapToDelete] = useState(null);
 
   const fetchResults = async () => {
     try {
@@ -23,7 +25,6 @@ const ResultEditor = ({ raceId, onClose }) => {
       setResults(response.data.results);
       setError(null);
       
-      // Refresh laps data if a runner is expanded
       if (expandedRunner) {
         await fetchRunnerLaps(expandedRunner);
       }
@@ -49,6 +50,38 @@ const ResultEditor = ({ raceId, onClose }) => {
     }
   };
 
+  const handleDeleteLapClick = (lap) => {
+    setLapToDelete(lap);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteLapConfirm = async () => {
+    if (!lapToDelete || !expandedRunner) return;
+
+    try {
+      await axios.post(`http://localhost:5001/race/${raceId}/lap/delete`, {
+        number: expandedRunner,
+        lap_number: lapToDelete.lap_number
+      });
+
+      setSuccessMessage('Lap deleted successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      await fetchRunnerLaps(expandedRunner);
+      await fetchResults();
+    } catch (err) {
+      setError('Failed to delete lap: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setShowDeleteConfirm(false);
+      setLapToDelete(null);
+    }
+  };
+
+  const handleDeleteLapCancel = () => {
+    setShowDeleteConfirm(false);
+    setLapToDelete(null);
+  };
+
   const handleEditClick = (result) => {
     setEditingResult(result);
     setEditedTime(result.race_time || '');
@@ -68,7 +101,7 @@ const ResultEditor = ({ raceId, onClose }) => {
   };
 
   const addMilliseconds = (timeStr) => {
-    return timeStr.includes('.') ? timeStr : timeStr + '.001';
+    return timeStr.includes('.') ? timeStr : timeStr + '.000';
   };
 
   const handleSaveLapEdit = async () => {
@@ -101,7 +134,7 @@ const ResultEditor = ({ raceId, onClose }) => {
       setSuccessMessage('Lap updated successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
       
-      // Refresh both results and laps
+      await fetchRunnerLaps(expandedRunner);
       await fetchResults();
       setEditingLap(null);
       setEditedLapTime('');
@@ -147,7 +180,6 @@ const ResultEditor = ({ raceId, onClose }) => {
       setSuccessMessage('Changes saved successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
       
-      // Refresh data after save
       await fetchResults();
       setEditingResult(null);
       setEditedTime('');
@@ -210,6 +242,28 @@ const ResultEditor = ({ raceId, onClose }) => {
         {successMessage && (
           <div className="result-editor__message result-editor__message--success">
             {successMessage}
+          </div>
+        )}
+        {showDeleteConfirm && (
+          <div className="result-editor__modal-overlay">
+            <div className="result-editor__modal">
+              <h3>Delete Lap</h3>
+              <p>Are you sure you want to delete lap {lapToDelete?.lap_number}?</p>
+              <div className="result-editor__modal-actions">
+                <button 
+                  onClick={handleDeleteLapConfirm}
+                  className="result-editor__button result-editor__button--delete"
+                >
+                  Yes
+                </button>
+                <button 
+                  onClick={handleDeleteLapCancel}
+                  className="result-editor__button result-editor__button--cancel"
+                >
+                  No
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -374,12 +428,20 @@ const ResultEditor = ({ raceId, onClose }) => {
                                       </button>
                                     </>
                                   ) : (
-                                    <button
-                                      onClick={() => handleEditLapClick(lap)}
-                                      className="result-editor__button result-editor__button--edit"
-                                    >
-                                      Edit
-                                    </button>
+                                    <>
+                                      <button
+                                        onClick={() => handleEditLapClick(lap)}
+                                        className="result-editor__button result-editor__button--edit"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteLapClick(lap)}
+                                        className="result-editor__button result-editor__button--delete"
+                                      >
+                                        Delete
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                               </td>

@@ -142,6 +142,19 @@ def store_tags_to_database(tag_id, number, last_seen_time):
         print(f'Error storing/updating tag {tag_id}: {str(e)}')
         raise
 
+def parse_time_with_ms(time_str):
+    """Parse time string with optional milliseconds"""
+    if '.' in time_str:
+        time_part, ms_part = time_str.split('.')
+        ms_part = ms_part.ljust(3, '0')[:3]
+        
+    try:
+        base_time = datetime.strptime(time_part, '%H:%M:%S').time()
+        return time(base_time.hour, base_time.minute, base_time.second, 
+                   int(ms_part) * 1000)
+    except ValueError as e:
+        raise ValueError(f"Invalid time format: {str(e)}")
+
 # Routes
 @app.route('/')
 def index():
@@ -1624,7 +1637,6 @@ def update_race_result(race_id):
         if not number or not track_id:
             return jsonify({'error': 'Missing required fields'}), 400
 
-        # Fetch track and registration information
         track = Track.query.get(track_id)
         registration = Registration.query.filter_by(
             track_id=track_id, 
@@ -1638,7 +1650,6 @@ def update_race_result(race_id):
         updates = []
         params = {'number': number}
 
-        # Build update clauses for each field that needs to be updated
         if status is not None or 'status' in data:
             updates.append("status = :status")
             params['status'] = status
@@ -1651,7 +1662,6 @@ def update_race_result(race_id):
                 updates.append("last_seen_time = :last_seen_time")
                 params['last_seen_time'] = full_last_seen
                 
-                # Only update timestamp if new_time isn't provided
                 if not new_time:
                     updates.append("timestamp = :timestamp")
                     params['timestamp'] = full_last_seen
@@ -1661,7 +1671,7 @@ def update_race_result(race_id):
 
         if new_time:
             try:
-                time_obj = parse_time_with_ms(new_time)  # 00:27:00.000
+                time_obj = parse_time_with_ms(new_time)
                 
                 actual_start_time = track.actual_start_time
                 user_start_time = registration.user_start_time
@@ -1669,7 +1679,6 @@ def update_race_result(race_id):
                 if not actual_start_time or not user_start_time:
                     return jsonify({'error': 'Missing start time information'}), 400
 
-                # Převedeme všechny časy na timedelta
                 actual_delta = timedelta(hours=actual_start_time.hour,
                                     minutes=actual_start_time.minute,
                                     seconds=actual_start_time.second,
@@ -1685,10 +1694,8 @@ def update_race_result(race_id):
                                     seconds=time_obj.second,
                                     microseconds=time_obj.microsecond)
                 
-                # Sečteme všechny tři časy
                 total_time = actual_delta + user_delta + time_delta
                 
-                # Převedeme výsledek zpět na datetime
                 current_date = datetime.now().date()
                 final_timestamp = datetime.combine(current_date, datetime.min.time()) + total_time
                 
@@ -1704,7 +1711,6 @@ def update_race_result(race_id):
         if not updates:
             return jsonify({'error': 'No updates provided'}), 400
 
-        # Combine all updates into a single query
         update_query = text(f"""
             UPDATE {table_name}
             SET {', '.join(updates)}
@@ -1930,19 +1936,141 @@ def update_lap_time(race_id):
         db.session.rollback()
         current_app.logger.error(f'Error updating lap: {str(e)}')
         return jsonify({'error': str(e)}), 500
-
-def parse_time_with_ms(time_str):
-    """Parse time string with optional milliseconds"""
-    if '.' in time_str:
-        time_part, ms_part = time_str.split('.')
-        ms_part = ms_part.ljust(3, '0')[:3]
-        
+    
+@app.route('/race/<int:race_id>/lap/delete', methods=['POST'])
+def delete_lap(race_id):
     try:
-        base_time = datetime.strptime(time_part, '%H:%M:%S').time()
-        return time(base_time.hour, base_time.minute, base_time.second, 
-                   int(ms_part) * 1000)
-    except ValueError as e:
-        raise ValueError(f"Invalid time format: {str(e)}")
+        data = request.get_json()
+        number = data.get('number')
+        lap_number = data.get('lap_number')
+
+        if not number or not lap_number:
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        table_name = f'race_results_{race_id}'
+
+        # Check if registration exists
+        registration = Registration.query.filter_by(
+            race_id=race_id,
+            number=number
+        ).first()
+
+        if not registration:
+            return jsonify({'error': 'Runner not found'}), 404
+
+        # Get all laps for the runner
+        query = text(f"""
+            SELECT 
+                lap_number,
+                timestamp
+            FROM {table_name}
+            WHERE number = :number
+            ORDER BY lap_number
+        """)
+        
+        laps = db.session.execute(query, {'number': number}).fetchall()
+        
+        # Find the lap to delete
+        target_lap = None
+        for lap in laps:
+            if lap.lap_number == lap_number:
+                target_lap = lap
+                break
+
+        if not target_lap:
+            return jsonify({'error': 'Lap not found'}), 404
+
+        # Delete the lap
+        delete_query = text(f"""
+            DELETE FROM {table_name}
+            WHERE number = :number
+            AND lap_number = :lap_number
+        """)
+        
+        db.session.execute(delete_query, {
+            'number': number,
+            'lap_number': lap_number
+        })
+
+        # Update timestamps for subsequent laps to maintain lap times
+        subsequent_laps = [lap for lap in laps if lap.lap_number > lap_number]
+        
+        if subsequent_laps:
+            # Get the previous lap's timestamp
+            prev_lap_query = text(f"""
+                SELECT timestamp
+                FROM {table_name}
+                WHERE number = :number
+                AND lap_number < :deleted_lap_number
+                ORDER BY lap_number DESC
+                LIMIT 1
+            """)
+            
+            prev_lap = db.session.execute(prev_lap_query, {
+                'number': number,
+                'deleted_lap_number': lap_number
+            }).first()
+
+            prev_timestamp = prev_lap.timestamp if prev_lap else None
+
+            for next_lap in subsequent_laps:
+                # Get the lap time
+                lap_time_query = text(f"""
+                    SELECT 
+                        timestamp - LAG(timestamp) OVER (ORDER BY lap_number) as lap_time
+                    FROM {table_name}
+                    WHERE number = :number
+                    AND lap_number = :lap_number
+                """)
+                
+                result = db.session.execute(lap_time_query, {
+                    'number': number,
+                    'lap_number': next_lap.lap_number
+                }).first()
+
+                if result and result.lap_time and prev_timestamp:
+                    # Update timestamp based on previous lap
+                    update_query = text(f"""
+                        UPDATE {table_name}
+                        SET 
+                            timestamp = :new_timestamp,
+                            last_seen_time = :new_timestamp
+                        WHERE number = :number
+                        AND lap_number = :lap_number
+                    """)
+
+                    new_timestamp = prev_timestamp + result.lap_time
+                    
+                    db.session.execute(update_query, {
+                        'new_timestamp': new_timestamp,
+                        'number': number,
+                        'lap_number': next_lap.lap_number
+                    })
+
+                    prev_timestamp = new_timestamp
+
+        # Update last_seen_time for the final lap
+        final_lap_query = text(f"""
+            UPDATE {table_name}
+            SET last_seen_time = timestamp
+            WHERE number = :number
+            AND lap_number = (
+                SELECT MAX(lap_number)
+                FROM {table_name}
+                WHERE number = :number
+            )
+        """)
+        
+        db.session.execute(final_lap_query, {'number': number})
+
+        db.session.commit()
+        
+        return jsonify({'message': 'Lap deleted successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error deleting lap: {str(e)}')
+        return jsonify({'error': str(e)}), 500
     
 @app.route('/race/<int:race_id>/startlist', methods=['GET'])
 def get_race_startlist(race_id):
