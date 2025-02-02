@@ -16,7 +16,12 @@ export const translations = {
         selectOption: "Vítejte na úvodní stránce."
       },
       common: {
-        loading: "Načítání"
+        loading: "Načítání",
+        edit: "Upravit",
+        create: "Vytvořit",
+        remove: "Smazat",
+        cancel: "Zrušit",
+        save: "Uložit"
       },
       registration: {
         title: "Registrace",
@@ -68,7 +73,8 @@ export const translations = {
         age: "Věk",
         noCat: "Nebyly nalezeny žádné kategorie",
         status: "Status",
-        editor: "Editor"
+        editor: "Editor",
+        createNewRace: "Vytvořit nový závod"
       },
       calendar: {
         title: "Kalendář",
@@ -110,6 +116,32 @@ export const translations = {
           totalTime: "Čas v cíli",
           behindTime: "Ztráta"
         }
+      },
+      raceManagement: {
+        createRace: "Vytvořit nový závod",
+        name: "Název",
+        date: "Datum",
+        startType: "Typ startu",
+        massStart: "Hromadný start",
+        intervalStart: "Intervalový start",
+        tracks: "Tratě",
+        addTrack: "Přidat novou trať",
+        track: "Trať",
+        trackName: "Název tratě",
+        distance: "Délka tratě",
+        minAge: "Minimální věk",
+        maxAge: "Maximální věk",
+        fastestTime: "Nejrychlejší možný čas",
+        startTime: "Čas startu",
+        numberOfLaps: "Počet kol",
+        categories: "Kategorie",
+        addCategory: "Přidat novou kategorii",
+        categoryName: "Název kategorie",
+        categoryMinAge: "Minimální věk pro tuto kategorii",
+        categoryMaxAge: "Maximální věk pro tuto kategorii",
+        gender: "Pohlaví",
+        male: "Muž",
+        female: "Žena"
       }
     },
     en: {
@@ -125,7 +157,12 @@ export const translations = {
         selectOption: "Welcome on the homepage"
       },
       common: {
-        loading: "Loading"
+        loading: "Loading",
+        edit: "Edit",
+        create: "Create",
+        remove: "Remove",
+        cancel: "Cancel",
+        save: "Save"
       },
       registration: {
         title: "Registration",
@@ -177,7 +214,8 @@ export const translations = {
         age: "Age",
         noCat: "No categories found",
         status: "Status",
-        editor: "Editor"
+        editor: "Editor",
+        createNewRace: "Create new race"
       },
       calendar: {
         title: "Calendar",
@@ -219,6 +257,32 @@ export const translations = {
           totalTime: "Finish time",
           behindTime: "Loss"
         }
+      },
+      raceManagement: {
+        createRace: "Create new race",
+        name: "Name",
+        date: "Date",
+        startType: "Start type",
+        massStart: "Mass start",
+        intervalStart: "Interval start",
+        tracks: "Tracks",
+        addTrack: "Add new track",
+        track: "Track",
+        trackName: "Track name",
+        distance: "Distance",
+        minAge: "Minimal age",
+        maxAge: "Maximal age",
+        fastestTime: "Fastest possible time",
+        startTime: "Start time",
+        numberOfLaps: "Number of laps",
+        categories: "Categories",
+        addCategory: "Add new category",
+        categoryName: "Category name",
+        categoryMinAge: "Minimal age for this category",
+        categoryMaxAge: "Maximal age for this category",
+        gender: "Category gender",
+        male: "Male",
+        female: "Female"
       }
     }
 
