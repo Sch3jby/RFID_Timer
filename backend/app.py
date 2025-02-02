@@ -634,18 +634,245 @@ def get_categories():
 def get_races():
     try:
         races = Race.query.all()
-        races_list = []
-        for race in races:
-            races_list.append({
-                'id': race.id,
-                'name': race.name,
-                'date': race.date.strftime('%Y-%m-%d'),
-                'start': race.start,
-                'description': race.description
-            })
-        return jsonify({'races': races_list}), 200
+        return jsonify({
+            "status": "success",
+            "races": [{
+                "id": race.id,
+                "name": race.name,
+                "date": race.date.strftime("%Y-%m-%d"),
+                "start": race.start,
+                "interval_time": race.interval_time.strftime("%H:%M:%S") if race.interval_time else None,
+                "description": race.description,
+                "tracks": [{
+                    "id": track.id,
+                    "name": track.name,
+                    "distance": track.distance,
+                    "min_age": track.min_age,
+                    "max_age": track.max_age,
+                    "fastest_possible_time": track.fastest_possible_time.strftime("%H:%M:%S"),
+                    "number_of_laps": track.number_of_laps,
+                    "expected_start_time": track.expected_start_time.strftime("%H:%M:%S"),
+                    "categories": [{
+                        "id": cat.id,
+                        "category_name": cat.category_name,
+                        "min_age": cat.min_age,
+                        "max_age": cat.max_age,
+                        "min_number": cat.min_number,
+                        "max_number": cat.max_number,
+                        "gender": cat.gender
+                    } for cat in track.categories]
+                } for track in race.tracks]
+            } for race in races]
+        })
+
     except Exception as e:
-        return jsonify({'error': 'Error fetching races'}), 500
+        print(f"Error fetching races: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@app.route('/race/add', methods=['POST'])
+def add_race():
+    try:
+        data = request.json
+        
+        required_fields = ['name', 'date', 'start']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Field '{field}' is required"
+                }), 400
+
+        try:
+            date = datetime.strptime(data['date'], "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid date format. Use YYYY-MM-DD"
+            }), 400
+
+        if data['start'] not in ['M', 'I']:
+            return jsonify({
+                "status": "error",
+                "message": "Start must be either 'M' (mass start) or 'I' (interval start)"
+            }), 400
+
+        new_race = Race(
+            name=data['name'],
+            date=date,
+            start=data['start'],
+            description=data.get('description', '')
+        )
+
+        if data['start'] == 'I' and data.get('interval_time'):
+            try:
+                new_race.interval_time = datetime.strptime(data['interval_time'], "%H:%M:%S").time()
+            except ValueError:
+                return jsonify({
+                    "status": "error",
+                    "message": "Invalid interval_time format. Use HH:MM:SS"
+                }), 400
+
+        db.session.add(new_race)
+        db.session.flush()
+
+        new_race.results_table_name = f'race_results_{new_race.id}'
+        create_results_table = text(f"""
+            CREATE TABLE {new_race.results_table_name} (
+                id SERIAL PRIMARY KEY,
+                number INTEGER NOT NULL,
+                tag_id VARCHAR(255) NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                lap_number INTEGER DEFAULT 1,
+                track_id INTEGER NOT NULL,
+                last_seen_time TIMESTAMP,
+                status VARCHAR(5)
+            )
+        """)
+        db.session.execute(create_results_table)
+
+        if 'tracks' in data:
+            for track_data in data['tracks']:
+                track = Track(
+                    name=track_data['name'],
+                    distance=track_data['distance'],
+                    min_age=track_data['min_age'],
+                    max_age=track_data['max_age'],
+                    fastest_possible_time=datetime.strptime(track_data['fastest_possible_time'], "%H:%M:%S").time(),
+                    number_of_laps=track_data['number_of_laps'],
+                    expected_start_time=datetime.strptime(track_data['expected_start_time'], "%H:%M:%S").time(),
+                    race_id=new_race.id
+                )
+                db.session.add(track)
+                db.session.flush()
+
+                if 'categories' in track_data:
+                    for cat_data in track_data['categories']:
+                        category = Category(
+                            category_name=cat_data['category_name'],
+                            min_age=cat_data['min_age'],
+                            max_age=cat_data['max_age'],
+                            min_number=cat_data['min_number'],
+                            max_number=cat_data['max_number'],
+                            gender=cat_data['gender'],
+                            track_id=track.id
+                        )
+                        db.session.add(category)
+
+        db.session.commit()
+        return jsonify({
+            "status": "success",
+            "message": "Race created successfully",
+            "race_id": new_race.id
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating race: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@app.route('/race/<int:race_id>/update', methods=['PUT'])
+def update_race(race_id):
+    try:
+        data = request.json
+        race = Race.query.get(race_id)
+        
+        if not race:
+            return jsonify({
+                "status": "error",
+                "message": "Race not found"
+            }), 404
+
+        race.name = data['name']
+        race.date = datetime.strptime(data['date'], "%Y-%m-%d").date()
+        race.start = data['start']
+        race.description = data.get('description', '')
+
+        if data['start'] == 'I' and data.get('interval_time'):
+            race.interval_time = datetime.strptime(data['interval_time'], "%H:%M:%S").time()
+
+        existing_track_ids = {track.id for track in race.tracks}
+        updated_track_ids = set()
+
+        for track_data in data.get('tracks', []):
+            if 'id' in track_data:
+                track = Track.query.get(track_data['id'])
+                if track and track.race_id == race_id:
+                    track.name = track_data['name']
+                    track.distance = track_data['distance']
+                    track.min_age = track_data['min_age']
+                    track.max_age = track_data['max_age']
+                    track.fastest_possible_time = datetime.strptime(track_data['fastest_possible_time'], "%H:%M:%S").time()
+                    track.number_of_laps = track_data['number_of_laps']
+                    track.expected_start_time = datetime.strptime(track_data['expected_start_time'], "%H:%M:%S").time()
+                    updated_track_ids.add(track.id)
+            else:
+                track = Track(
+                    name=track_data['name'],
+                    distance=track_data['distance'],
+                    min_age=track_data['min_age'],
+                    max_age=track_data['max_age'],
+                    fastest_possible_time=datetime.strptime(track_data['fastest_possible_time'], "%H:%M:%S").time(),
+                    number_of_laps=track_data['number_of_laps'],
+                    expected_start_time=datetime.strptime(track_data['expected_start_time'], "%H:%M:%S").time(),
+                    race_id=race_id
+                )
+                db.session.add(track)
+                db.session.flush()
+
+            if track:
+                existing_category_ids = {cat.id for cat in track.categories}
+                updated_category_ids = set()
+
+                for cat_data in track_data.get('categories', []):
+                    if 'id' in cat_data:
+                        category = Category.query.get(cat_data['id'])
+                        if category and category.track_id == track.id:
+                            category.category_name = cat_data['category_name']
+                            category.min_age = cat_data['min_age']
+                            category.max_age = cat_data['max_age']
+                            category.min_number = cat_data['min_number']
+                            category.max_number = cat_data['max_number']
+                            category.gender = cat_data['gender']
+                            updated_category_ids.add(category.id)
+                    else:
+                        category = Category(
+                            category_name=cat_data['category_name'],
+                            min_age=cat_data['min_age'],
+                            max_age=cat_data['max_age'],
+                            min_number=cat_data['min_number'],
+                            max_number=cat_data['max_number'],
+                            gender=cat_data['gender'],
+                            track_id=track.id
+                        )
+                        db.session.add(category)
+
+                categories_to_delete = existing_category_ids - updated_category_ids
+                if categories_to_delete:
+                    Category.query.filter(Category.id.in_(categories_to_delete)).delete(synchronize_session=False)
+
+        tracks_to_delete = existing_track_ids - updated_track_ids
+        if tracks_to_delete:
+            Track.query.filter(Track.id.in_(tracks_to_delete)).delete(synchronize_session=False)
+
+        db.session.commit()
+        return jsonify({
+            "status": "success",
+            "message": "Race updated successfully"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating race: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 @app.route('/tracks', methods=['GET'])
 def get_tracks():
@@ -2040,7 +2267,6 @@ def add_manual_lap(race_id):
 
         table_name = f'race_results_{race_id}'
 
-        # Query existing laps
         query = text(f"""
             SELECT 
                 lap_number,
