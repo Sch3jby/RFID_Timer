@@ -142,7 +142,8 @@ export const translations = {
         categoryMaxAge: "Maximální věk pro tuto kategorii",
         gender: "Pohlaví",
         male: "Muž",
-        female: "Žena"
+        female: "Žena",
+        editRace: "Upravit závod"
       }
     },
     en: {
@@ -284,8 +285,8 @@ export const translations = {
         categoryMaxAge: "Maximal age for this category",
         gender: "Category gender",
         male: "Male",
-        female: "Female"
+        female: "Female",
+        editRace: "Edit race"
       }
     }
-
   };

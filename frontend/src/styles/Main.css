@@ -144,7 +144,7 @@
   }
   
   button {
-    padding: 0.75rem 1.5rem;
+    padding: 0.6rem 1.5rem;
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -950,7 +950,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1; /* Video bude za obsahem */
+    z-index: -1;
   }
   
   video {
@@ -1479,4 +1479,246 @@
     .result-editor__button--add:hover {
       background-color: #157347;
     }
+  }
+
+  /*Race manager*/
+  .race-manager {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  .race-form {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin: 20px;
+  }
+
+  /* Form Elements */
+  .race-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .race-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .race-form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .race-form-input {
+    border-radius: 0.375rem;
+    border: 1px solid #D1D5DB;
+    padding: 0.5rem 1rem;
+    width: 100%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.15s ease-in-out;
+  }
+
+  .race-form-input:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* Custom Race Management Buttons */
+  .race-add-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+
+  .race-add-btn:hover {
+    background-color: #45a049;
+  }
+
+  .race-remove-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+  }
+
+  .race-remove-btn:hover {
+    background-color: #da190b;
+  }
+
+  .race-edit-btn {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+
+  .race-edit-btn:hover {
+    background-color: #0b7dda;
+  }
+
+  .race-cancel-btn {
+    background-color: #9e9e9e;
+    color: white;
+    border: none;
+    border-radius: .375rem;
+    font-weight: 500;
+    margin-right: 10px;
+  }
+
+  .race-cancel-btn:hover {
+    background-color: #757575;
+  }
+
+  /* Section Styling */
+  .race-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Track Section */
+  .race-track-section {
+    margin-top: 2rem;
+  }
+
+  .race-track-item {
+    background-color: #F9FAFB;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .race-track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Category Section */
+  .race-category-section {
+    margin-top: 1rem;
+  }
+
+  .race-category-item {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #E5E7EB;
+    margin-bottom: 1rem;
+  }
+
+  /* Race Cards */
+  .race-race-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+  }
+
+  .race-race-card:hover {
+    transform: scale(1.01);
+  }
+
+  /* Responsive Adjustments */
+  @media (min-width: 640px) {
+    .race-form-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .race-form-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* Animation */
+  @keyframes raceFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .race-manager {
+    animation: raceFadeIn 0.3s ease-in-out;
+  }
+
+  /* Accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .race-manager {
+      animation: none;
+    }
+    
+    .race-race-card {
+      transition: none;
+    }
+  }
+
+  /* Utility classes */
+  .race-flex {
+    display: flex;
+  }
+
+  .race-justify-end {
+    justify-content: flex-end;
+  }
+
+  .race-gap-4 {
+    gap: 1rem;
+  }
+
+  .race-mt-6 {
+    margin-top: 1.5rem;
+  }
+
+  .race-mt-8 {
+    margin-top: 2rem;
+  }
+
+  .race-text-xl {
+    font-size: 1.25rem;
+  }
+
+  .race-font-bold {
+    font-weight: 700;
+  }
+
+  .race-mb-6 {
+    margin-bottom: 1.5rem;
+  }
+
+  .race-text-lg {
+    font-size: 1.125rem;
+  }
+
+  .race-font-medium {
+    font-weight: 500;
+  }
+
+  .race-self-end {
+    align-self: flex-end;
   }

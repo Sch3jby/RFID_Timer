@@ -155,9 +155,9 @@ const RaceManagement = ({ onBack }) => {
         </button>
         <form onSubmit={handleSubmit}>
           {/* Základní informace o závodu */}
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">{t('raceManagement.name')}</label>
+          <div className="race-form-grid">
+            <div className="race-form-group">
+              <label className="race-form-label">{t('raceManagement.name')}</label>
               <input
                 type="text"
                 name="name"
@@ -168,25 +168,25 @@ const RaceManagement = ({ onBack }) => {
               />
             </div>
             
-            <div className="form-group">
-              <label className="form-label">{t('raceManagement.date')}</label>
+            <div className="race-form-group">
+              <label className="race-form-label">{t('raceManagement.date')}</label>
               <input
                 type="date"
                 name="date"
                 value={formData.date}
                 onChange={handleInputChange}
-                className="form-input"
+                className="race-form-input"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">{t('raceManagement.startType')}</label>
+            <div className="race-form-group">
+              <label className="race-form-label">{t('raceManagement.startType')}</label>
               <select
                 name="start"
                 value={formData.start}
                 onChange={handleInputChange}
-                className="form-input"
+                className="race-form-input"
               >
                 <option value="M">{t('raceManagement.massStart')}</option>
                 <option value="I">{t('raceManagement.intervalStart')}</option>
@@ -194,14 +194,14 @@ const RaceManagement = ({ onBack }) => {
             </div>
 
             {formData.start === 'I' && (
-              <div className="form-group">
-                <label className="form-label">{t('raceManagement.intervalTime')}</label>
+              <div className="race-form-group">
+                <label className="race-form-label">{t('raceManagement.intervalTime')}</label>
                 <input
                   type="time"
                   name="interval_time"
                   value={formData.interval_time}
                   onChange={handleInputChange}
-                  className="form-input"
+                  className="race-form-input"
                   step="1"
                   required
                 />
@@ -210,173 +210,173 @@ const RaceManagement = ({ onBack }) => {
           </div>
 
           {/* Sekce tratí */}
-          <div className="track-section">
-            <div className="section-header">
+          <div className="race-track-section">
+            <div className="race-section-header">
               <h3 className="text-lg font-semibold">{t('raceManagement.tracks')}</h3>
               <button 
                 type="button" 
                 onClick={addTrack}
-                className="btn btn-primary"
+                className="race-add-btn"
               >
                 {t('raceManagement.addTrack')}
               </button>
             </div>
 
             {formData.tracks.map((track, trackIndex) => (
-              <div key={trackIndex} className="track-item">
-                <div className="track-header">
+              <div key={trackIndex} className="race-track-item">
+                <div className="race-track-header">
                   <h4 className="text-md font-medium">
                     {t('raceManagement.track')} {trackIndex + 1}
                   </h4>
                   <button 
                     type="button"
                     onClick={() => removeTrack(trackIndex)}
-                    className="btn btn-danger"
+                    className="race-remove-btn"
                   >
                     {t('common.remove')}
                   </button>
                 </div>
 
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label className="form-label">{t('raceManagement.trackName')}</label>
+                <div className="race-form-grid">
+                  <div className="race-form-group">
+                    <label className="race-form-label">{t('raceManagement.trackName')}</label>
                     <input
                       type="text"
                       name="name"
                       value={track.name}
                       onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="form-input"
+                      className="race-form-input"
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('raceManagement.distance')}</label>
+                  <div className="race-form-group">
+                    <label className="race-form-label">{t('raceManagement.distance')}</label>
                     <input
                       type="number"
                       name="distance"
                       value={track.distance}
                       onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="form-input"
+                      className="race-form-input"
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('raceManagement.minAge')}</label>
+                  <div className="race-form-group">
+                    <label className="race-form-label">{t('raceManagement.minAge')}</label>
                     <input
                       type="number"
                       name="min_age"
                       value={track.min_age}
                       onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="form-input"
+                      className="race-form-input"
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('raceManagement.maxAge')}</label>
+                  <div className="race-form-group">
+                    <label className="race-form-label">{t('raceManagement.maxAge')}</label>
                     <input
                       type="number"
                       name="max_age"
                       value={track.max_age}
                       onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="form-input"
+                      className="race-form-input"
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('raceManagement.fastestTime')}</label>
+                  <div className="race-form-group">
+                    <label className="race-form-label">{t('raceManagement.fastestTime')}</label>
                     <input
                       type="time"
                       name="fastest_possible_time"
                       value={track.fastest_possible_time}
                       onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="form-input"
+                      className="race-form-input"
                       step="1"
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('raceManagement.startTime')}</label>
+                  <div className="race-form-group">
+                    <label className="race-form-label">{t('raceManagement.startTime')}</label>
                     <input
                       type="time"
                       name="expected_start_time"
                       value={track.expected_start_time}
                       onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="form-input"
+                      className="race-form-input"
                       step="1"
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('raceManagement.numberOfLaps')}</label>
+                  <div className="race-form-group">
+                    <label className="race-form-label">{t('raceManagement.numberOfLaps')}</label>
                     <input
                       type="number"
                       name="number_of_laps"
                       value={track.number_of_laps}
                       onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="form-input"
+                      className="race-form-input"
                     />
                   </div>
                 </div>
 
                 {/* Kategorie */}
-                <div className="category-section">
-                  <div className="section-header">
+                <div className="race-category-section">
+                  <div className="race-section-header">
                     <h5 className="text-md font-medium">{t('raceManagement.categories')}</h5>
                     <button
                       type="button"
                       onClick={() => addCategory(trackIndex)}
-                      className="btn btn-secondary"
+                      className="race-add-btn"
                     >
                       {t('raceManagement.addCategory')}
                     </button>
                   </div>
 
                   {track.categories?.map((category, categoryIndex) => (
-                    <div key={categoryIndex} className="category-item">
-                      <div className="form-grid">
-                        <div className="form-group">
-                          <label className="form-label">{t('raceManagement.categoryName')}</label>
+                    <div key={categoryIndex} className="race-category-item">
+                      <button
+                          type="button"
+                          onClick={() => removeCategory(trackIndex, categoryIndex)}
+                          className="race-remove-btn"
+                        >
+                          {t('common.remove')}
+                        </button>
+                      <div className="race-form-grid">
+                        <div className="race-form-group">
+                          <label className="race-form-label">{t('raceManagement.categoryName')}</label>
                           <input
                             type="text"
                             name="category_name"
                             value={category.category_name}
                             onChange={(e) => handleInputChange(e, trackIndex, categoryIndex)}
-                            className="form-input"
+                            className="race-form-input"
                           />
                         </div>
-                        <div className="form-group">
-                          <label className="form-label">{t('raceManagement.categoryMinAge')}</label>
+                        <div className="race-form-group">
+                          <label className="race-form-label">{t('raceManagement.categoryMinAge')}</label>
                           <input
                             type="number"
                             name="min_age"
                             value={category.min_age}
                             onChange={(e) => handleInputChange(e, trackIndex, categoryIndex)}
-                            className="form-input"
+                            className="race-form-input"
                           />
                         </div>
-                        <div className="form-group">
-                          <label className="form-label">{t('raceManagement.categoryMaxAge')}</label>
+                        <div className="race-form-group">
+                          <label className="race-form-label">{t('raceManagement.categoryMaxAge')}</label>
                           <input
                             type="number"
                             name="max_age"
                             value={category.max_age}
                             onChange={(e) => handleInputChange(e, trackIndex, categoryIndex)}
-                            className="form-input"
+                            className="race-form-input"
                           />
                         </div>
-                        <div className="form-group">
-                          <label className="form-label">{t('raceManagement.gender')}</label>
+                        <div className="race-form-group">
+                          <label className="race-form-label">{t('raceManagement.gender')}</label>
                           <select
                             name="gender"
                             value={category.gender}
                             onChange={(e) => handleInputChange(e, trackIndex, categoryIndex)}
-                            className="form-input"
+                            className="race-form-input"
                           >
                             <option value="M">{t('raceManagement.male')}</option>
                             <option value="F">{t('raceManagement.female')}</option>
                           </select>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeCategory(trackIndex, categoryIndex)}
-                          className="btn btn-danger self-end"
-                        >
-                          {t('common.remove')}
-                        </button>
                       </div>
                     </div>
                   ))}
@@ -390,12 +390,12 @@ const RaceManagement = ({ onBack }) => {
               <button
                 type="button"
                 onClick={resetForm}
-                className="btn btn-secondary"
+                className="race-cancel-btn"
               >
                 {t('common.cancel')}
               </button>
             )}
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="race-btn btn-primary">
               {isEditing ? t('common.save') : t('common.create')}
             </button>
           </div>
@@ -405,12 +405,12 @@ const RaceManagement = ({ onBack }) => {
       {/* Seznam závodů */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
         {races.map(race => (
-          <div key={race.id} className="race-card">
+          <div key={race.id} className="race-race-card">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium">{race.name}</h3>
               <button 
                 onClick={() => handleEdit(race)}
-                className="btn btn-secondary"
+                className="race-edit-btn"
               >
                 {t('common.edit')}
               </button>
