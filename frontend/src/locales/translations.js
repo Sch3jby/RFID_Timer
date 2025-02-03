@@ -21,7 +21,8 @@ export const translations = {
         create: "Vytvořit",
         remove: "Smazat",
         cancel: "Zrušit",
-        save: "Uložit"
+        save: "Uložit",
+        back: "Zpět"
       },
       registration: {
         title: "Registrace",
@@ -162,7 +163,8 @@ export const translations = {
         create: "Create",
         remove: "Remove",
         cancel: "Cancel",
-        save: "Save"
+        save: "Save",
+        back: "Back"
       },
       registration: {
         title: "Registration",

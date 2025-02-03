@@ -31,7 +31,7 @@ const emptyCategory = {
   gender: 'M'
 };
 
-const RaceManagement = () => {
+const RaceManagement = ({ onBack }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [races, setRaces] = useState([]);
@@ -137,13 +137,22 @@ const RaceManagement = () => {
     setFormData(race);
   };
 
+  const handleBack = () => {
+    onBack();
+  };
+
   return (
     <div className="race-manager">
       <div className="race-form">
         <h2 className="text-xl font-bold mb-6">
           {isEditing ? t('raceManagement.editRace') : t('raceManagement.createRace')}
         </h2>
-        
+        <button
+          onClick={handleBack}
+          className="btn btn-secondary"
+        >
+          {t('common.back')}
+        </button>
         <form onSubmit={handleSubmit}>
           {/* Základní informace o závodu */}
           <div className="form-grid">

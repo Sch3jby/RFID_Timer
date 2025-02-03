@@ -687,6 +687,26 @@ def add_race():
 
         try:
             date = datetime.strptime(data['date'], "%Y-%m-%d").date()
+            base_race_id = int(date.strftime("%y%m%d"))
+            
+            existing_races = Race.query.filter(
+                Race.id.between(base_race_id * 10, (base_race_id * 10) + 9)
+            ).all()
+            
+            if not existing_races:
+                sequence = 1
+            else:
+                sequences = [race.id % 10 for race in existing_races]
+                sequence = max(sequences) + 1
+                
+            if sequence > 9:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Maximum number of races (9) for date {data['date']} reached"
+                }), 400
+                
+            race_id = (base_race_id * 10) + sequence
+            
         except ValueError:
             return jsonify({
                 "status": "error",
@@ -700,6 +720,7 @@ def add_race():
             }), 400
 
         new_race = Race(
+            id=race_id,
             name=data['name'],
             date=date,
             start=data['start'],
@@ -718,7 +739,7 @@ def add_race():
         db.session.add(new_race)
         db.session.flush()
 
-        new_race.results_table_name = f'race_results_{new_race.id}'
+        new_race.results_table_name = f'race_results_{race_id}'
         create_results_table = text(f"""
             CREATE TABLE {new_race.results_table_name} (
                 id SERIAL PRIMARY KEY,
@@ -735,7 +756,10 @@ def add_race():
 
         if 'tracks' in data:
             for track_data in data['tracks']:
+                track_id = int(f"{race_id}{str(track_data['distance']).zfill(2)}")
+                
                 track = Track(
+                    id=track_id,
                     name=track_data['name'],
                     distance=track_data['distance'],
                     min_age=track_data['min_age'],
@@ -743,7 +767,7 @@ def add_race():
                     fastest_possible_time=datetime.strptime(track_data['fastest_possible_time'], "%H:%M:%S").time(),
                     number_of_laps=track_data['number_of_laps'],
                     expected_start_time=datetime.strptime(track_data['expected_start_time'], "%H:%M:%S").time(),
-                    race_id=new_race.id
+                    race_id=race_id
                 )
                 db.session.add(track)
                 db.session.flush()
@@ -757,7 +781,7 @@ def add_race():
                             min_number=cat_data['min_number'],
                             max_number=cat_data['max_number'],
                             gender=cat_data['gender'],
-                            track_id=track.id
+                            track_id=track_id
                         )
                         db.session.add(category)
 
@@ -765,7 +789,7 @@ def add_race():
         return jsonify({
             "status": "success",
             "message": "Race created successfully",
-            "race_id": new_race.id
+            "race_id": race_id
         })
 
     except Exception as e:
@@ -788,8 +812,16 @@ def update_race(race_id):
                 "message": "Race not found"
             }), 404
 
+        new_date = datetime.strptime(data['date'], "%Y-%m-%d").date()
+        new_base_id = int(new_date.strftime("%y%m%d")) * 10
+        if race_id // 10 != new_base_id // 10:
+            return jsonify({
+                "status": "error",
+                "message": "Cannot change race date as it would change the race ID"
+            }), 400
+
         race.name = data['name']
-        race.date = datetime.strptime(data['date'], "%Y-%m-%d").date()
+        race.date = new_date
         race.start = data['start']
         race.description = data.get('description', '')
 
@@ -800,6 +832,8 @@ def update_race(race_id):
         updated_track_ids = set()
 
         for track_data in data.get('tracks', []):
+            track_id = int(f"{race_id}{str(track_data['distance']).zfill(2)}")
+            
             if 'id' in track_data:
                 track = Track.query.get(track_data['id'])
                 if track and track.race_id == race_id:
@@ -813,6 +847,7 @@ def update_race(race_id):
                     updated_track_ids.add(track.id)
             else:
                 track = Track(
+                    id=track_id,
                     name=track_data['name'],
                     distance=track_data['distance'],
                     min_age=track_data['min_age'],
@@ -848,7 +883,7 @@ def update_race(race_id):
                             min_number=cat_data['min_number'],
                             max_number=cat_data['max_number'],
                             gender=cat_data['gender'],
-                            track_id=track.id
+                            track_id=track_id
                         )
                         db.session.add(category)
 
