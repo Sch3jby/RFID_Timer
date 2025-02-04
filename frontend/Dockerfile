@@ -1,36 +1,34 @@
 # Dockerfile for React
+# Use Node.js 16 as build stage
 FROM node:16 AS build
 
-# Set working directory
+# Set working directory in the container
 WORKDIR /app
 
-# Install dependencies
+# Copy package.json and package-lock.json to install dependencies
 COPY package*.json ./
 
-# Instalace závislostí
+# Install project dependencies
 RUN npm install
 RUN npm install react-router-dom axios
 
-# Copy application code
+# Copy entire project files into the container
 COPY . .
 
-# Build the React app
+# Build the production-ready React application
 RUN npm run build
 
-# Fáze 2: Nasazení sestavené aplikace pomocí http-server
-FROM node:16-alpine
+# Use lightweight Nginx Alpine image for serving the built app
+FROM nginx:alpine
 
-# Instalace http-server
-RUN npm install -g http-server
+# Copy built files from build stage to Nginx's HTML directory
+COPY --from=build /app/build /usr/share/nginx/html
 
-# Nastavení pracovního adresáře
-WORKDIR /app
+# Copy custom Nginx configuration for proper routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Kopírování sestavených souborů z předchozí fáze
-COPY --from=build /app/build /app/build
-
-# Expose the port
+# Expose port 3000 for the application
 EXPOSE 3000
 
-# Command to run the application
-CMD ["http-server", "build", "-p", "3000"]
+# Start Nginx in foreground mode
+CMD ["nginx", "-g", "daemon off;"]
