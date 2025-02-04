@@ -10,9 +10,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://admin:password@db:5432/race
       - PYTHONPATH=/app
-      - FLASK_ENV=development
+      - FLASK_ENV=production
     depends_on:
       - db
+    restart: always
 
   frontend:
     build:
@@ -20,6 +21,7 @@ services:
     image: janschejbal/raceapp:frontend
     ports:
       - "3000:3000"
+    restart: always
 
   db:
     image: postgres:17
@@ -32,14 +34,11 @@ services:
       - "50000:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  sql-client:
-    image: adminer
-    restart: always
-    ports:
-      - "10000:8080"
-    depends_on:
-      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d race"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:
