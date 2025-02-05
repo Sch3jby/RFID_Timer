@@ -30,13 +30,14 @@ const ResultEditor = ({ raceId, onClose }) => {
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:5001/race/${raceId}/results`);
-      setResults(response.data.results);
+      setResults(response.data.results || []);
       setError(null);
       
       if (expandedRunner) {
         await fetchRunnerLaps(expandedRunner);
       }
     } catch (err) {
+      setResults([]);
       setError('Failed to load results');
       console.error('Error fetching results:', err);
     } finally {
@@ -285,6 +286,20 @@ const ResultEditor = ({ raceId, onClose }) => {
       <div className="result-editor">
         <div className="result-editor__loading">
           <div className="result-editor__spinner" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !results.length) {
+    return (
+      <div className="result-editor">
+        <div className="result-editor__header">
+          <h2 className="result-editor__title">Edit Result List</h2>
+          <button onClick={onClose} className="result-editor__close">✕</button>
+        </div>
+        <div className="result-editor__message result-editor__message--error">
+          {error}
         </div>
       </div>
     );

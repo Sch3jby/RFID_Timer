@@ -24,7 +24,7 @@ const StartEditor = ({ raceId, onClose }) => {
       setLoading(true);
       // Fetch registrations with user details for the specific race
       const response = await axios.get(`http://localhost:5001/race/${raceId}/startlist`);
-      setStartList(response.data.startList);
+      setStartList(response.data.startList || []);;
 
       // Fetch available tracks for this race
       const tracksResponse = await axios.get(`http://localhost:5001/tracks?race_id=${raceId}`);
@@ -32,6 +32,7 @@ const StartEditor = ({ raceId, onClose }) => {
 
       setError(null);
     } catch (err) {
+      setStartList([]);
       setError('Failed to load start list');
       console.error('Error fetching start list:', err);
     } finally {
@@ -122,6 +123,20 @@ const StartEditor = ({ raceId, onClose }) => {
       <div className="start-editor">
         <div className="start-editor__loading">
           <div className="start-editor__spinner" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !startList.length) {
+    return (
+      <div className="start-editor">
+        <div className="start-editor__header">
+          <h2 className="start-editor__title">Edit Start List</h2>
+          <button onClick={onClose} className="start-editor__close">✕</button>
+        </div>
+        <div className="start-editor__message start-editor__message--error">
+          {error}
         </div>
       </div>
     );

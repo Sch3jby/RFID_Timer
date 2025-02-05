@@ -84,7 +84,7 @@ const ResultList = ({ raceId }) => {
         : `http://localhost:5001/race/${raceId}/results/by-track`;
       
       const response = await axios.get(endpoint);
-      setResults(response.data.results);
+      setResults(response.data?.results || []);
       setError('');
     } catch (err) {
       setError(t('raceDetail.error'));
@@ -107,14 +107,28 @@ const ResultList = ({ raceId }) => {
     setExpandedRunner(expandedRunner === number ? null : number);
   };
 
-  const filteredResults = results.filter((result) => {
-    const searchString = `${result.name.toLowerCase()} ${result.club.toLowerCase()} ${result.category.toLowerCase()} ${result.track.toLowerCase()}`;
-    return searchString.includes(searchQuery);
+  const filteredResults = (results || []).filter((result) => {
+    if (!result) return false;
+    
+    const searchString = [
+      result.name,
+      result.club,
+      result.category,
+      result.track
+    ]
+      .filter(Boolean)
+      .map(str => str.toLowerCase())
+      .join(' ');
+    
+    return searchString.includes(searchQuery.toLowerCase());
   });
 
   const groupByTrack = (results) => {
+    if (!Array.isArray(results)) return [];
+    
     return Object.entries(
       results.reduce((acc, result) => {
+        if (!result?.track) return acc;
         if (!acc[result.track]) {
           acc[result.track] = [];
         }
@@ -132,8 +146,11 @@ const ResultList = ({ raceId }) => {
   };
 
   const groupByCategory = (results) => {
+    if (!Array.isArray(results)) return [];
+    
     return Object.entries(
       results.reduce((acc, result) => {
+        if (!result?.category) return acc;
         if (!acc[result.category]) {
           acc[result.category] = [];
         }
@@ -143,6 +160,7 @@ const ResultList = ({ raceId }) => {
     ).map(([category, categoryResults]) => {
       const groupedByTrack = Object.entries(
         categoryResults.reduce((acc, result) => {
+          if (!result?.track) return acc;
           if (!acc[result.track]) {
             acc[result.track] = [];
           }
@@ -171,6 +189,12 @@ const ResultList = ({ raceId }) => {
 
   if (loading) return <div className="results-loading">{t('common.loading')}</div>;
   if (error) return <div className="results-error">{error}</div>;
+
+  const hasResults = groupedResults.length > 0 && (
+    groupBy === 'track' 
+      ? groupedResults.some(group => group.results?.length > 0)
+      : groupedResults.some(group => group.tracks?.some(track => track.results?.length > 0))
+  );
 
   return (
     <div className="results-page">
