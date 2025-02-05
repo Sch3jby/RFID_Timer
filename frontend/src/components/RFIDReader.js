@@ -1,37 +1,61 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useTranslation } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import RaceManagement from './RaceManagement';
 
 function RFIDReader() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [races, setRaces] = useState([]);
+  const [showManagement, setShowManagement] = useState(false);
 
-  // Fetch races when component mounts
   useEffect(() => {
-    axios.get("http://localhost:5001/races")
-      .then(response => {
-        setRaces(response.data.races);
-      })
-      .catch(error => {
-        console.error("Error fetching races:", error);
-      });
+    fetchRaces();
   }, []);
+
+  const fetchRaces = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/races");
+      const data = await response.json();
+      setRaces(data.races);
+    } catch (error) {
+      console.error("Error fetching races:", error);
+    }
+  };
 
   const handleRaceSelect = (raceId) => {
     navigate(`/rfid-reader/${raceId}`);
   };
 
+  if (showManagement) {
+    return (
+      <RaceManagement 
+        onBack={() => {
+          setShowManagement(false);
+          fetchRaces();
+        }}
+        initialMode="create"
+      />
+    );
+  }
+
   return (
-    <div className="races-container p-4">
-      <h1 className="text-center mb-4">{t('rfidReader.raceSelection')}</h1>
+    <div className="races-container">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>{t('rfidReader.raceSelection')}</h1>
+        <button 
+          className="btn btn-success" 
+          onClick={() => setShowManagement(true)}
+        >
+          {t('rfidReader.createNewRace')}
+        </button>
+      </div>
       
       <div className="race-list row">
         {races.map(race => (
           <div 
             key={race.id} 
-            className="col-md-4 mb-3"
+            className="col"
             onClick={() => handleRaceSelect(race.id)}
           >
             <div className="card race-card">

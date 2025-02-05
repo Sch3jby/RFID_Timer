@@ -1,4 +1,5 @@
 import Calendar from "../components/Calendar";
+import LapTimes from "../components/LapTimes";
 import RaceDetail from "../components/RaceDetail";
 
 export const translations = {
@@ -13,6 +14,15 @@ export const translations = {
       home: {
         welcome: "Vítejte v systému pro závody",
         selectOption: "Vítejte na úvodní stránce."
+      },
+      common: {
+        loading: "Načítání",
+        edit: "Upravit",
+        create: "Vytvořit",
+        remove: "Smazat",
+        cancel: "Zrušit",
+        save: "Uložit",
+        back: "Zpět"
       },
       registration: {
         title: "Registrace",
@@ -62,7 +72,10 @@ export const translations = {
         noStored: "Žádné uložené Tagy",
         categories: "Kategorie",
         age: "Věk",
-        noCat: "Nebyly nalezeny žádné kategorie"
+        noCat: "Nebyly nalezeny žádné kategorie",
+        status: "Status",
+        editor: "Editor",
+        createNewRace: "Vytvořit nový závod"
       },
       calendar: {
         title: "Kalendář",
@@ -87,6 +100,10 @@ export const translations = {
         register: "Přihlásit se",
         noParticipants: "Nebyli nalezeni žádní uživatelé",
         results: "Výsledková listina",
+        groupByTrack: "Celkové",
+        groupByCategory: "Kategorie",
+        lapTimes: "Mezičasy",
+        noResults: "Výsledky nejsou dostupné",
         columns: {
           name: "Jméno",
           club: "Klub/Město",
@@ -95,9 +112,40 @@ export const translations = {
           startTime: "Čas startu",
           number: "Číslo",
           position: "Pořadí",
+          lapTime: "Čas na kolo",
+          lap: "Okruh",
           totalTime: "Čas v cíli",
           behindTime: "Ztráta"
         }
+      },
+      raceManagement: {
+        createRace: "Vytvořit nový závod",
+        name: "Název",
+        date: "Datum",
+        startType: "Typ startu",
+        massStart: "Hromadný start",
+        intervalStart: "Intervalový start",
+        tracks: "Tratě",
+        addTrack: "Přidat novou trať",
+        track: "Trať",
+        trackName: "Název tratě",
+        distance: "Délka tratě",
+        minAge: "Minimální věk",
+        maxAge: "Maximální věk",
+        fastestTime: "Nejrychlejší možný čas",
+        startTime: "Čas startu",
+        numberOfLaps: "Počet kol",
+        categories: "Kategorie",
+        addCategory: "Přidat novou kategorii",
+        categoryName: "Název kategorie",
+        categoryMinAge: "Minimální věk pro tuto kategorii",
+        categoryMaxAge: "Maximální věk pro tuto kategorii",
+        gender: "Pohlaví",
+        male: "Muž",
+        female: "Žena",
+        editRace: "Upravit závod",
+        categoryMinNumber: "První číslo v této kategorii",
+        categoryMaxNumber: "Poslední číslo v této kategorii"
       }
     },
     en: {
@@ -111,6 +159,15 @@ export const translations = {
       home: {
         welcome: "Welcome to the Race System",
         selectOption: "Welcome on the homepage"
+      },
+      common: {
+        loading: "Loading",
+        edit: "Edit",
+        create: "Create",
+        remove: "Remove",
+        cancel: "Cancel",
+        save: "Save",
+        back: "Back"
       },
       registration: {
         title: "Registration",
@@ -160,7 +217,10 @@ export const translations = {
         noStored: "No stored Tags",
         categories: "Categories",
         age: "Age",
-        noCat: "No categories found"
+        noCat: "No categories found",
+        status: "Status",
+        editor: "Editor",
+        createNewRace: "Create new race"
       },
       calendar: {
         title: "Calendar",
@@ -185,6 +245,10 @@ export const translations = {
         register: "Register",
         noParticipants: "No users found",
         results: "Result list",
+        groupByTrack: "Overall",
+        groupByCategory: "Categories",
+        LapTimes: "Lap times",
+        noResults: "No results available",
         columns: {
           name: "Name",
           club: "Club/City",
@@ -193,10 +257,40 @@ export const translations = {
           startTime: "Start time",
           number: "Number",
           position: "Position",
+          lapTime: "Lap Time",
+          lap: "Lap",
           totalTime: "Finish time",
           behindTime: "Loss"
         }
+      },
+      raceManagement: {
+        createRace: "Create new race",
+        name: "Name",
+        date: "Date",
+        startType: "Start type",
+        massStart: "Mass start",
+        intervalStart: "Interval start",
+        tracks: "Tracks",
+        addTrack: "Add new track",
+        track: "Track",
+        trackName: "Track name",
+        distance: "Distance",
+        minAge: "Minimal age",
+        maxAge: "Maximal age",
+        fastestTime: "Fastest possible time",
+        startTime: "Start time",
+        numberOfLaps: "Number of laps",
+        categories: "Categories",
+        addCategory: "Add new category",
+        categoryName: "Category name",
+        categoryMinAge: "Minimal age for this category",
+        categoryMaxAge: "Maximal age for this category",
+        gender: "Category gender",
+        male: "Male",
+        female: "Female",
+        editRace: "Edit race",
+        categoryMinNumber: "First number for this category",
+        categoryMaxNumber: "Last number for this category"
       }
     }
-
   };

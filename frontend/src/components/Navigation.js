@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "../contexts/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
+import logo from '../styles/other/stopwatch.png'
 
 function Navigation() {
   const location = useLocation();
@@ -10,6 +11,7 @@ function Navigation() {
   return (
     <nav className="navigation">
       <div className="nav-container">
+        <img src={logo} alt="Logo" id="logo" />
         <Link 
           to="/" 
           className={`nav-button ${location.pathname === '/' ? 'active' : ''}`}

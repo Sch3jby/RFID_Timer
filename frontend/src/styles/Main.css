@@ -35,14 +35,14 @@
   .main-content {
     flex: 1;
     padding: 2rem;
-    max-width: 1200px;
+    max-width: 1500px;
     margin: 0 auto;
     width: 100%;
   }
   
   /* Navigation */
   .navigation {
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.97);
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     padding: 1rem 0;
     position: sticky;
@@ -82,6 +82,7 @@
   .home-container {
     text-align: center;
     padding: 3rem 1rem;
+    overflow: hidden;
   }
   
   .home-container h1 {
@@ -122,6 +123,10 @@
     color: var(--text-color);
   }
   
+  .form-label {
+    margin: 10px;
+  }
+
   input,
   select {
     padding: 0.75rem;
@@ -139,7 +144,7 @@
   }
   
   button {
-    padding: 0.75rem 1.5rem;
+    padding: 0.6rem 1.5rem;
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -159,6 +164,11 @@
     cursor: not-allowed;
   }
   
+  .space {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
   /* Messages */
   .message {
     padding: 1rem;
@@ -241,7 +251,7 @@
   }
   
   .race-detail-container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
   }
@@ -250,329 +260,398 @@
     margin-bottom: 2rem;
   }
 
-/* RFID Reader Styles */
-.races-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
+  /* RFID Reader Styles */
+  .races-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
 
-.race-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
+  .race-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
 
-.race-card {
-  transition: var(--transition);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  height: 100%;
-}
+  .race-card {
+    transition: var(--transition);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    height: 100%;
+  }
 
-.race-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary-color);
-}
+  .race-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+  }
 
-.race-card .card-body {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  padding: 1.25rem;
-}
+  .race-card .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: 1.25rem;
+  }
 
-.race-card .card-title {
-  color: var(--primary-color);
-  margin-bottom: 0.75rem;
-  font-weight: 600;
-}
+  .race-card .card-title {
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
 
-.race-card .card-text {
-  color: var(--secondary-color);
-  margin-bottom: 1rem;
-  flex-grow: 1;
-}
+  .race-card .card-text {
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+    flex-grow: 1;
+  }
 
-.race-card .btn {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: var(--transition);
-}
+  .race-card .btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: var(--transition);
+  }
 
-.race-card .btn:hover {
-  background-color: var(--primary-hover);
-}
+  .race-card .btn:hover {
+    background-color: var(--primary-hover);
+  }
 
 
-/* RFID Reader Detail Styles */
-.rfid-reader-detail {
-  background-color: white;
-  border-radius: var(--border-radius);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
-}
+  /* RFID Reader Detail Styles */
+  .rfid-reader-detail {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+  }
 
-.rfid-reader-detail__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--primary-color);
-}
+  .rfid-reader-detail__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+  }
 
-.rfid-reader-detail__title {
-  color: var(--primary-color);
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-}
+  .rfid-reader-detail__title {
+    color: var(--primary-color);
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+  }
 
-.rfid-reader-detail__connection-status {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background-color: #f1f5f9;
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
-}
+  .rfid-reader-detail__connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: #f1f5f9;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+  }
 
-.rfid-reader-detail__connection-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: var(--danger-color);
-  animation: pulse 1.5s infinite;
-}
+  .rfid-reader-detail__connection-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--danger-color);
+    animation: pulse 1.5s infinite;
+  }
 
-.rfid-reader-detail__connection-indicator--connected {
-  background-color: var(--success-color);
-  animation: none;
-}
+  .rfid-reader-detail__connection-indicator--connected {
+    background-color: var(--success-color);
+    animation: none;
+  }
 
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.7; }
-}
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.7; }
+  }
 
-.rfid-reader-tracks {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  max-width: 1600px;
-  margin: 0 auto;
+  .rfid-reader-tracks {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 /* Responsive adjustments */
 @media (max-width: 1200px) {
-  .rfid-reader-tracks {
-    grid-template-columns: repeat(2, 1fr);
-  }
+    .rfid-reader-tracks {
+        grid-template-columns: 1fr;
+    }
 }
 
 .rfid-reader-track {
-  background-color: white;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
-  transition: var(--transition);
-  position: relative;
-  overflow: hidden;
-  cursor: move;
+    background-color: white;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    cursor: move;
 }
 
 .rfid-reader-track:hover {
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary-color);
-  transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
 }
 
 .rfid-reader-track.dragging {
-  opacity: 0.7;
-  transform: scale(1.02);
-  box-shadow: 0 12px 16px rgba(0, 0, 0, 0.15);
-  background-color: #f9fafb;
+    opacity: 0.7;
+    transform: scale(1.02);
+    box-shadow: 0 12px 16px rgba(0, 0, 0, 0.15);
+    background-color: #f9fafb;
 }
 
 .rfid-reader-track::before {
-  content: '⋮';
-  position: absolute;
-  top: 50%;
-  left: 10px;
-  transform: translateY(-50%);
-  color: var(--secondary-color);
-  font-size: 1.5rem;
-  opacity: 0.5;
-  pointer-events: none;
+    content: '⋮';
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: var(--secondary-color);
+    font-size: 1.5rem;
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .rfid-reader-track:hover::before {
-  opacity: 0.7;
+    opacity: 0.7;
 }
 
 .rfid-reader-track__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.rfid-reader-track__title {
-  color: var(--text-color);
-  font-weight: 600;
-  margin: 0;
+.rfid-reader-tags__title {
+    color: var(--text-color);
+    font-weight: 600;
+    margin: 0;
+    margin-bottom: 7px;
+    margin-top: 7px;
 }
 
 .rfid-reader-track__distance {
-  color: var(--secondary-color);
-  font-size: 0.875rem;
-  background-color: #f1f5f9;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
+    color: var(--secondary-color);
+    font-size: 0.875rem;
+    background-color: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius);
 }
 
-.rfid-reader-tags__container {
-  background-color: #f9fafb;
-  border: 1px dashed var(--border-color);
-  border-radius: var(--border-radius);
-  max-height: 250px;
-  overflow-y: auto;
-  padding: 1rem;
-  margin-bottom: 15px;
-}
-
-.rfid-reader-tag {
-  margin: 0.25rem;
-  padding: 0.35rem 0.75rem;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: var(--border-radius);
-  font-size: 0.8rem;
-  display: inline-block;
-  transition: var(--transition);
-}
-
-.rfid-reader-tag:hover {
-  background-color: rgb(229, 189, 9);
-  transform: scale(1.05);
-}
-
-.rfid-reader-tag--stored {
-  background-color: var(--success-color);
-}
-
-.rfid-reader-track__categories {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  margin-top: 15px;
-}
-
-.rfid-reader-track__categories title {
-  color: var(--text-color);
-  border-bottom: 2px solid #dee2e6;
-  padding-bottom: 10px;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.rfid-reader-track__categories-list {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.rfid-reader-track__categories-item {
-  background-color: #ffffff;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  padding: 10px;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background-color 0.2s ease;
-}
-
-.rfid-reader-track__categories-item:hover {
-  background-color: #f1f3f5;
-}
-
-.rfid-reader-track__categories-item span {
-  font-weight: 500;
-  color: #495057;
-}
-
-.rfid-reader-track__categories-item .category-name {
-  font-weight: 600;
-  color: #343a40;
-}
-
-.rfid-reader-track__categories-item .category-details {
-  color: #6c757d;
-  font-size: 0.9em;
-}
-
-.race-list-tabs {
-  display: flex;
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid var(--border-color);
-}
-
-.race-list-tabs button {
-  flex: 1;
-  padding: 0.75rem 1.5rem;
-  background-color: transparent;
-  color: var(--secondary-color);
-  border: none;
-  border-bottom: 2px solid transparent;
-  font-weight: 500;
-  transition: var(--transition);
-  cursor: pointer;
-}
-
-.race-list-tabs button:hover {
-  color: var(--primary-color);
-  background-color: rgba(37, 99, 235, 0.05);
-}
-
-.race-list-tabs button.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
-  font-weight: 600;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .races-container {
-    padding: 1rem;
-  }
-
-  .race-list {
-    grid-template-columns: 1fr;
-  }
-
-  .rfid-reader-tracks {
-    grid-template-columns: 1fr;
-  }
-
-  .rfid-reader-detail__header {
-    flex-direction: column;
-    align-items: flex-start;
+/* Time controls layout */
+.rfid-reader-track__time-controls {
+    display: flex;
     gap: 1rem;
-  }
+    margin-bottom: 1.5rem;
+    align-items: flex-end;
 }
+
+.rfid-reader-track__time-input {
+    flex: 1;
+}
+
+.rfid-reader-track__auto-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    height: 50px;
+    margin: auto;
+}
+
+/* Manual entry layout */
+.rfid-reader-track__manual-entry {
+    margin-top: 1rem;
+}
+
+.rfid-reader-track__manual-fields {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rfid-reader-track__manual-field {
+    flex: 1;
+}
+
+.rfid-reader-track__manual-field input,
+.rfid-reader-track__manual-field select {
+    width: 100%;
+    height: 38px;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.rfid-reader-track__manual-field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .rfid-reader-track__time-controls {
+        flex-direction: column;
+    }
+    
+    .rfid-reader-track__manual-fields {
+        flex-direction: column;
+    }
+}
+
+  .rfid-reader-tags__container {
+    background-color: #f9fafb;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 1rem;
+    margin-bottom: 15px;
+  }
+
+  .rfid-reader-tag {
+    margin: 0.25rem;
+    padding: 0.35rem 0.75rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    font-size: 0.8rem;
+    display: inline-block;
+    transition: var(--transition);
+  }
+
+  .rfid-reader-tag:hover {
+    background-color: rgb(229, 189, 9);
+    transform: scale(1.05);
+  }
+
+  .rfid-reader-tag--stored {
+    background-color: var(--success-color);
+  }
+
+  .rfid-reader-track__categories {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+  }
+
+  .rfid-reader-track__categories title {
+    color: var(--text-color);
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+
+  .rfid-reader-track__categories-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .rfid-reader-track__categories-item {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+  }
+
+  .rfid-reader-track__categories-item:hover {
+    background-color: #f1f3f5;
+  }
+
+  .rfid-reader-track__categories-item span {
+    font-weight: 500;
+    color: #495057;
+  }
+
+  .rfid-reader-track__categories-item .category-name {
+    font-weight: 600;
+    color: #343a40;
+  }
+
+  .rfid-reader-track__categories-item .category-details {
+    color: #6c757d;
+    font-size: 0.9em;
+  }
+
+  .race-list-tabs {
+    display: flex;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .race-list-tabs button {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    background-color: transparent;
+    color: var(--secondary-color);
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-weight: 500;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .race-list-tabs button:hover {
+    color: var(--primary-color);
+    background-color: rgba(37, 99, 235, 0.05);
+  }
+
+  .race-list-tabs button.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    font-weight: 600;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .races-container {
+      padding: 1rem;
+    }
+
+    .race-list {
+      grid-template-columns: 1fr;
+    }
+
+    .rfid-reader-tracks {
+      grid-template-columns: 1fr;
+    }
+
+    .rfid-reader-detail__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  }
   
   /* Loading State */
   .loading {
@@ -670,4 +749,976 @@
       width: auto;
       min-width: 80px;
     }
+  }
+
+  /* Results Page Styles */
+  .results-page {
+    padding: 1rem 0.5rem;
+    max-width: 98vw;
+    margin: 0 auto;
+  }
+
+  .results-table-wrapper {
+    overflow-x: auto;
+    margin: 0.25rem;
+  }
+
+  /* Header Styles */
+  .results-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .results-header {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .results-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+  }
+
+  .results-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .results-controls {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  /* View Toggle Styles */
+  .view-toggle {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .view-toggle-button {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #f1f5f9;
+    color: #617b9e;
+  }
+
+  .view-toggle-button:hover {
+    background-color: #e2e8f0;
+  }
+
+  .view-toggle-button.active {
+    background-color: #2563eb;
+    color: white;
+  }
+
+  /* Search Box Styles */
+  .search-box {
+    min-width: 250px;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  }
+
+  /* Section Styles */
+  .track-section,
+  .category-section {
+    margin-bottom: 2rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .track-title,
+  .category-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    padding: 1rem 1.5rem;
+    margin: 0;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .track-subtitle {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #475569;
+    padding: 1rem 1.5rem;
+    margin: 0;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+  }
+
+  /* Table Styles */
+  .results-table-wrapper {
+    overflow-x: auto;
+    margin: 0.5rem;
+  }
+
+  .results-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+  }
+
+  .results-cell {
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+  }
+
+  .results-table thead .results-cell {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: #475569;
+    text-align: left;
+  }
+
+  .results-table tbody .results-row:hover {
+    background-color: #f8fafc;
+  }
+
+  .results-table tbody .results-cell {
+    color: #475569;
+  }
+
+  /* Status Messages */
+  .results-loading,
+  .results-error,
+  .no-results {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .results-error {
+    color: #dc2626;
+    background-color: #fee2e2;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 640px) {
+    .results-page {
+      padding: 1rem;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+    }
+
+    .results-cell {
+      padding: 0.5rem 0.75rem;
+    }
+  }
+
+  .video-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+  
+  video {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Logo Styling */
+  #logo {
+    height: 40px;
+    width: auto;
+    margin-right: 20px;
+  }
+
+  /* Expand/collapse button */
+  .expand-button {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: #6b7280;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .expand-button:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+    border-radius: 0.25rem;
+  }
+
+  /* Expanded content section */
+  .expanded-content {
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .expanded-content td {
+    padding: 0;
+  }
+
+  /* Lap times table inside expanded section */
+  .lap-times-table {
+    width: 100%;
+    margin: 1rem 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .lap-times-table th,
+  .lap-times-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+  }
+
+  .lap-times-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Loading state */
+  .loading-indicator {
+    padding: 2rem;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  /* Transitions */
+  .expanded-content {
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* Category and track headers */
+  .category-title, .track-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #2364ec;
+    background: #2364ec1f;
+  }
+
+  .messages-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+  }
+  
+  .messages-container .alert {
+    margin-bottom: 10px;
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .editor-container {
+    background-color: var(--background-light);
+    position: fixed;
+    inset: 64px 0 0 0;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+    transition: all var(--transition-speed) ease-in-out;
+    z-index: 50;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .editor-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      position: relative;
+      flex-shrink: 0;
+      z-index: 7;
+  }
+
+  .editor-content {
+      background-color: white;
+      padding: 24px;
+      max-width: 1850px;
+      margin: 0 auto;
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+  }
+
+  .editor-tabs {
+    display: flex;
+    background-color: var(--background-light);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 8px;
+  }
+
+  .editor-tab {
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all var(--transition-speed) ease;
+    background-color: transparent;
+    border: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .editor-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-color);
+    transform: scaleX(0);
+    transition: transform var(--transition-speed) ease;
+  }
+
+  .editor-tab.active {
+    color: var(--primary-color);
+  }
+
+  .editor-tab.active::after {
+    transform: scaleX(1);
+  }
+
+  .editor-tab:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+  }
+
+  /* Result and Start Editor Shared Styles */
+  .result-editor, .start-editor {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .result-editor__content, .start-editor__content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+  }
+
+  .result-editor__header, .start-editor__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 2px solid var(--primary-color);
+  }
+
+  .result-editor__title, .start-editor__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+  }
+
+  .result-editor__close, .start-editor__close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all var(--transition-speed) ease;
+  }
+
+  .result-editor__close:hover, .start-editor__close:hover {
+    background-color: var(--background-light);
+    color: var(--text-dark);
+  }
+
+  .result-editor__content, .start-editor__content {
+    padding: 24px;
+  }
+
+  .result-editor__table, .start-editor__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .result-editor__table th, .start-editor__table th {
+    background-color: var(--background-light);
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .result-editor__table td, .start-editor__table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+
+  .result-editor__table tr:hover, .start-editor__table tr:hover {
+    background-color: rgba(59, 130, 246, 0.025);
+  }
+
+  .result-editor__input, .start-editor__input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all var(--transition-speed) ease;
+  }
+
+  .result-editor__input:focus, .start-editor__input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+
+  .result-editor__button, .start-editor__button {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .result-editor__button--save, .start-editor__button--save {
+    background-color: #0ab601;
+    color: white;
+    border: none;
+  }
+
+  .result-editor__button--save:hover, .start-editor__button--save:hover {
+    background-color: #089c00;
+  }
+
+  .result-editor__button--cancel, .start-editor__button--cancel {
+    background-color: #dc3545;
+    border: none;
+  }
+
+  .result-editor__button--cancel:hover, .start-editor__button--cancel:hover {
+    background-color: #c82333;
+  }
+
+  .result-editor__button--edit, .start-editor__button--edit {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-dark);
+  }
+
+  .result-editor__button--edit:hover, .start-editor__button--edit:hover {
+    background-color: var(--primary-color);
+    color: white;
+  }
+
+  .result-editor__actions, .start-editor__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Loading Spinner */
+  .result-editor__loading, .start-editor__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+
+  .result-editor__spinner, .start-editor__spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .result-editor__content, .start-editor__content {
+      padding: 16px;
+    }
+    
+    .result-editor__table, .start-editor__table {
+      display: block;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .result-editor__header, .start-editor__header {
+      padding: 16px;
+    }
+  }
+
+  .result-editor__modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .result-editor__modal {
+    background-color: white;
+    padding: 20px;
+    border-radius: 4px;
+    min-width: 300px;
+  }
+  
+  .result-editor__modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .result-editor__button--delete {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .result-editor__button--delete:hover {
+    background-color: #c82333;
+  }
+
+  .result-editor__quick-add {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+  }
+  
+  .result-editor__quick-add-form {
+    width: 100%;
+  }
+  
+  .result-editor__quick-add-fields {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .result-editor__input,
+  .result-editor__select {
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    min-width: 120px;
+    background-color: white;
+  }
+  
+  .result-editor__input:focus,
+  .result-editor__select:focus {
+    outline: none;
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+  
+  .result-editor__input[type="number"] {
+    width: 140px;
+  }
+  
+  .result-editor__input[type="date"] {
+    width: 140px;
+  }
+  
+  .result-editor__input[type="text"] {
+    width: 190px;
+  }
+  
+  .result-editor__select {
+    width: 160px;
+    cursor: pointer;
+  }
+  
+  .result-editor__button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+  
+  .result-editor__button:hover {
+    transform: translateY(-1px);
+  }
+  
+  .result-editor__button:active {
+    transform: translateY(0);
+  }
+  
+  .result-editor__button--add {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .result-editor__button--add:hover {
+    background-color: #218838;
+  }
+  
+  @media (max-width: 768px) {
+    .result-editor__quick-add-fields {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+  
+    .result-editor__input,
+    .result-editor__select {
+      width: 100%;
+    }
+  
+    .result-editor__input[type="number"],
+    .result-editor__input[type="date"],
+    .result-editor__input[type="text"] {
+      width: 100%;
+    }
+  
+    .result-editor__button {
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+  }
+  
+  @media (prefers-color-scheme: light) {
+    .result-editor__quick-add {
+      background-color: #ececec;
+    }
+  
+    .result-editor__input,
+    .result-editor__select {
+      background-color: #dedede;
+      border-color: #404040;
+      color: rgb(90, 90, 90);
+    }
+  
+    .result-editor__input:focus,
+    .result-editor__select:focus {
+      border-color: #0d6efd;
+    }
+  
+    .result-editor__button--add {
+      background-color: #198754;
+    }
+  
+    .result-editor__button--add:hover {
+      background-color: #157347;
+    }
+  }
+
+  /*Race manager*/
+  .race-manager {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  .race-form {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin: 20px;
+  }
+
+  /* Form Elements */
+  .race-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .race-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .race-form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .race-form-input {
+    border-radius: 0.375rem;
+    border: 1px solid #D1D5DB;
+    padding: 0.5rem 1rem;
+    width: 100%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.15s ease-in-out;
+  }
+
+  .race-form-input:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* Custom Race Management Buttons */
+  .race-add-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+
+  .race-add-btn:hover {
+    background-color: #45a049;
+  }
+
+  .race-remove-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+  }
+
+  .race-remove-btn:hover {
+    background-color: #da190b;
+  }
+
+  .race-edit-btn {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+
+  .race-edit-btn:hover {
+    background-color: #0b7dda;
+  }
+
+  .race-cancel-btn {
+    background-color: #9e9e9e;
+    color: white;
+    border: none;
+    border-radius: .375rem;
+    font-weight: 500;
+    margin-right: 10px;
+  }
+
+  .race-cancel-btn:hover {
+    background-color: #757575;
+  }
+
+  /* Section Styling */
+  .race-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Track Section */
+  .race-track-section {
+    margin-top: 2rem;
+  }
+
+  .race-track-item {
+    background-color: #F9FAFB;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .race-track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Category Section */
+  .race-category-section {
+    margin-top: 1rem;
+  }
+
+  .race-category-item {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #E5E7EB;
+    margin-bottom: 1rem;
+  }
+
+  /* Race Cards */
+  .race-race-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+  }
+
+  .race-race-card:hover {
+    transform: scale(1.01);
+  }
+
+  /* Responsive Adjustments */
+  @media (min-width: 640px) {
+    .race-form-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .race-form-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* Animation */
+  @keyframes raceFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .race-manager {
+    animation: raceFadeIn 0.3s ease-in-out;
+  }
+
+  /* Accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .race-manager {
+      animation: none;
+    }
+    
+    .race-race-card {
+      transition: none;
+    }
+  }
+
+  /* Utility classes */
+  .race-flex {
+    display: flex;
+  }
+
+  .race-justify-end {
+    justify-content: flex-end;
+  }
+
+  .race-gap-4 {
+    gap: 1rem;
+  }
+
+  .race-mt-6 {
+    margin-top: 1.5rem;
+  }
+
+  .race-mt-8 {
+    margin-top: 2rem;
+  }
+
+  .race-text-xl {
+    font-size: 1.25rem;
+  }
+
+  .race-font-bold {
+    font-weight: 700;
+  }
+
+  .race-mb-6 {
+    margin-bottom: 1.5rem;
+  }
+
+  .race-text-lg {
+    font-size: 1.125rem;
+  }
+
+  .race-font-medium {
+    font-weight: 500;
+  }
+
+  .race-self-end {
+    align-self: flex-end;
   }

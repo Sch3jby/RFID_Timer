@@ -1,4 +1,3 @@
-// StartList.js
 import React, { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -42,51 +41,73 @@ function StartList({ participants, raceId }) {
   });
 
   return (
-    <div className="start-list-container">
-      <h2>
-        {t('raceDetail.participants')} ({filteredParticipants.length})
-      </h2>
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder={t('raceDetail.search')}
-          value={searchQuery}
-          onChange={handleSearch}
-        />
+    <div className="results-page">
+      <div className="results-header">
+        <h2 className="results-title">
+          {t('raceDetail.participants')} ({filteredParticipants.length})
+        </h2>
+        
+        <div className="results-controls">
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder={t('raceDetail.search')}
+              value={searchQuery}
+              onChange={handleSearch}
+              className="search-input"
+            />
+          </div>
+        </div>
       </div>
 
-      <table className="participants-table">
-        <thead>
-          <tr>
-            <th onClick={() => handleSort('number')}>{t('raceDetail.columns.number')}</th>
-            <th onClick={() => handleSort('surname')}>{t('raceDetail.columns.name')}</th>
-            <th onClick={() => handleSort('club')}>{t('raceDetail.columns.club')}</th>
-            <th onClick={() => handleSort('category')}>{t('raceDetail.columns.category')}</th>
-            <th onClick={() => handleSort('track')}>{t('raceDetail.columns.track')}</th>
-            <th onClick={() => handleSort('start_time')}>{t('raceDetail.columns.startTime')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedParticipants.length === 0 ? (
-            <tr>
-              <td colSpan="6" className="text-center">
-                {t('raceDetail.noParticipants')}
-              </td>
-            </tr>
-          ) : (
-            sortedParticipants.map((participant, index) => (
-              <tr key={index}>
-                <td>{participant.number}</td>
-                <td>{participant.forename} {participant.surname}</td>
-                <td>{participant.club}</td>
-                <td>{participant.category}</td>
-                <td>{participant.track}</td>
-                <td>{participant.start_time}</td>
+      <div className="track-section">
+        <div className="results-table-wrapper">
+          <table className="results-table">
+            <thead>
+              <tr>
+                <th className="results-cell" onClick={() => handleSort('number')}>
+                  {t('raceDetail.columns.number')}
+                </th>
+                <th className="results-cell" onClick={() => handleSort('surname')}>
+                  {t('raceDetail.columns.name')}
+                </th>
+                <th className="results-cell" onClick={() => handleSort('club')}>
+                  {t('raceDetail.columns.club')}
+                </th>
+                <th className="results-cell" onClick={() => handleSort('category')}>
+                  {t('raceDetail.columns.category')}
+                </th>
+                <th className="results-cell" onClick={() => handleSort('track')}>
+                  {t('raceDetail.columns.track')}
+                </th>
+                <th className="results-cell" onClick={() => handleSort('start_time')}>
+                  {t('raceDetail.columns.startTime')}
+                </th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {sortedParticipants.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="results-cell text-center">
+                    {t('raceDetail.noParticipants')}
+                  </td>
+                </tr>
+              ) : (
+                sortedParticipants.map((participant, index) => (
+                  <tr key={index} className="results-row">
+                    <td className="results-cell">{participant.number}</td>
+                    <td className="results-cell">{participant.forename} {participant.surname}</td>
+                    <td className="results-cell">{participant.club}</td>
+                    <td className="results-cell">{participant.category}</td>
+                    <td className="results-cell">{participant.track}</td>
+                    <td className="results-cell">{participant.start_time}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
