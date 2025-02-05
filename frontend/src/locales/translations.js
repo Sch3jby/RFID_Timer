@@ -143,7 +143,9 @@ export const translations = {
         gender: "Pohlaví",
         male: "Muž",
         female: "Žena",
-        editRace: "Upravit závod"
+        editRace: "Upravit závod",
+        categoryMinNumber: "První číslo v této kategorii",
+        categoryMaxNumber: "Poslední číslo v této kategorii"
       }
     },
     en: {
@@ -286,7 +288,9 @@ export const translations = {
         gender: "Category gender",
         male: "Male",
         female: "Female",
-        editRace: "Edit race"
+        editRace: "Edit race",
+        categoryMinNumber: "First number for this category",
+        categoryMaxNumber: "Last number for this category"
       }
     }
   };

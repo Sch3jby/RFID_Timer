@@ -377,6 +377,26 @@ const RaceManagement = ({ onBack }) => {
                             <option value="F">{t('raceManagement.female')}</option>
                           </select>
                         </div>
+                        <div className="race-form-group">
+                          <label className="race-form-label">{t('raceManagement.categoryMinNumber')}</label>
+                          <input
+                            type="number"
+                            name="min_number"
+                            value={category.min_number}
+                            onChange={(e) => handleInputChange(e, trackIndex, categoryIndex)}
+                            className="race-form-input"
+                          />
+                        </div>
+                        <div className="race-form-group">
+                          <label className="race-form-label">{t('raceManagement.categoryMaxNumber')}</label>
+                          <input
+                            type="number"
+                            name="max_number"
+                            value={category.max_number}
+                            onChange={(e) => handleInputChange(e, trackIndex, categoryIndex)}
+                            className="race-form-input"
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
