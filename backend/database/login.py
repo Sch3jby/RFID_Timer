@@ -1,11 +1,8 @@
 # login.py
 from . import db
 
-class Users(db.Model):
+class Login(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    firstname = db.Column(db.String(25), nullable=False)
-    surname = db.Column(db.String(25), nullable=False)
-    year = db.Column(db.Integer, nullable=False)
-    club = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(70), nullable=False)
-    gender = db.Column(db.String(1), nullable=False)
+    nickname = db.Column(db.String(70), nullable=False)
+    email = db.Column(db.String(70), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)

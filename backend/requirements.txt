@@ -7,3 +7,4 @@ psycopg2-binary
 configparser
 requests
 gunicorn>=20.1.0
+flask-jwt-extended

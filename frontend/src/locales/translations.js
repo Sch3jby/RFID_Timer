@@ -9,7 +9,9 @@ export const translations = {
         organizer: "Organizátor",
         competitor: "Registrace",
         startList: "Startovní listina",
-        calendar: "Kalendář"
+        calendar: "Kalendář",
+        login: "Uživatel",
+        submit: "Potvrdit"
       },
       home: {
         welcome: "Vítejte v systému pro závody",
@@ -146,6 +148,24 @@ export const translations = {
         editRace: "Upravit závod",
         categoryMinNumber: "První číslo v této kategorii",
         categoryMaxNumber: "Poslední číslo v této kategorii"
+      },
+      login: {
+        submit: "Přihlásit se",
+        noAccount: "Nemáte účet?",
+        logTitle: "Přihlášní k účtu",
+        email: "Email",
+        password: "Password",
+        register: "Registrace"
+      },
+      register: {
+        submit: "Vytvořit účet",
+        regTitle: "Vytvoření účtu",
+        nickname: "Jméno",
+        email: "Email",
+        password: "Heslo",
+        confirmPassword: "Potvrdit heslo",
+        haveAccount: "Již máte vytvořený účet?",
+        login: "Přihlásit se"
       }
     },
     en: {
@@ -154,7 +174,8 @@ export const translations = {
         organizer: "Organizer",
         competitor: "Registration",
         startList: "Start List",
-        calendar: "Calendar"
+        calendar: "Calendar",
+        login: "User",
       },
       home: {
         welcome: "Welcome to the Race System",
@@ -291,6 +312,24 @@ export const translations = {
         editRace: "Edit race",
         categoryMinNumber: "First number for this category",
         categoryMaxNumber: "Last number for this category"
+      },
+      login: {
+        submit: "Login",
+        noAccount: "Dont have account?",
+        logTitle: "Login",
+        email: "Email",
+        password: "Password",
+        register: "Registration"
+      },
+      register: {
+        submit: "Create account",
+        regTitle: "Create account",
+        nickname: "Name",
+        email: "Email",
+        password: "Password",
+        confirmPassword: "Confirm password",
+        haveAccount: "Already have account?",
+        login: "Login"
       }
     }
   };

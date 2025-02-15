@@ -1,12 +1,27 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "../contexts/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import logo from '../styles/other/stopwatch.png'
 
 function Navigation() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    localStorage.getItem('access_token') !== null
+  );
+  
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    navigate('/');
+  };
+  
+  const handleLogin = () => {
+    navigate('/login');
+  };
   
   return (
     <nav className="navigation">
@@ -37,6 +52,14 @@ function Navigation() {
           {t('nav.calendar')}
         </Link>
         <LanguageSwitcher />
+        
+        {/* Přihlašovací/odhlašovací tlačítko */}
+        <button 
+          className="login-button"
+          onClick={isLoggedIn ? handleLogout : handleLogin}
+        >
+          {isLoggedIn ? t('nav.logout') : t('nav.login')}
+        </button>
       </div>
     </nav>
   );
