@@ -22,7 +22,7 @@ function StartList({ participants, raceId }) {
   };
 
   const filteredParticipants = participants.filter((participant) => {
-    const fullName = `${participant.forename.toLowerCase()} ${participant.surname.toLowerCase()}`;
+    const fullName = `${participant.firstname.toLowerCase()} ${participant.surname.toLowerCase()}`;
     const club = participant.club.toLowerCase();
     const category = participant.category.toLowerCase();
     const track = participant.track.toLowerCase();
@@ -96,7 +96,7 @@ function StartList({ participants, raceId }) {
                 sortedParticipants.map((participant, index) => (
                   <tr key={index} className="results-row">
                     <td className="results-cell">{participant.number}</td>
-                    <td className="results-cell">{participant.forename} {participant.surname}</td>
+                    <td className="results-cell">{participant.firstname} {participant.surname}</td>
                     <td className="results-cell">{participant.club}</td>
                     <td className="results-cell">{participant.category}</td>
                     <td className="results-cell">{participant.track}</td>

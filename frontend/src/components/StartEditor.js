@@ -9,7 +9,7 @@ const StartEditor = ({ raceId, onClose }) => {
 
   // Editing states
   const [editingRegistration, setEditingRegistration] = useState(null);
-  const [editedForename, setEditedForename] = useState('');
+  const [editedfirstname, setEditedfirstname] = useState('');
   const [editedSurname, setEditedSurname] = useState('');
   const [editedNumber, setEditedNumber] = useState('');
   const [editedClub, setEditedClub] = useState('');
@@ -53,7 +53,7 @@ const StartEditor = ({ raceId, onClose }) => {
   // Handle edit click for a registration
   const handleEditClick = (registration) => {
     setEditingRegistration(registration);
-    setEditedForename(registration.forename);
+    setEditedfirstname(registration.firstname);
     setEditedSurname(registration.surname);
     setEditedNumber(registration.number || '');
     setEditedClub(registration.club);
@@ -91,7 +91,7 @@ const StartEditor = ({ raceId, onClose }) => {
       // Update user details
       await axios.post(`http://localhost:5001/race/${raceId}/startlist/update/user`, {
         user_id: editingRegistration.user_id,
-        forename: editedForename,
+        firstname: editedfirstname,
         surname: editedSurname,
         club: editedClub
       });
@@ -194,8 +194,8 @@ const StartEditor = ({ raceId, onClose }) => {
                     <>
                       <input
                         type="text"
-                        value={editedForename}
-                        onChange={(e) => setEditedForename(e.target.value)}
+                        value={editedfirstname}
+                        onChange={(e) => setEditedfirstname(e.target.value)}
                         className="start-editor__input"
                         placeholder="First Name"
                       />
@@ -208,7 +208,7 @@ const StartEditor = ({ raceId, onClose }) => {
                       />
                     </>
                   ) : (
-                    `${registration.forename} ${registration.surname}`
+                    `${registration.firstname} ${registration.surname}`
                   )}
                 </td>
                 <td>

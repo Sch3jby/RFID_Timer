@@ -202,7 +202,7 @@ def fetch_taglist():
 def register():
     try:
         data = request.json
-        forename = data.get('forename')
+        firstname = data.get('firstname')
         surname = data.get('surname')
         year = data.get('year')
         club = data.get('club')
@@ -211,7 +211,7 @@ def register():
         race_id = data.get('race_id')
         track_id = data.get('track_id')
 
-        if not all([forename, surname, year, club, email, gender, race_id, track_id]):
+        if not all([firstname, surname, year, club, email, gender, race_id, track_id]):
             return jsonify({'error': 'All fields are required'}), 400
 
         try:
@@ -248,7 +248,7 @@ def register():
             }), 400
 
         user = Users(
-            forename=forename,
+            firstname=firstname,
             surname=surname,
             year=year,
             club=club,
@@ -1019,7 +1019,7 @@ def get_race_detail(race_id):
 
             final_participant_details.append({
                 'number': participant['number'],
-                'forename': user.forename,
+                'firstname': user.firstname,
                 'surname': user.surname,
                 'club': user.club,
                 'category': category.category_name,
@@ -1232,7 +1232,7 @@ def get_race_results(race_id):
                     ll.lap_number,
                     ll.status,
                     ll.last_seen_time,
-                    u.forename,
+                    u.firstname,
                     u.surname,
                     u.club,
                     u.year,
@@ -1311,7 +1311,7 @@ def get_race_results(race_id):
             )
             SELECT 
                 number,
-                forename,
+                firstname,
                 surname,
                 club,
                 category_name,
@@ -1366,7 +1366,7 @@ def get_race_results(race_id):
         for row in results:
             formatted_results.append({
                 'number': row.number,
-                'name': f"{row.forename} {row.surname}",
+                'name': f"{row.firstname} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
@@ -1445,7 +1445,7 @@ def get_race_results_by_category(race_id):
                     ll.lap_number,
                     ll.status,
                     ll.last_seen_time,
-                    u.forename,
+                    u.firstname,
                     u.surname,
                     u.club,
                     u.year,
@@ -1509,7 +1509,7 @@ def get_race_results_by_category(race_id):
             )
             SELECT 
                 number,
-                forename,
+                firstname,
                 surname,
                 club,
                 category_name,
@@ -1553,7 +1553,7 @@ def get_race_results_by_category(race_id):
         for row in results:
             formatted_results.append({
                 'number': row.number,
-                'name': f"{row.forename} {row.surname}",
+                'name': f"{row.firstname} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
@@ -1630,7 +1630,7 @@ def get_race_results_by_track(race_id):
                     ll.lap_number,
                     ll.status,
                     ll.last_seen_time,
-                    u.forename,
+                    u.firstname,
                     u.surname,
                     u.club,
                     u.year,
@@ -1694,7 +1694,7 @@ def get_race_results_by_track(race_id):
             )
             SELECT 
                 number,
-                forename,
+                firstname,
                 surname,
                 club,
                 category_name,
@@ -1737,7 +1737,7 @@ def get_race_results_by_track(race_id):
         for row in results:
             formatted_results.append({
                 'number': row.number,
-                'name': f"{row.forename} {row.surname}",
+                'name': f"{row.firstname} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
@@ -2432,7 +2432,7 @@ def get_race_startlist(race_id):
             start_list.append({
                 'registration_id': reg.id,
                 'user_id': user.id,
-                'forename': user.forename,
+                'firstname': user.firstname,
                 'surname': user.surname,
                 'club': user.club,
                 'number': '---' if reg.number is None else reg.number,
@@ -2456,7 +2456,7 @@ def update_startlist_user(race_id):
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        user.forename = data['forename']
+        user.firstname = data['firstname']
         user.surname = data['surname']
         user.club = data['club']
         

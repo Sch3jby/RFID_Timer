@@ -1,4 +1,4 @@
-# users.py
+# login.py
 from . import db
 
 class Users(db.Model):
@@ -9,6 +9,3 @@ class Users(db.Model):
     club = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(70), nullable=False)
     gender = db.Column(db.String(1), nullable=False)
-
-    # Relationship with Registration
-    registrations = db.relationship('Registration', backref='users')
