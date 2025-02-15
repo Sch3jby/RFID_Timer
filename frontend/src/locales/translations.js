@@ -10,8 +10,9 @@ export const translations = {
         competitor: "Registrace",
         startList: "Startovní listina",
         calendar: "Kalendář",
-        login: "Uživatel",
-        submit: "Potvrdit"
+        login: "Přihlásit se",
+        logout: "Odhlásit se",
+        welcome: "Vítejte zpět,"
       },
       home: {
         welcome: "Vítejte v systému pro závody",
@@ -152,7 +153,7 @@ export const translations = {
       login: {
         submit: "Přihlásit se",
         noAccount: "Nemáte účet?",
-        logTitle: "Přihlášní k účtu",
+        logTitle: "Přihlášení k účtu",
         email: "Email",
         password: "Password",
         register: "Registrace"
@@ -175,7 +176,9 @@ export const translations = {
         competitor: "Registration",
         startList: "Start List",
         calendar: "Calendar",
-        login: "User",
+        login: "Login",
+        logout: "Logout",
+        welcome: "Welcome back,"
       },
       home: {
         welcome: "Welcome to the Race System",

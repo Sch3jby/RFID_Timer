@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "../contexts/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -11,11 +11,46 @@ function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(
     localStorage.getItem('access_token') !== null
   );
+  const [userNickname, setUserNickname] = useState('');
+  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('access_token');
+      if (isLoggedIn && token) {
+        try {
+          const response = await fetch('http://localhost:5001/api/me', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            setUserNickname(userData.nickname);
+          } else {
+            console.error('Failed to fetch user data:', await response.text());
+            if (response.status === 401) {
+              localStorage.removeItem('access_token');
+              setIsLoggedIn(false);
+              navigate('/login');
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [isLoggedIn, navigate]);
   
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     setIsLoggedIn(false);
+    setUserNickname('');
     navigate('/');
   };
   
@@ -51,15 +86,19 @@ function Navigation() {
         >
           {t('nav.calendar')}
         </Link>
-        <LanguageSwitcher />
         
-        {/* Přihlašovací/odhlašovací tlačítko */}
-        <button 
-          className="login-button"
-          onClick={isLoggedIn ? handleLogout : handleLogin}
-        >
-          {isLoggedIn ? t('nav.logout') : t('nav.login')}
-        </button>
+        <div className="user-controls">
+          {isLoggedIn && userNickname && (
+            <span className="user-nickname">{t('nav.welcome')} {userNickname}</span>
+          )}
+          <button 
+            className="login-button"
+            onClick={isLoggedIn ? handleLogout : handleLogin}
+          >
+            {isLoggedIn ? t('nav.logout') : t('nav.login')}
+          </button>
+        </div>
+        <LanguageSwitcher />
       </div>
     </nav>
   );

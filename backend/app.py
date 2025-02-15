@@ -31,8 +31,7 @@ config.read('config.ini')
 # Initialize Flask application
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
-
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000"], "supports_credentials": True}})
 
 # Initialize database
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('database', 'DATABASE_URL')
@@ -2500,28 +2499,23 @@ def update_startlist_registration(race_id):
         db.session.rollback()
         return jsonify({'error': f'Error updating registration: {str(e)}'}), 500
 
-# Endpoint pro registraci
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
     
-    # Kontrola, zda jsou všechna povinná pole vyplněna
     if not data.get('nickname') or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Chybí povinné údaje'}), 400
     
-    # Kontrola, zda uživatel s daným emailem již neexistuje
     existing_user = Login.query.filter_by(email=data['email']).first()
     if existing_user:
         return jsonify({'message': 'Uživatel s tímto emailem již existuje'}), 409
     
-    # Vytvoření nového uživatele
     new_user = Login(
         nickname=data['nickname'],
         email=data['email'],
         password_hash=generate_password_hash(data['password'])
     )
     
-    # Přidání do databáze
     try:
         db.session.add(new_user)
         db.session.commit()
@@ -2530,24 +2524,19 @@ def register():
         db.session.rollback()
         return jsonify({'message': f'Chyba při registraci: {str(e)}'}), 500
 
-# Endpoint pro přihlášení
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     
-    # Kontrola, zda jsou všechna povinná pole vyplněna
     if not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Chybí email nebo heslo'}), 400
     
-    # Vyhledání uživatele podle emailu
     user = Login.query.filter_by(email=data['email']).first()
     
-    # Kontrola, zda uživatel existuje a heslo je správné
     if not user or not check_password_hash(user.password_hash, data['password']):
         return jsonify({'message': 'Nesprávný email nebo heslo'}), 401
     
-    # Vytvoření JWT tokenu
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
     
     return jsonify({
         'message': 'Přihlášení úspěšné',
@@ -2559,7 +2548,6 @@ def login():
         }
     }), 200
 
-# Endpoint pro získání informací o přihlášeném uživateli
 @app.route('/api/me', methods=['GET'])
 @jwt_required()
 def get_current_user():

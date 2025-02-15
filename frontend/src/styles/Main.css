@@ -1,4 +1,3 @@
-/* Reset and base styles */
 * {
     margin: 0;
     padding: 0;
@@ -36,7 +35,7 @@
     flex: 1;
     padding: 2rem;
     max-width: 1500px;
-    margin: 0 auto;
+    margin: auto;
     width: 100%;
   }
   
@@ -729,7 +728,6 @@
     font-weight: 500;
     cursor: pointer;
     transition: var(--transition);
-    margin-left: auto;
   }
   
   .language-switcher:hover {
@@ -1722,3 +1720,95 @@
   .race-self-end {
     align-self: flex-end;
   }
+
+  /* Login */
+  .user-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+  }
+  
+  .user-nickname {
+    font-weight: 500;
+  }
+
+  /* Container Styling */
+.login-container,
+.register-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+/* Form Group Styling */
+.form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+/* Button Styling */
+.submit-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.submit-button:hover {
+  background-color: #0056b3;
+}
+
+.submit-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Error Message Styling */
+.error-message {
+  color: rgb(190, 0, 0);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+/* Links Styling */
+.register-link,
+.login-link {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.register-link a,
+.login-link a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.register-link a:hover,
+.login-link a:hover {
+  text-decoration: underline;
+}
