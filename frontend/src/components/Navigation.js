@@ -12,6 +12,7 @@ function Navigation() {
     localStorage.getItem('access_token') !== null
   );
   const [userNickname, setUserNickname] = useState('');
+  const [userRole, setUserRole] = useState(null);
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -29,6 +30,11 @@ function Navigation() {
           if (response.ok) {
             const userData = await response.json();
             setUserNickname(userData.nickname);
+            setUserRole(userData.role);
+            
+            if (location.pathname === '/rfid-reader' && userData.role !== 1) {
+              navigate('/');
+            }
           } else {
             console.error('Failed to fetch user data:', await response.text());
             if (response.status === 401) {
@@ -44,13 +50,14 @@ function Navigation() {
     };
 
     fetchUserData();
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn, navigate, location]);
   
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUserNickname('');
+    setUserRole(null);
     navigate('/');
   };
   
@@ -68,12 +75,14 @@ function Navigation() {
         >
           {t('nav.home')}
         </Link>
-        <Link 
-          to="/rfid-reader" 
-          className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
-        >
-          {t('nav.organizer')}
-        </Link>
+        {userRole === 1 && (
+          <Link 
+            to="/rfid-reader" 
+            className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
+          >
+            {t('nav.organizer')}
+          </Link>
+        )}
         <Link 
           to="/registration" 
           className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}

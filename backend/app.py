@@ -2560,7 +2560,8 @@ def get_current_user():
     return jsonify({
         'id': user.id,
         'nickname': user.nickname,
-        'email': user.email
+        'email': user.email,
+        'role': user.role
     }), 200
 
 @app.route('/<path:path>')
