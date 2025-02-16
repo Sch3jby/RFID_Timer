@@ -1863,3 +1863,8 @@
   .request-new-link:hover {
     text-decoration: underline;
   }
+
+  .readonly-input {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }

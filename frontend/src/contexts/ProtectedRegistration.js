@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
-const ProtectedRoute = ({ children }) => {
-  const [isAuthorized, setIsAuthorized] = useState(null);
+const ProtectedRegistration = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const navigate = useNavigate();
   
   useEffect(() => {
-    const checkAuthorization = async () => {
+    const checkAuthentication = async () => {
       const token = localStorage.getItem('access_token');
       if (!token) {
-        setIsAuthorized(false);
+        setIsAuthenticated(false);
         return;
       }
 
@@ -23,33 +23,32 @@ const ProtectedRoute = ({ children }) => {
         });
         
         if (response.ok) {
-          const userData = await response.json();
-          setIsAuthorized(userData.role === 1);
+          setIsAuthenticated(true);
         } else {
-          setIsAuthorized(false);
+          setIsAuthenticated(false);
           if (response.status === 401) {
             localStorage.removeItem('access_token');
             navigate('/login');
           }
         }
       } catch (error) {
-        console.error('Error checking authorization:', error);
-        setIsAuthorized(false);
+        console.error('Error checking authentication:', error);
+        setIsAuthenticated(false);
       }
     };
 
-    checkAuthorization();
+    checkAuthentication();
   }, [navigate]);
 
-  if (isAuthorized === null) {
+  if (isAuthenticated === null) {
     return <div>Loading...</div>;
   }
 
-  if (!isAuthorized) {
-    return <Navigate to="/" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;
 };
 
-export default ProtectedRoute;
+export default ProtectedRegistration;

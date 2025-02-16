@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { useTranslation } from '../contexts/LanguageContext';
 
 function RegistrationForm() {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstname: '',
     surname: '',
@@ -26,21 +27,46 @@ function RegistrationForm() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const racesResponse = await axios.get('http://localhost:5001/races');
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        const userResponse = await axios.get('http://localhost:5001/api/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        setFormData(prevData => ({
+          ...prevData,
+          email: userResponse.data.email
+        }));
+
+        const racesResponse = await axios.get('http://localhost:5001/races', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         setRaces(racesResponse.data.races);
 
-        // Check for pre-selected race from navigation state
         if (location.state?.preselectedRace) {
           setRaceInput(location.state.preselectedRace);
           
-          // Find the corresponding race and set its ID
           const selectedRace = racesResponse.data.races.find(race => 
             `${race.name} - ${race.date}` === location.state.preselectedRace
           );
           
           if (selectedRace) {
-            // Fetch tracks for the pre-selected race
-            const tracksResponse = await axios.get(`http://localhost:5001/tracks?race_id=${selectedRace.id}`);
+            const tracksResponse = await axios.get(
+              `http://localhost:5001/tracks?race_id=${selectedRace.id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              }
+            );
             setTracks(tracksResponse.data.tracks);
             
             setFormData(prevData => ({
@@ -50,17 +76,21 @@ function RegistrationForm() {
           }
         }
       } catch (error) {
-        setMessage({ 
-          type: 'error', 
-          text: t('registration.errorLoadingData') 
-        });
+        if (error.response?.status === 401) {
+          navigate('/login');
+        } else {
+          setMessage({ 
+            type: 'error', 
+            text: t('registration.errorLoadingData') 
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [t, location.state]);
+  }, [t, location.state, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -69,11 +99,10 @@ function RegistrationForm() {
     });
   };
 
-  const handleRaceChange = (e) => {
+  const handleRaceChange = async (e) => {
     const inputValue = e.target.value;
     setRaceInput(inputValue);
     
-    // Find the corresponding race and set its ID
     const selectedRace = races.find(race => 
       `${race.name} - ${race.date}` === inputValue
     );
@@ -83,27 +112,39 @@ function RegistrationForm() {
       race_id: selectedRace ? selectedRace.id : '',
       track_id: ''
     });
+    setTrackInput('');
 
-    // Fetch tracks for the selected race
-    const fetchTracks = async () => {
+    if (selectedRace) {
       try {
-        const response = await axios.get(`http://localhost:5001/tracks?race_id=${selectedRace?.id}`);
+        const token = localStorage.getItem('access_token');
+        const response = await axios.get(
+          `http://localhost:5001/tracks?race_id=${selectedRace.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
         setTracks(response.data.tracks);
       } catch (error) {
-        setMessage({ 
-          type: 'error', 
-          text: t('registration.errorLoadingTracks') 
-        });
+        if (error.response?.status === 401) {
+          navigate('/login');
+        } else {
+          setMessage({ 
+            type: 'error', 
+            text: t('registration.errorLoadingTracks') 
+          });
+        }
       }
-    };
-    fetchTracks();
+    } else {
+      setTracks([]);
+    }
   };
 
   const handleTrackChange = (e) => {
     const inputValue = e.target.value;
     setTrackInput(inputValue);
     
-    // Find the corresponding track and set its ID
     const selectedTrack = tracks.find(track => 
       `${track.name} - ${track.distance}km` === inputValue
     );
@@ -117,25 +158,39 @@ function RegistrationForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5001/registration', formData);
+      const token = localStorage.getItem('access_token');
+      const response = await axios.post(
+        'http://localhost:5001/registration',
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
       setMessage({ type: 'success', text: t('registration.success') });
-      setFormData({ 
+      
+      setFormData(prevData => ({ 
         firstname: '', 
         surname: '', 
         year: '', 
         club: '', 
-        email: '', 
+        email: prevData.email,
         gender: '',
         race_id: '',
         track_id: ''
-      });
+      }));
       setRaceInput('');
       setTrackInput('');
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || t('registration.error') 
-      });
+      if (error.response?.status === 401) {
+        navigate('/login');
+      } else {
+        setMessage({ 
+          type: 'error', 
+          text: error.response?.data?.error || t('registration.error') 
+        });
+      }
     }
   };
 
@@ -163,6 +218,7 @@ function RegistrationForm() {
             ))}
           </datalist>
         </div>
+        
         <div className="form-group">
           <label>{t('registration.track')}:</label>
           <input
@@ -179,6 +235,7 @@ function RegistrationForm() {
             ))}
           </datalist>
         </div>
+
         <div className="form-group">
           <label>{t('registration.firstName')}:</label>
           <input 
@@ -189,6 +246,7 @@ function RegistrationForm() {
             required 
           />
         </div>
+
         <div className="form-group">
           <label>{t('registration.lastName')}:</label>
           <input 
@@ -199,6 +257,7 @@ function RegistrationForm() {
             required 
           />
         </div>
+
         <div className="form-group">
           <label>{t('registration.birthYear')}:</label>
           <input 
@@ -209,6 +268,7 @@ function RegistrationForm() {
             required 
           />
         </div>
+
         <div className="form-group">
           <label>{t('registration.club')}:</label>
           <input 
@@ -219,16 +279,18 @@ function RegistrationForm() {
             required 
           />
         </div>
+
         <div className="form-group">
           <label>{t('registration.email')}:</label>
           <input 
             type="email" 
             name="email" 
             value={formData.email} 
-            onChange={handleChange} 
-            required 
+            readOnly 
+            className="readonly-input"
           />
         </div>
+
         <div className="form-group">
           <label>{t('registration.gender')}:</label>
           <select 
@@ -242,8 +304,12 @@ function RegistrationForm() {
             <option value="F">{t('registration.female')}</option>
           </select>
         </div>
-        <button type="submit">{t('registration.register')}</button>
+
+        <button type="submit" className="submit-button">
+          {t('registration.register')}
+        </button>
       </form>
+
       {message.text && (
         <div className={`message ${message.type}`}>
           {message.text}
