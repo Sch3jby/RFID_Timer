@@ -156,7 +156,8 @@ export const translations = {
         logTitle: "Přihlášení k účtu",
         email: "Email",
         password: "Password",
-        register: "Registrace"
+        register: "Registrace",
+        forgotPassword: "Zapomenuté heslo?"
       },
       register: {
         submit: "Vytvořit účet",
@@ -167,6 +168,13 @@ export const translations = {
         confirmPassword: "Potvrdit heslo",
         haveAccount: "Již máte vytvořený účet?",
         login: "Přihlásit se"
+      },
+      forgotPassword: {
+        title: "Obnova hesla",
+        email: "Email",
+        submit: "Odeslat",
+        backToLogin: "Zpět na přihlášení",
+        description: "Po stisknutí tlačítka bude na váš e-mail odeslán formulář pro obnovení hesla."
       }
     },
     en: {
@@ -322,7 +330,8 @@ export const translations = {
         logTitle: "Login",
         email: "Email",
         password: "Password",
-        register: "Registration"
+        register: "Registration",
+        forgotPassword: "Forgot password?"
       },
       register: {
         submit: "Create account",
@@ -333,6 +342,13 @@ export const translations = {
         confirmPassword: "Confirm password",
         haveAccount: "Already have account?",
         login: "Login"
+      },
+      forgotPassword: {
+        title: "Password reset",
+        email: "Email",
+        submit: "Send",
+        backToLogin: "Back to login",
+        description: "After pressing the button, password reset form will be sent to your email."
       }
     }
   };

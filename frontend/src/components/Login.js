@@ -67,6 +67,9 @@ function Login() {
             required
           />
         </div>
+        <div className="forgot-password">
+          <Link to="/forgot-password">{t('login.forgotPassword') || 'Zapomenuté heslo?'}</Link>
+        </div>
         <button type="submit" disabled={isLoading} className="submit-button">
           {isLoading ? t('login.loggingIn') : t('login.submit')}
         </button>

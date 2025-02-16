@@ -1,16 +1,14 @@
-# app.py
-import os
-import logging
-from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, request, current_app
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, decode_token
 import telnetlib
 import configparser
 from datetime import datetime, time, timedelta
 import re
 from sqlalchemy import text
+from flask_mail import Mail, Message
+from functools import wraps
 
 # Import models
 from database import db
@@ -43,6 +41,20 @@ db.init_app(app)
 jwt = JWTManager(app)
 app.config['JWT_SECRET_KEY'] = 'jwt_secret_key_here'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
+
+# Initialize Mail
+mail = Mail()
+app.config['MAIL_SERVER'] = config.get('mail', 'MAIL_SERVER', fallback='smtp.gmail.com')
+app.config['MAIL_PORT'] = config.getint('mail', 'MAIL_PORT', fallback=587)
+app.config['MAIL_USE_TLS'] = config.getboolean('mail', 'MAIL_USE_TLS', fallback=True)
+app.config['MAIL_USERNAME'] = config.get('mail', 'MAIL_USERNAME', fallback='your-email@gmail.com')
+app.config['MAIL_PASSWORD'] = config.get('mail', 'MAIL_PASSWORD', fallback='your-app-password')
+mail.init_app(app)
+
+# Password reset configuration
+TOKEN_EXPIRY = 3600
+app.config['PASSWORD_RESET_SALT'] = config.get('security', 'PASSWORD_RESET_SALT', fallback='password-reset-salt')
+reset_requests = {}
 
 # Get the RFID configuration
 hostname = config.get('alien_rfid', 'hostname')
@@ -159,6 +171,74 @@ def parse_time_with_ms(time_str):
                    int(ms_part) * 1000)
     except ValueError as e:
         raise ValueError(f"Invalid time format: {str(e)}")
+
+def check_rate_limit(email):
+    """Check if email has exceeded rate limit for password reset requests."""
+    now = datetime.utcnow()
+    if email in reset_requests:
+        requests = [t for t in reset_requests[email] 
+                   if now - t < timedelta(hours=1)]
+        reset_requests[email] = requests
+        if len(requests) >= 3:
+            return False
+    else:
+        reset_requests[email] = []
+    reset_requests[email].append(now)
+    return True
+
+def send_password_reset_email(email, reset_token):
+    """Send password reset email with the reset token."""
+    reset_url = f"http://localhost:3000/reset-password?token={reset_token}"
+    
+    msg = Message(
+        'Password Reset Request',
+        sender=app.config['MAIL_USERNAME'],
+        recipients=[email]
+    )
+    
+    msg.body = f'''To reset your password, visit the following link:
+{reset_url}
+
+If you did not make this request, please ignore this email.
+The link will expire in 1 hour.
+'''
+    
+    mail.send(msg)
+
+def generate_reset_token(user_id):
+    """Generate a JWT token for password reset."""
+    return create_access_token(
+        identity=user_id,
+        additional_claims={'type': 'reset'},
+        expires_delta=timedelta(seconds=TOKEN_EXPIRY)
+    )
+
+def verify_reset_token(token):
+    """Verify the reset token and return the user_id if valid."""
+    try:
+        decoded_token = decode_token(token)
+        if decoded_token.get('type') != 'reset':
+            return None
+        return decoded_token['sub']
+    except Exception:
+        return None
+
+def validate_password(password):
+    """
+    Validate password strength.
+    Returns (bool, str) tuple - (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number"
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must contain at least one special character"
+    return True, ""
 
 # Routes
 @app.route('/')
@@ -2563,6 +2643,64 @@ def get_current_user():
         'email': user.email,
         'role': user.role
     }), 200
+
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    """Handle forgot password request."""
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'message': 'Email is required'}), 400
+    
+    if not check_rate_limit(email):
+        return jsonify({'message': 'Too many reset requests. Please try again later'}), 429
+    
+    user = Login.query.filter_by(email=email).first()
+    
+    if not user:
+        return jsonify({'message': 'If an account exists with this email, you will receive a password reset link'}), 200
+    
+    reset_token = generate_reset_token(str(user.id))
+    
+    try:
+        send_password_reset_email(email, reset_token)
+        return jsonify({'message': 'Password reset email sent'}), 200
+    except Exception as e:
+        app.logger.error(f"Error sending email: {e}")
+        return jsonify({'message': 'Error sending password reset email'}), 500
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    """Handle password reset."""
+    data = request.get_json()
+    token = data.get('token')
+    new_password = data.get('password')
+    
+    if not token or not new_password:
+        return jsonify({'message': 'Token and new password are required'}), 400
+    
+    is_valid, error_message = validate_password(new_password)
+    if not is_valid:
+        return jsonify({'message': error_message}), 400
+    
+    user_id = verify_reset_token(token)
+    if not user_id:
+        return jsonify({'message': 'Invalid or expired reset token'}), 400
+    
+    user = Login.query.get(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
+    user.password_hash = generate_password_hash(new_password)
+    
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Password successfully reset'}), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error resetting password: {e}")
+        return jsonify({'message': 'Error resetting password'}), 500
 
 @app.route('/<path:path>')
 def catch_all(path):

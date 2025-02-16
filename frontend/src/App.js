@@ -10,6 +10,8 @@ import RaceDetail from './components/RaceDetail';
 import RFIDReaderDetail from './components/RFIDReaderDetail';
 import Login from './components/Login';
 import Register from './components/Register';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import ProtectedRoute from './contexts/ProtectedRoutes';
 
 import './styles/Main.css';
@@ -35,6 +37,8 @@ function App() {
             <Route path="/rfid-reader/:raceId" element={<RFIDReaderDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
         </Layout>
       </Router>

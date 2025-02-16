@@ -42,11 +42,12 @@
   /* Navigation */
   .navigation {
     background-color: rgba(255, 255, 255, 0.97);
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 15px 0 rgba(0, 0, 0, 0.1);
     padding: 1rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
+    border-bottom: 2px solid var(--primary-color);
   }
   
   .nav-container {
@@ -102,7 +103,8 @@
     padding: 2rem;
     background-color: white;
     border-radius: var(--border-radius);
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 10px 0 rgba(0, 0, 0, 0.1);
+    border: 2px solid #2364ec57;
   }
   
   form {
@@ -1731,84 +1733,132 @@
   
   .user-nickname {
     font-weight: 500;
+    border-bottom: 2px #2563eb91;
   }
 
   /* Container Styling */
-.login-container,
-.register-container {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  text-align: center;
-  margin: 0 auto;
-  max-width: 600px;
-}
+  .login-container,
+  .register-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    text-align: center;
+    margin: 0 auto;
+    max-width: 600px;
+    border: 2px solid #2364ec57;
+  }
 
-/* Form Group Styling */
-.form-group {
-  margin-bottom: 1rem;
-  text-align: left;
-}
+  /* Form Group Styling */
+  .form-group {
+    margin-bottom: 1rem;
+    text-align: left;
+  }
 
-.form-group label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
+  .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
 
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 1rem;
-}
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
 
-/* Button Styling */
-.submit-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s;
-}
+  /* Button Styling */
+  .submit-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
 
-.submit-button:hover {
-  background-color: #0056b3;
-}
+  .submit-button:hover {
+    background-color: #0056b3;
+  }
 
-.submit-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
+  .submit-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
 
-/* Error Message Styling */
-.error-message {
-  color: rgb(190, 0, 0);
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
+  /* Error Message Styling */
+  .error-message {
+    color: rgb(190, 0, 0);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
 
-/* Links Styling */
-.register-link,
-.login-link {
-  margin-top: 1rem;
-  font-size: 0.9rem;
-}
+  /* Links Styling */
+  .register-link,
+  .login-link {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
 
-.register-link a,
-.login-link a {
-  color: #007bff;
-  text-decoration: none;
-}
+  .register-link a,
+  .login-link a {
+    color: #007bff;
+    text-decoration: none;
+  }
 
-.register-link a:hover,
-.login-link a:hover {
-  text-decoration: underline;
-}
+  .register-link a:hover,
+  .login-link a:hover {
+    text-decoration: underline;
+  }
+
+  .forgot-password {
+    margin-top: -10px;
+    margin-bottom: 15px;
+    text-align: right;
+  }
+
+  .forgot-password a {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9em;
+  }
+
+  .forgot-password a:hover {
+    text-decoration: underline;
+  }
+
+  .forgot-password-container,
+  .reset-password-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .forgot-password-description {
+    margin-bottom: 20px;
+    color: #666;
+    text-align: center;
+  }
+
+  .back-to-login,
+  .request-new-link {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+    text-decoration: none;
+  }
+
+  .back-to-login:hover,
+  .request-new-link:hover {
+    text-decoration: underline;
+  }
