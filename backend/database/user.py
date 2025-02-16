@@ -3,7 +3,7 @@ from . import db
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    forename = db.Column(db.String(25), nullable=False)
+    firstname = db.Column(db.String(25), nullable=False)
     surname = db.Column(db.String(25), nullable=False)
     year = db.Column(db.Integer, nullable=False)
     club = db.Column(db.String(50), nullable=False)

@@ -9,7 +9,10 @@ export const translations = {
         organizer: "Organizátor",
         competitor: "Registrace",
         startList: "Startovní listina",
-        calendar: "Kalendář"
+        calendar: "Kalendář",
+        login: "Přihlásit se",
+        logout: "Odhlásit se",
+        welcome: "Vítejte zpět,"
       },
       home: {
         welcome: "Vítejte v systému pro závody",
@@ -146,6 +149,35 @@ export const translations = {
         editRace: "Upravit závod",
         categoryMinNumber: "První číslo v této kategorii",
         categoryMaxNumber: "Poslední číslo v této kategorii"
+      },
+      login: {
+        submit: "Přihlásit se",
+        noAccount: "Nemáte účet?",
+        logTitle: "Přihlášení k účtu",
+        email: "Email",
+        password: "Password",
+        register: "Registrace",
+        forgotPassword: "Zapomenuté heslo?"
+      },
+      register: {
+        submit: "Vytvořit účet",
+        regTitle: "Vytvoření účtu",
+        nickname: "Jméno",
+        email: "Email",
+        password: "Heslo",
+        confirmPassword: "Potvrdit heslo",
+        haveAccount: "Již máte vytvořený účet?",
+        login: "Přihlásit se"
+      },
+      forgotPassword: {
+        title: "Obnova hesla",
+        email: "Email",
+        submit: "Odeslat",
+        backToLogin: "Zpět na přihlášení",
+        description: "Po stisknutí tlačítka bude na váš e-mail odeslán formulář pro obnovení hesla.",
+        checkEmail: "Email odeslán",
+        emailSent: "Odkaz pro obnovu hesla byl odeslán na uvedenou mailovou adresu. Platnost odkazu je 30 minut.",
+        sending: "Odesílání..."
       }
     },
     en: {
@@ -154,7 +186,10 @@ export const translations = {
         organizer: "Organizer",
         competitor: "Registration",
         startList: "Start List",
-        calendar: "Calendar"
+        calendar: "Calendar",
+        login: "Login",
+        logout: "Logout",
+        welcome: "Welcome back,"
       },
       home: {
         welcome: "Welcome to the Race System",
@@ -291,6 +326,35 @@ export const translations = {
         editRace: "Edit race",
         categoryMinNumber: "First number for this category",
         categoryMaxNumber: "Last number for this category"
+      },
+      login: {
+        submit: "Login",
+        noAccount: "Dont have account?",
+        logTitle: "Login",
+        email: "Email",
+        password: "Password",
+        register: "Registration",
+        forgotPassword: "Forgot password?"
+      },
+      register: {
+        submit: "Create account",
+        regTitle: "Create account",
+        nickname: "Name",
+        email: "Email",
+        password: "Password",
+        confirmPassword: "Confirm password",
+        haveAccount: "Already have account?",
+        login: "Login"
+      },
+      forgotPassword: {
+        title: "Password reset",
+        email: "Email",
+        submit: "Send",
+        backToLogin: "Back to login",
+        description: "After pressing the button, password reset form will be sent to your email.",
+        checkEmail: "Email sent",
+        emailSent: "A password reset link has been sent to the specified email address. The validity of the link is 30 minutes.",
+        sending: "Sending..."
       }
     }
   };

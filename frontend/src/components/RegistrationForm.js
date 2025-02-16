@@ -7,7 +7,7 @@ function RegistrationForm() {
   const { t } = useTranslation();
   const location = useLocation();
   const [formData, setFormData] = useState({
-    forename: '',
+    firstname: '',
     surname: '',
     year: '',
     club: '',
@@ -120,7 +120,7 @@ function RegistrationForm() {
       const response = await axios.post('http://localhost:5001/registration', formData);
       setMessage({ type: 'success', text: t('registration.success') });
       setFormData({ 
-        forename: '', 
+        firstname: '', 
         surname: '', 
         year: '', 
         club: '', 
@@ -183,8 +183,8 @@ function RegistrationForm() {
           <label>{t('registration.firstName')}:</label>
           <input 
             type="text" 
-            name="forename" 
-            value={formData.forename} 
+            name="firstname" 
+            value={formData.firstname} 
             onChange={handleChange} 
             required 
           />

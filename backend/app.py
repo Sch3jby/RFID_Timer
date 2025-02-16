@@ -1,14 +1,14 @@
-# app.py
-import os
-import logging
-from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, request, current_app
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, decode_token
 import telnetlib
 import configparser
 from datetime import datetime, time, timedelta
 import re
 from sqlalchemy import text
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Mail, Message
 
 # Import models
 from database import db
@@ -18,6 +18,7 @@ from database.race import Race
 from database.registration import Registration
 from database.category import Category
 from database.track import Track
+from database.login import Login
 
 from database.race_operations import setup_all_race_results_tables
 
@@ -28,12 +29,32 @@ config.read('config.ini')
 # Initialize Flask application
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000"], "supports_credentials": True}})
 
 # Initialize database
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('database', 'DATABASE_URL')
 app.config['SECRET_KEY'] = 'secret_key_here'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+
+# Inicializace JWT
+jwt = JWTManager(app)
+app.config['JWT_SECRET_KEY'] = 'jwt_secret_key_here'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
+
+# Initialize Mail
+mail = Mail()
+app.config['MAIL_SERVER'] = config.get('mail', 'MAIL_SERVER', fallback='smtp.gmail.com')
+app.config['MAIL_PORT'] = config.getint('mail', 'MAIL_PORT', fallback=587)
+app.config['MAIL_USE_TLS'] = config.getboolean('mail', 'MAIL_USE_TLS', fallback=True)
+app.config['MAIL_USERNAME'] = config.get('mail', 'MAIL_USERNAME', fallback='your-email@gmail.com')
+app.config['MAIL_PASSWORD'] = config.get('mail', 'MAIL_PASSWORD', fallback='your-app-password')
+mail.init_app(app)
+
+# Password reset configuration
+TOKEN_EXPIRY = 1800
+app.config['PASSWORD_RESET_SALT'] = config.get('security', 'PASSWORD_RESET_SALT', fallback='password-reset-salt')
+reset_requests = {}
 
 # Get the RFID configuration
 hostname = config.get('alien_rfid', 'hostname')
@@ -151,6 +172,72 @@ def parse_time_with_ms(time_str):
     except ValueError as e:
         raise ValueError(f"Invalid time format: {str(e)}")
 
+def generate_reset_token(user_id):
+    """Generate a timed token for password reset."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    return serializer.dumps(user_id, salt='password-reset-salt')
+
+def verify_reset_token(token, expiration=1800):
+    """Verify the reset token and return the user_id if valid."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    try:
+        user_id = serializer.loads(
+            token,
+            salt='password-reset-salt',
+            max_age=expiration
+        )
+        return user_id
+    except:
+        return None
+
+def check_rate_limit(email):
+    """Check if email has exceeded rate limit for password reset requests."""
+    now = datetime.utcnow()
+    if email in reset_requests:
+        requests = [t for t in reset_requests[email] 
+                   if now - t < timedelta(hours=1)]
+        reset_requests[email] = requests
+        if len(requests) >= 3:
+            return False
+    else:
+        reset_requests[email] = []
+    reset_requests[email].append(now)
+    return True
+
+def send_password_reset_email(email, reset_token):
+    """Send password reset email with the reset token."""
+    reset_url = f"http://localhost:3000/reset-password?token={reset_token}"
+    
+    msg = Message(
+        'Password Reset Request',
+        sender=current_app.config['MAIL_USERNAME'],
+        recipients=[email]
+    )
+    
+    msg.body = f'''To reset your password, visit the following link:
+{reset_url}
+
+If you did not make this request, please ignore this email.
+The link will expire in 30 minutes.
+'''
+    
+    mail.send(msg)
+
+def validate_password(password):
+    """
+    Validate password strength.
+    Returns (bool, str) tuple - (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number"
+    return True, ""
+
 # Routes
 @app.route('/')
 def index():
@@ -199,10 +286,10 @@ def fetch_taglist():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/registration', methods=['POST'])
-def register():
+def registration():
     try:
         data = request.json
-        forename = data.get('forename')
+        firstname = data.get('firstname')
         surname = data.get('surname')
         year = data.get('year')
         club = data.get('club')
@@ -211,7 +298,7 @@ def register():
         race_id = data.get('race_id')
         track_id = data.get('track_id')
 
-        if not all([forename, surname, year, club, email, gender, race_id, track_id]):
+        if not all([firstname, surname, year, club, email, gender, race_id, track_id]):
             return jsonify({'error': 'All fields are required'}), 400
 
         try:
@@ -248,7 +335,7 @@ def register():
             }), 400
 
         user = Users(
-            forename=forename,
+            firstname=firstname,
             surname=surname,
             year=year,
             club=club,
@@ -1019,7 +1106,7 @@ def get_race_detail(race_id):
 
             final_participant_details.append({
                 'number': participant['number'],
-                'forename': user.forename,
+                'firstname': user.firstname,
                 'surname': user.surname,
                 'club': user.club,
                 'category': category.category_name,
@@ -1232,7 +1319,7 @@ def get_race_results(race_id):
                     ll.lap_number,
                     ll.status,
                     ll.last_seen_time,
-                    u.forename,
+                    u.firstname,
                     u.surname,
                     u.club,
                     u.year,
@@ -1311,7 +1398,7 @@ def get_race_results(race_id):
             )
             SELECT 
                 number,
-                forename,
+                firstname,
                 surname,
                 club,
                 category_name,
@@ -1366,7 +1453,7 @@ def get_race_results(race_id):
         for row in results:
             formatted_results.append({
                 'number': row.number,
-                'name': f"{row.forename} {row.surname}",
+                'name': f"{row.firstname} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
@@ -1445,7 +1532,7 @@ def get_race_results_by_category(race_id):
                     ll.lap_number,
                     ll.status,
                     ll.last_seen_time,
-                    u.forename,
+                    u.firstname,
                     u.surname,
                     u.club,
                     u.year,
@@ -1509,7 +1596,7 @@ def get_race_results_by_category(race_id):
             )
             SELECT 
                 number,
-                forename,
+                firstname,
                 surname,
                 club,
                 category_name,
@@ -1553,7 +1640,7 @@ def get_race_results_by_category(race_id):
         for row in results:
             formatted_results.append({
                 'number': row.number,
-                'name': f"{row.forename} {row.surname}",
+                'name': f"{row.firstname} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
@@ -1630,7 +1717,7 @@ def get_race_results_by_track(race_id):
                     ll.lap_number,
                     ll.status,
                     ll.last_seen_time,
-                    u.forename,
+                    u.firstname,
                     u.surname,
                     u.club,
                     u.year,
@@ -1694,7 +1781,7 @@ def get_race_results_by_track(race_id):
             )
             SELECT 
                 number,
-                forename,
+                firstname,
                 surname,
                 club,
                 category_name,
@@ -1737,7 +1824,7 @@ def get_race_results_by_track(race_id):
         for row in results:
             formatted_results.append({
                 'number': row.number,
-                'name': f"{row.forename} {row.surname}",
+                'name': f"{row.firstname} {row.surname}",
                 'club': row.club,
                 'category': row.category_name or 'N/A',
                 'track': row.track_name,
@@ -2432,7 +2519,7 @@ def get_race_startlist(race_id):
             start_list.append({
                 'registration_id': reg.id,
                 'user_id': user.id,
-                'forename': user.forename,
+                'firstname': user.firstname,
                 'surname': user.surname,
                 'club': user.club,
                 'number': '---' if reg.number is None else reg.number,
@@ -2456,7 +2543,7 @@ def update_startlist_user(race_id):
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        user.forename = data['forename']
+        user.firstname = data['firstname']
         user.surname = data['surname']
         user.club = data['club']
         
@@ -2489,6 +2576,134 @@ def update_startlist_registration(race_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error updating registration: {str(e)}'}), 500
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    password = data.get('password')
+    
+    if not data.get('nickname') or not data.get('email') or not data.get('password'):
+        return jsonify({'message': 'Chybí povinné údaje'}), 400
+    
+    existing_user = Login.query.filter_by(email=data['email']).first()
+    if existing_user:
+        return jsonify({'message': 'Uživatel s tímto emailem již existuje'}), 409
+    
+    is_valid, error_message = validate_password(password)
+    if not is_valid:
+        return jsonify({'message': error_message}), 400
+    
+    new_user = Login(
+        nickname=data['nickname'],
+        email=data['email'],
+        password_hash=generate_password_hash(data['password'])
+    )
+    
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({'message': 'Registrace úspěšná'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Chyba při registraci: {str(e)}'}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    
+    if not data.get('email') or not data.get('password'):
+        return jsonify({'message': 'Chybí email nebo heslo'}), 400
+    
+    user = Login.query.filter_by(email=data['email']).first()
+    
+    if not user or not check_password_hash(user.password_hash, data['password']):
+        return jsonify({'message': 'Nesprávný email nebo heslo'}), 401
+    
+    access_token = create_access_token(identity=str(user.id))
+    
+    return jsonify({
+        'message': 'Přihlášení úspěšné',
+        'access_token': access_token,
+        'user': {
+            'id': user.id,
+            'nickname': user.nickname,
+            'email': user.email
+        }
+    }), 200
+
+@app.route('/api/me', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    user_id = get_jwt_identity()
+    user = Login.query.get(user_id)
+    
+    if not user:
+        return jsonify({'message': 'Uživatel nenalezen'}), 404
+    
+    return jsonify({
+        'id': user.id,
+        'nickname': user.nickname,
+        'email': user.email,
+        'role': user.role
+    }), 200
+
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    """Handle forgot password request."""
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'message': 'Email is required'}), 400
+    
+    if not check_rate_limit(email):
+        return jsonify({'message': 'Too many reset requests. Please try again later'}), 429
+    
+    user = Login.query.filter_by(email=email).first()
+    
+    if not user:
+        return jsonify({'message': 'If an account exists with this email, you will receive a password reset link'}), 200
+    
+    reset_token = generate_reset_token(str(user.id))
+    
+    try:
+        send_password_reset_email(email, reset_token)
+        return jsonify({'message': 'Password reset email sent'}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error sending email: {e}")
+        return jsonify({'message': 'Error sending password reset email'}), 500
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    """Handle password reset."""
+    data = request.get_json()
+    token = data.get('token')
+    new_password = data.get('password')
+    
+    if not token or not new_password:
+        return jsonify({'message': 'Token and new password are required'}), 400
+    
+    is_valid, error_message = validate_password(new_password)
+    if not is_valid:
+        return jsonify({'message': error_message}), 400
+    
+    user_id = verify_reset_token(token)
+    if not user_id:
+        return jsonify({'message': 'Invalid or expired reset token'}), 400
+    
+    user = Login.query.get(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
+    user.password_hash = generate_password_hash(new_password)
+    
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Password successfully reset'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error resetting password: {e}")
+        return jsonify({'message': 'Error resetting password'}), 500
 
 @app.route('/<path:path>')
 def catch_all(path):
