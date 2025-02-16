@@ -7,8 +7,8 @@ import configparser
 from datetime import datetime, time, timedelta
 import re
 from sqlalchemy import text
+from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Mail, Message
-from functools import wraps
 
 # Import models
 from database import db
@@ -52,7 +52,7 @@ app.config['MAIL_PASSWORD'] = config.get('mail', 'MAIL_PASSWORD', fallback='your
 mail.init_app(app)
 
 # Password reset configuration
-TOKEN_EXPIRY = 3600
+TOKEN_EXPIRY = 1800
 app.config['PASSWORD_RESET_SALT'] = config.get('security', 'PASSWORD_RESET_SALT', fallback='password-reset-salt')
 reset_requests = {}
 
@@ -172,6 +172,24 @@ def parse_time_with_ms(time_str):
     except ValueError as e:
         raise ValueError(f"Invalid time format: {str(e)}")
 
+def generate_reset_token(user_id):
+    """Generate a timed token for password reset."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    return serializer.dumps(user_id, salt='password-reset-salt')
+
+def verify_reset_token(token, expiration=1800):
+    """Verify the reset token and return the user_id if valid."""
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    try:
+        user_id = serializer.loads(
+            token,
+            salt='password-reset-salt',
+            max_age=expiration
+        )
+        return user_id
+    except:
+        return None
+
 def check_rate_limit(email):
     """Check if email has exceeded rate limit for password reset requests."""
     now = datetime.utcnow()
@@ -192,7 +210,7 @@ def send_password_reset_email(email, reset_token):
     
     msg = Message(
         'Password Reset Request',
-        sender=app.config['MAIL_USERNAME'],
+        sender=current_app.config['MAIL_USERNAME'],
         recipients=[email]
     )
     
@@ -200,28 +218,10 @@ def send_password_reset_email(email, reset_token):
 {reset_url}
 
 If you did not make this request, please ignore this email.
-The link will expire in 1 hour.
+The link will expire in 30 minutes.
 '''
     
     mail.send(msg)
-
-def generate_reset_token(user_id):
-    """Generate a JWT token for password reset."""
-    return create_access_token(
-        identity=user_id,
-        additional_claims={'type': 'reset'},
-        expires_delta=timedelta(seconds=TOKEN_EXPIRY)
-    )
-
-def verify_reset_token(token):
-    """Verify the reset token and return the user_id if valid."""
-    try:
-        decoded_token = decode_token(token)
-        if decoded_token.get('type') != 'reset':
-            return None
-        return decoded_token['sub']
-    except Exception:
-        return None
 
 def validate_password(password):
     """
@@ -236,8 +236,6 @@ def validate_password(password):
         return False, "Password must contain at least one lowercase letter"
     if not re.search(r"\d", password):
         return False, "Password must contain at least one number"
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-        return False, "Password must contain at least one special character"
     return True, ""
 
 # Routes
@@ -2582,6 +2580,7 @@ def update_startlist_registration(race_id):
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
+    password = data.get('password')
     
     if not data.get('nickname') or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Chybí povinné údaje'}), 400
@@ -2589,6 +2588,10 @@ def register():
     existing_user = Login.query.filter_by(email=data['email']).first()
     if existing_user:
         return jsonify({'message': 'Uživatel s tímto emailem již existuje'}), 409
+    
+    is_valid, error_message = validate_password(password)
+    if not is_valid:
+        return jsonify({'message': error_message}), 400
     
     new_user = Login(
         nickname=data['nickname'],
@@ -2667,7 +2670,7 @@ def forgot_password():
         send_password_reset_email(email, reset_token)
         return jsonify({'message': 'Password reset email sent'}), 200
     except Exception as e:
-        app.logger.error(f"Error sending email: {e}")
+        current_app.logger.error(f"Error sending email: {e}")
         return jsonify({'message': 'Error sending password reset email'}), 500
 
 @app.route('/api/reset-password', methods=['POST'])
@@ -2699,7 +2702,7 @@ def reset_password():
         return jsonify({'message': 'Password successfully reset'}), 200
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"Error resetting password: {e}")
+        current_app.logger.error(f"Error resetting password: {e}")
         return jsonify({'message': 'Error resetting password'}), 500
 
 @app.route('/<path:path>')

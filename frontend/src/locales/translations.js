@@ -174,7 +174,10 @@ export const translations = {
         email: "Email",
         submit: "Odeslat",
         backToLogin: "Zpět na přihlášení",
-        description: "Po stisknutí tlačítka bude na váš e-mail odeslán formulář pro obnovení hesla."
+        description: "Po stisknutí tlačítka bude na váš e-mail odeslán formulář pro obnovení hesla.",
+        checkEmail: "Email odeslán",
+        emailSent: "Odkaz pro obnovu hesla byl odeslán na uvedenou mailovou adresu. Platnost odkazu je 30 minut.",
+        sending: "Odesílání..."
       }
     },
     en: {
@@ -348,7 +351,10 @@ export const translations = {
         email: "Email",
         submit: "Send",
         backToLogin: "Back to login",
-        description: "After pressing the button, password reset form will be sent to your email."
+        description: "After pressing the button, password reset form will be sent to your email.",
+        checkEmail: "Email sent",
+        emailSent: "A password reset link has been sent to the specified email address. The validity of the link is 30 minutes.",
+        sending: "Sending..."
       }
     }
   };
