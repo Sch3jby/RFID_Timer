@@ -111,13 +111,26 @@ const StartEditor = ({ raceId, onClose }) => {
     }
   };
 
-  // Cancel edit
   const handleCancelEdit = () => {
     setEditingRegistration(null);
     setError(null);
   };
 
-  // Render loading state
+  const handleDelete = async (registrationId) => {
+    if (!window.confirm('Opravdu chcete odstranit tohoto závodníka? Tato akce odstraní závodníka ze závodu i z databáze uživatelů.')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`http://localhost:5001/race/${raceId}/startlist/delete/${registrationId}`);
+      setSuccessMessage('Závodník byl úspěšně odstraněn ze závodu i z databáze');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      await fetchStartList();
+    } catch (err) {
+      setError('Chyba při odstraňování závodníka: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   if (loading) {
     return (
       <div className="start-editor">
@@ -272,12 +285,20 @@ const StartEditor = ({ raceId, onClose }) => {
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => handleEditClick(registration)}
-                        className="start-editor__button start-editor__button--edit"
-                      >
-                        Edit
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleEditClick(registration)}
+                          className="start-editor__button start-editor__button--edit"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(registration.registration_id)}
+                          className="start-editor__button start-editor__button--delete"
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
                   </div>
                 </td>

@@ -9,7 +9,7 @@ export const translations = {
         organizer: "Organizátor",
         competitor: "Registrace",
         startList: "Startovní listina",
-        calendar: "Kalendář",
+        calendar: "Kalendář závodů",
         login: "Přihlásit se",
         logout: "Odhlásit se",
         welcome: "Vítejte zpět,"
@@ -81,7 +81,7 @@ export const translations = {
         createNewRace: "Vytvořit nový závod"
       },
       calendar: {
-        title: "Kalendář",
+        title: "Kalendář závodů",
         loading: "Načítání...",
         error: "Chyba při načítání závodů",
         search: "Hledat",
@@ -186,7 +186,7 @@ export const translations = {
         organizer: "Organizer",
         competitor: "Registration",
         startList: "Start List",
-        calendar: "Calendar",
+        calendar: "Race calendar",
         login: "Login",
         logout: "Logout",
         welcome: "Welcome back,"
@@ -258,7 +258,7 @@ export const translations = {
         createNewRace: "Create new race"
       },
       calendar: {
-        title: "Calendar",
+        title: "Race calendar",
         loading: "Loading...",
         error: "Error loading races",
         search: "Search",

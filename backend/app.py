@@ -2577,6 +2577,32 @@ def update_startlist_registration(race_id):
         db.session.rollback()
         return jsonify({'error': f'Error updating registration: {str(e)}'}), 500
 
+@app.route('/race/<int:race_id>/startlist/delete/<int:registration_id>', methods=['DELETE'])
+def delete_registration(race_id, registration_id):
+    try:
+        registration = Registration.query.get(registration_id)
+        
+        if not registration:
+            return jsonify({'error': 'Registration not found'}), 404
+            
+        if registration.race_id != race_id:
+            return jsonify({'error': 'Registration does not belong to this race'}), 403
+        
+        user_id = registration.user_id
+        
+        db.session.delete(registration)
+        
+        user = Users.query.get(user_id)
+        if user:
+            db.session.delete(user)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Registration and user deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error deleting registration and user: {str(e)}'}), 500
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
