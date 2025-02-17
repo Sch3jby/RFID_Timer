@@ -186,7 +186,9 @@ export const translations = {
         track: "Trať",
         startNumber: "Startovní číslo",
         startTime: "Čas startu",
-        laps: "kol"
+        laps: "Počet kol",
+        firstname: "Jméno",
+        surname: "Příjmení"
       }
     },
     en: {
@@ -375,7 +377,9 @@ export const translations = {
         track: "Track",
         startNumber: "Start number",
         startTime: "Race start",
-        laps: "laps"
+        laps: "Number of laps",
+        firstname: "Firstname",
+        surname: "Surname"
       }
     }
   };

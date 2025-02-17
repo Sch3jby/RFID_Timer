@@ -74,24 +74,24 @@ function ProfilePage() {
             <table className="registrations-table">
               <thead>
                 <tr>
+                  <th>{t('profile.firstname')}</th>
+                  <th>{t('profile.surname')}</th>
                   <th>{t('profile.race')}</th>
                   <th>{t('profile.date')}</th>
                   <th>{t('profile.track')}</th>
-                  <th>{t('profile.startNumber')}</th>
-                  <th>{t('profile.startTime')}</th>
                 </tr>
               </thead>
               <tbody>
                 {registrations.map(reg => (
                   <tr key={reg.registration_id}>
+                    <td>{reg.user.firstname}</td>
+                    <td>{reg.user.surname}</td>
                     <td>{reg.race.name}</td>
                     <td>{reg.race.date}</td>
                     <td>
                       {reg.track.name} ({reg.track.distance} km,{' '}
-                      {reg.track.number_of_laps} {t('profile.laps')})
+                      {t('profile.laps')}: {reg.track.number_of_laps})
                     </td>
-                    <td>{reg.registration_details.number}</td>
-                    <td>{reg.registration_details.user_start_time}</td>
                   </tr>
                 ))}
               </tbody>
