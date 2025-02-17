@@ -186,9 +186,20 @@ export const translations = {
         track: "Trať",
         startNumber: "Startovní číslo",
         startTime: "Čas startu",
-        laps: "Počet kol",
+        lapsCompleted: "Počet kol",
         firstname: "Jméno",
-        surname: "Příjmení"
+        surname: "Příjmení",
+        yourResults: "Vaše výsledky",
+        number: "Číslo",
+        track: "Trať",
+        category: "Kategorie",
+        progress: "Kolo",
+        lastSeen: "Čas v cíli",
+        raceTime: "Čas závodu",
+        overallPosition: "Celkové pořadí",
+        categoryPosition: "Pořadí v kategorii",
+        status: "Status",
+        actions: "Mezičasy"
       }
     },
     en: {
@@ -377,9 +388,20 @@ export const translations = {
         track: "Track",
         startNumber: "Start number",
         startTime: "Race start",
-        laps: "Number of laps",
+        lapsCompleted: "Number of laps",
         firstname: "Firstname",
-        surname: "Surname"
+        surname: "Surname",
+        yourResults: "Your results",
+        number: "Number",
+        track: "Track",
+        category: "Category",
+        progress: "Lap",
+        lastSeen: "Finnish time",
+        raceTime: "Race time",
+        overallPosition: "Overall position",
+        categoryPosition: "Category position",
+        status: "Status",
+        actions: "Lap times"
       }
     }
   };

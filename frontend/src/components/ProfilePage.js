@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../contexts/LanguageContext";
+import UserRaceResults from "./UserRaceResults";
 
 function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [registrations, setRegistrations] = useState([]);
+  const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -50,6 +52,10 @@ function ProfilePage() {
     fetchUserRegistrations();
   }, [navigate, t]);
 
+  const handleViewResults = (raceId) => {
+    setSelectedRaceId(raceId);
+  };
+
   if (loading) return <div className="profile-container loading">{t('common.loading')}</div>;
   if (error) return <div className="profile-container error">{error}</div>;
 
@@ -79,6 +85,7 @@ function ProfilePage() {
                   <th>{t('profile.race')}</th>
                   <th>{t('profile.date')}</th>
                   <th>{t('profile.track')}</th>
+                  <th>{t('profile.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,6 +99,14 @@ function ProfilePage() {
                       {reg.track.name} ({reg.track.distance} km,{' '}
                       {t('profile.laps')}: {reg.track.number_of_laps})
                     </td>
+                    <td>
+                      <button 
+                        className="view-results-btn"
+                        onClick={() => handleViewResults(reg.race.id)}
+                      >
+                        {t('profile.viewResults')}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -99,6 +114,10 @@ function ProfilePage() {
           </div>
         )}
       </div>
+      
+      {selectedRaceId && (
+        <UserRaceResults raceId={selectedRaceId} />
+      )}
     </div>
   );
 }
