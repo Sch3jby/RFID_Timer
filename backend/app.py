@@ -2731,6 +2731,79 @@ def reset_password():
         current_app.logger.error(f"Error resetting password: {e}")
         return jsonify({'message': 'Error resetting password'}), 500
 
+@app.route('/api/me/registrations', methods=['GET'])
+@jwt_required()
+def get_user_registrations():
+    user_id = get_jwt_identity()
+    
+    try:
+        login_user = Login.query.get(user_id)
+        if not login_user:
+            return jsonify({'message': 'Uživatel nenalezen v Login tabulce'}), 404
+        
+        user_email = login_user.email
+        
+        # Najdeme všechny uživatele s daným emailem
+        users_with_same_email = Users.query.filter_by(email=user_email).all()
+        user_ids = [user.id for user in users_with_same_email]
+        
+        if not user_ids:
+            return jsonify({'message': 'Uživatel nenalezen v Users tabulce'}), 404
+        
+        # První uživatel pro základní údaje
+        main_user = users_with_same_email[0]
+        
+        registrations = (
+            db.session.query(Registration, Race, Track, Users)
+            .join(Race, Registration.race_id == Race.id)
+            .join(Track, Registration.track_id == Track.id)
+            .join(Users, Registration.user_id == Users.id)
+            .filter(Users.email == user_email)  # Filtrujeme podle emailu, ne podle ID
+            .all()
+        )
+        
+        result = []
+        for reg, race, track, user in registrations:
+            result.append({
+                'registration_id': reg.id,
+                'race': {
+                    'id': race.id,
+                    'name': race.name,
+                    'date': race.date.strftime('%Y-%m-%d'),
+                    'start_type': 'Hromadný' if race.start == 'M' else 'Intervalový',
+                    'description': race.description
+                },
+                'track': {
+                    'id': track.id,
+                    'name': track.name,
+                    'distance': track.distance,
+                    'number_of_laps': track.number_of_laps
+                },
+                'user': {
+                    'id': user.id,
+                    'firstname': user.firstname,
+                    'surname': user.surname,
+                    'club': user.club,
+                    'year': user.year,
+                    'email': user.email,
+                    'gender': 'Muž' if user.gender == 'M' else 'Žena'
+                }
+            })
+        
+        return jsonify({
+            'user': {
+                'id': main_user.id,
+                'firstname': main_user.firstname,
+                'surname': main_user.surname,
+                'nickname': login_user.nickname,
+                'email': main_user.email
+            },
+            'registrations': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Chyba při získávání registrací: {str(e)}'}), 500
+
 @app.route('/<path:path>')
 def catch_all(path):
     return app.send_static_file('index.html'), 200

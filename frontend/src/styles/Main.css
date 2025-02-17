@@ -77,6 +77,25 @@
     background-color: #eff6ff;
     font-weight: 500;
   }
+
+  .prof-button {
+    text-decoration: none;
+    color: var(--secondary-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+  }
+  
+  .prof-button:hover {
+    color: var(--primary-color);
+    background-color: #f1f5f9;
+  }
+  
+  .prof-button.active {
+    color: var(--primary-color);
+    background-color: #eff6ff;
+    font-weight: 500;
+  }
   
   /* Home Page */
   .home-container {
@@ -1867,4 +1886,182 @@
   .readonly-input {
     background-color: #f5f5f5;
     cursor: not-allowed;
+  }
+
+  /* ProfilePage.css */
+  .profile-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 12px;
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .profile-container h1 {
+    font-size: 2.2rem;
+    color: #333;
+    margin-bottom: 2rem;
+    text-align: center;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 1rem;
+  }
+
+  .user-info-card {
+    background: linear-gradient(135deg, #4a90e2, var(--primary-color));
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  .user-info-card h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .user-info-card p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .registrations-section {
+    margin-top: 3rem;
+  }
+
+  .registrations-section h2 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eaeaea;
+  }
+
+  .no-registrations {
+    background-color: #f9f9f9;
+    padding: 2rem;
+    text-align: center;
+    border-radius: 8px;
+    color: #777;
+    font-style: italic;
+  }
+
+  .registrations-table-container {
+    margin-top: 1.5rem;
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .registrations-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    background-color: white;
+  }
+
+  .registrations-table th {
+    background-color: rgb(223, 223, 223);
+    color: var(--text-color);
+    padding: 1rem;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    border-bottom: 2px solid var(--primary-color);
+  }
+
+  .registrations-table th:first-child {
+    border-top-left-radius: 8px;
+  }
+
+  .registrations-table th:last-child {
+    border-top-right-radius: 8px;
+  }
+
+  .registrations-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .registrations-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .registrations-table tr:hover {
+    background-color: #f9f9f9;
+  }
+
+  /* Styles for loading and error states */
+  .profile-container.loading,
+  .profile-container.error {
+    text-align: center;
+    padding: 4rem 2rem;
+    font-size: 1.2rem;
+    color: #666;
+  }
+
+  .profile-container.error {
+    color: #d9534f;
+    background-color: #fdf7f7;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .profile-container {
+      padding: 1.5rem;
+      margin: 1rem;
+    }
+    
+    .profile-container h1 {
+      font-size: 1.8rem;
+    }
+    
+    .user-info-card {
+      padding: 1.2rem;
+    }
+    
+    .user-info-card h2 {
+      font-size: 1.4rem;
+    }
+    
+    .registrations-table th,
+    .registrations-table td {
+      padding: 0.6rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  /* Additional styles for better UX */
+  .registrations-table .empty-cell {
+    color: #999;
+    font-style: italic;
+  }
+
+  /* Button styles (if you need to add any buttons) */
+  .profile-action-button {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .profile-action-button:hover {
+    background-color: #3273bf;
+  }
+
+  /* Animation for loading state */
+  @keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+
+  .profile-container.loading {
+    animation: pulse 1.5s infinite;
   }

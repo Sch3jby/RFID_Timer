@@ -12,6 +12,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import ProfilePage from './components/ProfilePage';
 import ProtectedAdmin from './contexts/ProtectedAdmin';
 import ProtectedRegistration from './contexts/ProtectedRegistration';
 
@@ -47,6 +48,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </Layout>
       </Router>

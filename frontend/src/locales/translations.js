@@ -1,6 +1,3 @@
-import Calendar from "../components/Calendar";
-import LapTimes from "../components/LapTimes";
-import RaceDetail from "../components/RaceDetail";
 
 export const translations = {
     cs: {
@@ -12,7 +9,8 @@ export const translations = {
         calendar: "Kalendář závodů",
         login: "Přihlásit se",
         logout: "Odhlásit se",
-        welcome: "Vítejte zpět,"
+        welcome: "Vítejte zpět,",
+        profile: "Profil"
       },
       home: {
         welcome: "Vítejte v systému pro závody",
@@ -178,6 +176,17 @@ export const translations = {
         checkEmail: "Email odeslán",
         emailSent: "Odkaz pro obnovu hesla byl odeslán na uvedenou mailovou adresu. Platnost odkazu je 30 minut.",
         sending: "Odesílání..."
+      },
+      profile: {
+        title: "Můj profil",
+        email: "Email",
+        yourRegistrations: "Vaše přihlášky",
+        race: "Závod",
+        date: "Datum",
+        track: "Trať",
+        startNumber: "Startovní číslo",
+        startTime: "Čas startu",
+        laps: "kol"
       }
     },
     en: {
@@ -189,7 +198,8 @@ export const translations = {
         calendar: "Race calendar",
         login: "Login",
         logout: "Logout",
-        welcome: "Welcome back,"
+        welcome: "Welcome back,",
+        profile: "Profile"
       },
       home: {
         welcome: "Welcome to the Race System",
@@ -355,6 +365,17 @@ export const translations = {
         checkEmail: "Email sent",
         emailSent: "A password reset link has been sent to the specified email address. The validity of the link is 30 minutes.",
         sending: "Sending..."
+      },
+      profile: {
+        title: "My profile",
+        email: "Email",
+        yourRegistrations: "Your registrations",
+        race: "Race",
+        date: "Date",
+        track: "Track",
+        startNumber: "Start number",
+        startTime: "Race start",
+        laps: "laps"
       }
     }
   };

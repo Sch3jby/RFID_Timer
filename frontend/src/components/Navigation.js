@@ -100,6 +100,14 @@ function Navigation() {
           {isLoggedIn && userNickname && (
             <span className="user-nickname">{t('nav.welcome')} {userNickname}</span>
           )}
+          {isLoggedIn && (
+            <Link 
+              to="/profile" 
+              className={`prof-button ${location.pathname === '/profile' ? 'active' : ''}`}
+            >
+              {t('nav.profile')}
+            </Link>
+          )}
           <button 
             className="login-button"
             onClick={isLoggedIn ? handleLogout : handleLogin}
