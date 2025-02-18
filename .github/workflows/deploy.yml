@@ -1,12 +1,12 @@
 name: Deploy to Production
 
-#Spouští se při pushi na main
+# Spouští se při pushi na main
 on:
   push:
     branches:
       - main
 
-#Když přidje druhý push během nasazování předchozího, ten předchozí se zruší
+# Když přidje druhý push během nasazování předchozího, ten předchozí se zruší
 concurrency: 
   group: production_environment
   cancel-in-progress: true
@@ -15,10 +15,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      #Stáhne virtuálně kód na ubuntu virt stroj
+      # Stáhne virtuálně kód na ubuntu virt stroj
       - uses: actions/checkout@v2
       
-      #Nastavuje privátní klíč pro ssh připojení k serveru
+      # Nastavuje privátní klíč pro ssh připojení k serveru
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -26,23 +26,39 @@ jobs:
           known_hosts: unnecessary
           if_key_exists: replace
           
-      #Nastavuje cílový server mezi známé hostitele (důvěřuje mu)
+      # Nastavuje cílový server mezi známé hostitele (důvěřuje mu)
       - name: Adding Known Hosts
         run: ssh-keyscan -H bard.nti.tul.cz >> ~/.ssh/known_hosts
       
-      #Deploy přes ssh (jako bych to dělal ručně v cmd)
+      # Deploy přes ssh (jako bych to dělal ručně v cmd)
       - name: Deploy with SSH
         run: |
           ssh schejby@bard.nti.tul.cz "\
             cd /var/www/race-app && \
-            git pull && \
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S cp /var/www/race-app/frontend/nginx.conf /etc/nginx/sites-available/race-app && \
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S ln -sf /etc/nginx/sites-available/race-app /etc/nginx/sites-enabled/race-app && \
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S rm -f /etc/nginx/sites-enabled/default && \
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S nginx -t && \
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S systemctl reload nginx && \
-            docker-compose -f docker-compose.prod.yml down --remove-orphans && \
-            docker ps -a | grep 'race-app' | awk '{print $1}' | xargs -r docker rm -f && \
-            docker system prune -af && \
-            docker-compose -f docker-compose.prod.yml up -d --build && \
-            docker-compose -f docker-compose.prod.yml exec -T backend python app.py"
+            if [ ! -d .git ]; then \
+              git init && \
+              git remote add origin https://github.com/Sch3jby/RFID_Timer.git && \
+              git fetch --all && \
+              git checkout -f main; \
+            else \
+              git fetch --all && \
+              git reset --hard origin/main; \
+            fi && \
+            if [ -f frontend/nginx.conf ]; then \
+              echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S cp /var/www/race-app/frontend/nginx.conf /etc/nginx/sites-available/race-app && \
+              echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S ln -sf /etc/nginx/sites-available/race-app /etc/nginx/sites-enabled/race-app && \
+              echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S rm -f /etc/nginx/sites-enabled/default && \
+              echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S nginx -t && \
+              echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S systemctl reload nginx; \
+            fi && \
+            if [ -f docker-compose.prod.yml ]; then \
+              docker-compose -f docker-compose.prod.yml down --remove-orphans && \
+              docker ps -a | grep 'race-app' | awk '{print \$1}' | xargs -r docker rm -f && \
+              docker system prune -af && \
+              docker-compose -f docker-compose.prod.yml up -d --build && \
+              if docker-compose -f docker-compose.prod.yml ps | grep -q backend; then \
+                docker-compose -f docker-compose.prod.yml exec -T backend python app.py || echo 'Failed to execute app.py'; \
+              fi; \
+            else \
+              echo 'docker-compose.prod.yml not found, skipping Docker deployment'; \
+            fi"
