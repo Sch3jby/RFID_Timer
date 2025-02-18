@@ -37,11 +37,11 @@ jobs:
             cd /var/www/race-app && \
             if [ ! -d .git ]; then \
               git init && \
-              git remote add origin https://${{ secrets.GITHUB_PAT }}@github.com/Sch3jby/RFID_Timer.git && \
+              git remote add origin https://${{ secrets.PAT }}@github.com/Sch3jby/RFID_Timer.git && \
               git fetch --all && \
               git checkout -f main || git checkout -f master; \
             else \
-              git remote set-url origin https://${{ secrets.GITHUB_PAT }}@github.com/Sch3jby/RFID_Timer.git && \
+              git remote set-url origin https://${{ secrets.PAT }}@github.com/Sch3jby/RFID_Timer.git && \
               git fetch --all && \
               git reset --hard origin/main || git reset --hard origin/master; \
             fi && \
