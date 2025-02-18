@@ -8,7 +8,6 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [registrations, setRegistrations] = useState([]);
-  const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -52,12 +51,26 @@ function ProfilePage() {
     fetchUserRegistrations();
   }, [navigate, t]);
 
-  const handleViewResults = (raceId) => {
-    setSelectedRaceId(raceId);
+  const getUniqueRaces = (registrations) => {
+    const uniqueRaces = new Map();
+    
+    registrations.forEach(reg => {
+      const raceId = reg.race.id;
+      if (!uniqueRaces.has(raceId)) {
+        uniqueRaces.set(raceId, {
+          id: raceId,
+          name: reg.race.name
+        });
+      }
+    });
+    
+    return Array.from(uniqueRaces.values());
   };
 
   if (loading) return <div className="profile-container loading">{t('common.loading')}</div>;
   if (error) return <div className="profile-container error">{error}</div>;
+
+  const uniqueRaces = getUniqueRaces(registrations);
 
   return (
     <div className="profile-container">
@@ -85,7 +98,6 @@ function ProfilePage() {
                   <th>{t('profile.race')}</th>
                   <th>{t('profile.date')}</th>
                   <th>{t('profile.track')}</th>
-                  <th>{t('profile.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,14 +111,6 @@ function ProfilePage() {
                       {reg.track.name} ({reg.track.distance} km,{' '}
                       {t('profile.laps')}: {reg.track.number_of_laps})
                     </td>
-                    <td>
-                      <button 
-                        className="view-results-btn"
-                        onClick={() => handleViewResults(reg.race.id)}
-                      >
-                        {t('profile.viewResults')}
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -115,9 +119,12 @@ function ProfilePage() {
         )}
       </div>
       
-      {selectedRaceId && (
-        <UserRaceResults raceId={selectedRaceId} />
-      )}
+      {uniqueRaces.map(race => (
+        <div key={`results-${race.id}`} className="race-results-section">
+          <h3>{race.name} - {t('profile.results')}</h3>
+          <UserRaceResults raceId={race.id} />
+        </div>
+      ))}
     </div>
   );
 }

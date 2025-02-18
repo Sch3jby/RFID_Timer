@@ -155,7 +155,8 @@ export const translations = {
         email: "Email",
         password: "Password",
         register: "Registrace",
-        forgotPassword: "Zapomenuté heslo?"
+        forgotPassword: "Zapomenuté heslo?",
+        loggingIn: "Přihlašování..."
       },
       register: {
         submit: "Vytvořit účet",
@@ -186,6 +187,7 @@ export const translations = {
         track: "Trať",
         startNumber: "Startovní číslo",
         startTime: "Čas startu",
+        laps: "Počet kol",
         lapsCompleted: "Počet kol",
         firstname: "Jméno",
         surname: "Příjmení",
@@ -199,7 +201,10 @@ export const translations = {
         overallPosition: "Celkové pořadí",
         categoryPosition: "Pořadí v kategorii",
         status: "Status",
-        actions: "Mezičasy"
+        actions: "Mezičasy",
+        results: "Výsledky",
+        showLapTimes: "Mezičasy",
+        hideLapTimes: "Zavřít"
       }
     },
     en: {
@@ -357,7 +362,8 @@ export const translations = {
         email: "Email",
         password: "Password",
         register: "Registration",
-        forgotPassword: "Forgot password?"
+        forgotPassword: "Forgot password?",
+        loggingIn: "Logging in..."
       },
       register: {
         submit: "Create account",
@@ -388,6 +394,7 @@ export const translations = {
         track: "Track",
         startNumber: "Start number",
         startTime: "Race start",
+        laps: "Number of laps",
         lapsCompleted: "Number of laps",
         firstname: "Firstname",
         surname: "Surname",
@@ -401,7 +408,10 @@ export const translations = {
         overallPosition: "Overall position",
         categoryPosition: "Category position",
         status: "Status",
-        actions: "Lap times"
+        actions: "Lap times",
+        results: "results",
+        showLapTimes: "Lap times",
+        hideLapTimes: "Close"
       }
     }
   };

@@ -2141,3 +2141,185 @@
   .lap-times-container {
     padding: 1rem;
   }
+
+  .race-results-section {
+    margin-top: 3rem;
+  }
+  
+  .race-results-section h3 {
+    font-size: 1.6rem;
+    color: #333;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eaeaea;
+  }
+  
+  .user-race-results {
+    margin-top: 1.5rem;
+  }
+  
+  .results-table-container {
+    margin-top: 1rem;
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    background-color: white;
+  }
+  
+  .results-table th {
+    background-color: rgb(223, 223, 223);
+    color: var(--text-color);
+    padding: 1rem;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    border-bottom: 2px solid var(--primary-color);
+    white-space: nowrap;
+  }
+  
+  .results-table th:first-child {
+    border-top-left-radius: 8px;
+  }
+  
+  .results-table th:last-child {
+    border-top-right-radius: 8px;
+  }
+  
+  .results-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .results-table tr:hover {
+    background-color: #f9f9f9;
+  }
+  
+  .results-table .selected-row {
+    background-color: #f3f4f6;
+  }
+  
+  .results-table .behind-time {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-left: 0.25rem;
+  }
+  
+  .lap-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .lap-progress span {
+    font-size: 0.875rem;
+    color: #4b5563;
+  }
+  
+  .progress-bar {
+    height: 0.5rem;
+    width: 100%;
+    background-color: #e5e7eb;
+    border-radius: 0.25rem;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+  }
+  
+  .lap-times-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+  
+  .lap-times-btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+  
+  .lap-times-btn:active {
+    transform: translateY(0);
+  }
+  
+  .lap-times-row {
+    background-color: #f8fafc;
+  }
+  
+  .lap-times-row td {
+    padding: 0;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 15px;;
+  }
+  
+  .lap-times-container {
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    padding: 0.3rem;
+  }
+  
+  /* Loading and error states for results */
+  .user-results-loading,
+  .user-results-error {
+    padding: 2rem;
+    text-align: center;
+    border-radius: 8px;
+    margin-top: 1rem;
+  }
+  
+  .user-results-loading {
+    background-color: #f9fafb;
+    color: #6b7280;
+  }
+  
+  .user-results-error {
+    background-color: #fef2f2;
+    color: #dc2626;
+  }
+  
+  .no-results {
+    background-color: #f9fafb;
+    padding: 2rem;
+    text-align: center;
+    border-radius: 8px;
+    color: #6b7280;
+    margin-top: 1rem;
+  }
+  
+  /* Responsive adjustments for results */
+  @media (max-width: 768px) {
+    .race-results-section h3 {
+      font-size: 1.4rem;
+    }
+  
+    .results-table th,
+    .results-table td {
+      padding: 0.6rem;
+      font-size: 0.875rem;
+    }
+  
+    .lap-times-btn {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+  
+    .behind-time {
+      display: block;
+      margin-top: 0.25rem;
+    }
+  }

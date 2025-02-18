@@ -47,35 +47,24 @@ const UserRaceResults = ({ raceId }) => {
           }
         });
         
-        let uniqueResults = [];
-        const uniqueKeys = new Set();
-        
         if (resultsResponse.data.results && resultsResponse.data.results.length > 0) {
-          resultsResponse.data.results.forEach(result => {
-            const uniqueKey = `${result.track}-${result.category}-${result.number}`;
+          const groupedResults = resultsResponse.data.results.reduce((acc, result) => {
+            const key = `${result.track}-${result.category}-${result.number}`;
             
-            if (!uniqueKeys.has(uniqueKey)) {
-              uniqueKeys.add(uniqueKey);
-              
-              const existingResult = uniqueResults.find(r => 
-                r.track === result.track && 
-                r.category === result.category && 
-                r.number === result.number
-              );
-              
-              if (!existingResult || result.lap_number > existingResult.lap_number) {
-                uniqueResults = uniqueResults.filter(r => 
-                  !(r.track === result.track && 
-                    r.category === result.category && 
-                    r.number === result.number)
-                );
-                uniqueResults.push(result);
-              }
+            if (!acc[key] || result.lap_number > acc[key].lap_number) {
+              acc[key] = result;
             }
-          });
+            
+            return acc;
+          }, {});
+          
+          const uniqueResults = Object.values(groupedResults);
+          
+          setResults(uniqueResults);
+        } else {
+          setResults([]);
         }
         
-        setResults(uniqueResults);
         setError('');
       } catch (err) {
         setError(err.response?.data?.error || t('profile.loadError'));
@@ -109,16 +98,16 @@ const UserRaceResults = ({ raceId }) => {
 
   if (loading) return <div className="user-results-loading">{t('common.loading')}</div>;
   if (error) return <div className="user-results-error">{error}</div>;
-  if (results.length === 0) return <div className="no-results">{t('profile.noResults')}</div>;
+  if (results.length === 0) return null;
 
   return (
     <div className="user-race-results">
-      <h2>{t('profile.yourResults')}</h2>
-      
       <div className="results-table-container">
         <table className="results-table">
           <thead>
             <tr>
+              <th>{t('profile.firstname')}</th>
+              <th>{t('profile.surname')}</th>
               <th>{t('profile.track')}</th>
               <th>{t('profile.category')}</th>
               <th>{t('profile.raceTime')}</th>
@@ -133,6 +122,8 @@ const UserRaceResults = ({ raceId }) => {
             {results.map((result) => (
               <React.Fragment key={`${result.track}-${result.category}-${result.number}`}>
                 <tr className={selectedRacerNumber === result.number ? 'selected-row' : ''}>
+                  <td>{result.firstname}</td>
+                  <td>{result.surname}</td>
                   <td>{result.track}</td>
                   <td>{result.category !== 'N/A' ? result.category : '-'}</td>
                   <td>{formatRaceTime(result.race_time, result.status)}</td>
@@ -177,7 +168,7 @@ const UserRaceResults = ({ raceId }) => {
                 </tr>
                 {selectedRacerNumber === result.number && (
                   <tr className="lap-times-row">
-                    <td colSpan="8">
+                    <td colSpan="10">
                       <div className="lap-times-container">
                         <LapTimes 
                           lapTimes={lapTimesData[result.number] || []} 

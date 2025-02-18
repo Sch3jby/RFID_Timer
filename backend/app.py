@@ -2929,6 +2929,8 @@ def get_race_results_by_email(race_id, email):
             )
             SELECT 
                 number,
+                firstname,
+                surname, 
                 track_name,
                 category_name,
                 lap_number,
@@ -2980,6 +2982,8 @@ def get_race_results_by_email(race_id, email):
         for row in results:
             formatted_results.append({
                 'number': row.number,
+                'firstname': row.firstname,
+                'surname': row.surname,
                 'track': row.track_name,
                 'category': row.category_name or 'N/A',
                 'lap_number': row.lap_number,
