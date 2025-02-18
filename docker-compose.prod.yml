@@ -4,6 +4,7 @@ services:
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile.prod
     image: janschejbal/raceapp:backend
     ports:
       - "5001:5001"
@@ -17,6 +18,7 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile.prod
     image: janschejbal/raceapp:frontend
     ports:
       - "3000:3000"
