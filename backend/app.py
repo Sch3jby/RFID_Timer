@@ -919,7 +919,8 @@ def update_race(race_id):
         updated_track_ids = set()
 
         for track_data in data.get('tracks', []):
-            track_id = int(f"{race_id}{str(track_data['distance']).zfill(2)}")
+            distance = float(track_data['distance'])
+            track_id = int(f"{race_id}{str(int(distance * 10)).zfill(2)}")
             
             if 'id' in track_data:
                 track = Track.query.get(track_data['id'])

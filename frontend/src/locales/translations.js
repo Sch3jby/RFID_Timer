@@ -76,7 +76,7 @@ export const translations = {
         noCat: "Nebyly nalezeny žádné kategorie",
         status: "Status",
         editor: "Editor",
-        createNewRace: "Vytvořit nový závod"
+        createNewRace: "Vytvořit / Upravit závod"
       },
       calendar: {
         title: "Kalendář závodů",
@@ -283,7 +283,7 @@ export const translations = {
         noCat: "No categories found",
         status: "Status",
         editor: "Editor",
-        createNewRace: "Create new race"
+        createNewRace: "Create / Modify race"
       },
       calendar: {
         title: "Race calendar",
