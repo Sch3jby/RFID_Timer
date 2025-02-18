@@ -53,12 +53,12 @@ jobs:
               echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S systemctl reload nginx; \
             fi && \
             if [ -f docker-compose.prod.yml ]; then \
-              docker-compose -f docker-compose.prod.yml down --remove-orphans && \
+              docker compose -f docker-compose.prod.yml down --remove-orphans && \
               docker ps -a | grep 'race-app' | awk '{print \$1}' | xargs -r docker rm -f && \
               docker system prune -af && \
-              docker-compose -f docker-compose.prod.yml up -d --build && \
-              if docker-compose -f docker-compose.prod.yml ps | grep -q backend; then \
-                docker-compose -f docker-compose.prod.yml exec -T backend python app.py || echo 'Failed to execute app.py'; \
+              docker compose -f docker-compose.prod.yml up -d --build && \
+              if docker compose -f docker-compose.prod.yml ps | grep -q backend; then \
+                docker compose -f docker-compose.prod.yml exec -T backend python app.py || echo 'Failed to execute app.py'; \
               fi; \
             else \
               echo 'docker-compose.prod.yml not found, skipping Docker deployment'; \
