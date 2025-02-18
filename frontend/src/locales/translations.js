@@ -1,6 +1,3 @@
-import Calendar from "../components/Calendar";
-import LapTimes from "../components/LapTimes";
-import RaceDetail from "../components/RaceDetail";
 
 export const translations = {
     cs: {
@@ -9,10 +6,11 @@ export const translations = {
         organizer: "Organizátor",
         competitor: "Registrace",
         startList: "Startovní listina",
-        calendar: "Kalendář",
+        calendar: "Kalendář závodů",
         login: "Přihlásit se",
         logout: "Odhlásit se",
-        welcome: "Vítejte zpět,"
+        welcome: "Vítejte zpět,",
+        profile: "Profil"
       },
       home: {
         welcome: "Vítejte v systému pro závody",
@@ -78,10 +76,10 @@ export const translations = {
         noCat: "Nebyly nalezeny žádné kategorie",
         status: "Status",
         editor: "Editor",
-        createNewRace: "Vytvořit nový závod"
+        createNewRace: "Vytvořit / Upravit závod"
       },
       calendar: {
-        title: "Kalendář",
+        title: "Kalendář závodů",
         loading: "Načítání...",
         error: "Chyba při načítání závodů",
         search: "Hledat",
@@ -157,7 +155,8 @@ export const translations = {
         email: "Email",
         password: "Password",
         register: "Registrace",
-        forgotPassword: "Zapomenuté heslo?"
+        forgotPassword: "Zapomenuté heslo?",
+        loggingIn: "Přihlašování..."
       },
       register: {
         submit: "Vytvořit účet",
@@ -178,6 +177,34 @@ export const translations = {
         checkEmail: "Email odeslán",
         emailSent: "Odkaz pro obnovu hesla byl odeslán na uvedenou mailovou adresu. Platnost odkazu je 30 minut.",
         sending: "Odesílání..."
+      },
+      profile: {
+        title: "Můj profil",
+        email: "Email",
+        yourRegistrations: "Vaše přihlášky",
+        race: "Závod",
+        date: "Datum",
+        track: "Trať",
+        startNumber: "Startovní číslo",
+        startTime: "Čas startu",
+        laps: "Počet kol",
+        lapsCompleted: "Počet kol",
+        firstname: "Jméno",
+        surname: "Příjmení",
+        yourResults: "Vaše výsledky",
+        number: "Číslo",
+        track: "Trať",
+        category: "Kategorie",
+        progress: "Kolo",
+        lastSeen: "Čas v cíli",
+        raceTime: "Čas závodu",
+        overallPosition: "Celkové pořadí",
+        categoryPosition: "Pořadí v kategorii",
+        status: "Status",
+        actions: "Mezičasy",
+        results: "Výsledky",
+        showLapTimes: "Mezičasy",
+        hideLapTimes: "Zavřít"
       }
     },
     en: {
@@ -186,10 +213,11 @@ export const translations = {
         organizer: "Organizer",
         competitor: "Registration",
         startList: "Start List",
-        calendar: "Calendar",
+        calendar: "Race calendar",
         login: "Login",
         logout: "Logout",
-        welcome: "Welcome back,"
+        welcome: "Welcome back,",
+        profile: "Profile"
       },
       home: {
         welcome: "Welcome to the Race System",
@@ -255,10 +283,10 @@ export const translations = {
         noCat: "No categories found",
         status: "Status",
         editor: "Editor",
-        createNewRace: "Create new race"
+        createNewRace: "Create / Modify race"
       },
       calendar: {
-        title: "Calendar",
+        title: "Race calendar",
         loading: "Loading...",
         error: "Error loading races",
         search: "Search",
@@ -334,7 +362,8 @@ export const translations = {
         email: "Email",
         password: "Password",
         register: "Registration",
-        forgotPassword: "Forgot password?"
+        forgotPassword: "Forgot password?",
+        loggingIn: "Logging in..."
       },
       register: {
         submit: "Create account",
@@ -355,6 +384,34 @@ export const translations = {
         checkEmail: "Email sent",
         emailSent: "A password reset link has been sent to the specified email address. The validity of the link is 30 minutes.",
         sending: "Sending..."
+      },
+      profile: {
+        title: "My profile",
+        email: "Email",
+        yourRegistrations: "Your registrations",
+        race: "Race",
+        date: "Date",
+        track: "Track",
+        startNumber: "Start number",
+        startTime: "Race start",
+        laps: "Number of laps",
+        lapsCompleted: "Number of laps",
+        firstname: "Firstname",
+        surname: "Surname",
+        yourResults: "Your results",
+        number: "Number",
+        track: "Track",
+        category: "Category",
+        progress: "Lap",
+        lastSeen: "Finnish time",
+        raceTime: "Race time",
+        overallPosition: "Overall position",
+        categoryPosition: "Category position",
+        status: "Status",
+        actions: "Lap times",
+        results: "results",
+        showLapTimes: "Lap times",
+        hideLapTimes: "Close"
       }
     }
   };

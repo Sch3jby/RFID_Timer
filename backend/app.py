@@ -919,7 +919,8 @@ def update_race(race_id):
         updated_track_ids = set()
 
         for track_data in data.get('tracks', []):
-            track_id = int(f"{race_id}{str(track_data['distance']).zfill(2)}")
+            distance = float(track_data['distance'])
+            track_id = int(f"{race_id}{str(int(distance * 10)).zfill(2)}")
             
             if 'id' in track_data:
                 track = Track.query.get(track_data['id'])
@@ -2577,6 +2578,32 @@ def update_startlist_registration(race_id):
         db.session.rollback()
         return jsonify({'error': f'Error updating registration: {str(e)}'}), 500
 
+@app.route('/race/<int:race_id>/startlist/delete/<int:registration_id>', methods=['DELETE'])
+def delete_registration(race_id, registration_id):
+    try:
+        registration = Registration.query.get(registration_id)
+        
+        if not registration:
+            return jsonify({'error': 'Registration not found'}), 404
+            
+        if registration.race_id != race_id:
+            return jsonify({'error': 'Registration does not belong to this race'}), 403
+        
+        user_id = registration.user_id
+        
+        db.session.delete(registration)
+        
+        user = Users.query.get(user_id)
+        if user:
+            db.session.delete(user)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Registration and user deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error deleting registration and user: {str(e)}'}), 500
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -2704,6 +2731,280 @@ def reset_password():
         db.session.rollback()
         current_app.logger.error(f"Error resetting password: {e}")
         return jsonify({'message': 'Error resetting password'}), 500
+
+@app.route('/api/me/registrations', methods=['GET'])
+@jwt_required()
+def get_user_registrations():
+    user_id = get_jwt_identity()
+    
+    try:
+        login_user = Login.query.get(user_id)
+        if not login_user:
+            return jsonify({'message': 'Uživatel nenalezen v Login tabulce'}), 404
+        
+        user_email = login_user.email
+        
+        users_with_same_email = Users.query.filter_by(email=user_email).all()
+        user_ids = [user.id for user in users_with_same_email]
+        
+        if not user_ids:
+            return jsonify({'message': 'Uživatel nenalezen v Users tabulce'}), 404
+        
+        main_user = users_with_same_email[0]
+        
+        registrations = (
+            db.session.query(Registration, Race, Track, Users)
+            .join(Race, Registration.race_id == Race.id)
+            .join(Track, Registration.track_id == Track.id)
+            .join(Users, Registration.user_id == Users.id)
+            .filter(Users.email == user_email)
+            .all()
+        )
+        
+        result = []
+        for reg, race, track, user in registrations:
+            result.append({
+                'registration_id': reg.id,
+                'race': {
+                    'id': race.id,
+                    'name': race.name,
+                    'date': race.date.strftime('%Y-%m-%d'),
+                    'start_type': 'Hromadný' if race.start == 'M' else 'Intervalový',
+                    'description': race.description
+                },
+                'track': {
+                    'id': track.id,
+                    'name': track.name,
+                    'distance': track.distance,
+                    'number_of_laps': track.number_of_laps
+                },
+                'user': {
+                    'id': user.id,
+                    'firstname': user.firstname,
+                    'surname': user.surname,
+                    'club': user.club,
+                    'year': user.year,
+                    'email': user.email,
+                    'gender': 'Muž' if user.gender == 'M' else 'Žena'
+                }
+            })
+        
+        return jsonify({
+            'user': {
+                'id': main_user.id,
+                'firstname': main_user.firstname,
+                'surname': main_user.surname,
+                'nickname': login_user.nickname,
+                'email': main_user.email
+            },
+            'registrations': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Chyba při získávání registrací: {str(e)}'}), 500
+
+@app.route('/api/race/<race_id>/results/by-email/<email>', methods=['GET'])
+def get_race_results_by_email(race_id, email):
+    try:
+        user = db.session.query(Users).filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': f'User with email {email} not found'}), 404
+            
+        table_name = f'race_results_{race_id}'
+        
+        table_exists_query = text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public'
+                AND table_name = :table_name
+            );
+        """)
+        
+        table_exists = db.session.execute(table_exists_query, 
+            {'table_name': table_name}).scalar()
+            
+        if not table_exists:
+            return jsonify({'error': f'No results found for race {race_id}'}), 404
+
+        query = text(f"""
+            WITH status_laps AS (
+                SELECT 
+                    r.number,
+                    r.timestamp,
+                    r.lap_number,
+                    r.status,
+                    r.last_seen_time
+                FROM race_results_{race_id} r
+                WHERE r.status IN ('DNF', 'DNS', 'DSQ')
+            ),
+            latest_laps AS (
+                SELECT 
+                    r.number,
+                    CASE 
+                        WHEN sl.timestamp IS NOT NULL THEN sl.timestamp
+                        ELSE MAX(r.timestamp)
+                    END as last_lap_timestamp,
+                    CASE 
+                        WHEN sl.lap_number IS NOT NULL THEN sl.lap_number
+                        ELSE MAX(r.lap_number)
+                    END as lap_number,
+                    sl.status,
+                    MAX(r.last_seen_time) as last_seen_time
+                FROM race_results_{race_id} r
+                LEFT JOIN (
+                    SELECT DISTINCT ON (number)
+                        number, timestamp, lap_number, status, last_seen_time
+                    FROM status_laps
+                    ORDER BY number, timestamp ASC
+                ) sl ON r.number = sl.number
+                GROUP BY r.number, sl.timestamp, sl.lap_number, sl.status
+            ),
+            ranked_results AS (
+                SELECT 
+                    r.number,
+                    ll.last_lap_timestamp,  -- Changed from ll.timestamp to ll.last_lap_timestamp
+                    ll.lap_number,
+                    ll.status,
+                    ll.last_seen_time,
+                    u.firstname,
+                    u.surname,
+                    u.club,
+                    u.gender,
+                    t.name as track_name,
+                    c.category_name,
+                    t.actual_start_time,
+                    t.number_of_laps,
+                    reg.user_start_time,
+                    CASE 
+                        WHEN ll.lap_number = t.number_of_laps THEN
+                            EXTRACT(EPOCH FROM (
+                                ll.last_lap_timestamp - 
+                                (date_trunc('day', ll.last_lap_timestamp) + 
+                                t.actual_start_time::time + 
+                                reg.user_start_time::interval)
+                            ))
+                        ELSE NULL
+                    END as race_time_seconds
+                FROM race_results_{race_id} r
+                JOIN latest_laps ll ON r.number = ll.number
+                JOIN registration reg ON reg.number = r.number 
+                    AND reg.race_id = :race_id
+                JOIN users u ON u.id = reg.user_id
+                JOIN track t ON t.id = reg.track_id
+                LEFT JOIN category c ON c.track_id = reg.track_id 
+                    AND c.gender = u.gender 
+                    AND EXTRACT(YEAR FROM CURRENT_DATE) - u.year 
+                        BETWEEN c.min_age AND c.max_age
+                WHERE u.email = :email
+            ),
+            track_results AS (
+                SELECT *,
+                    MIN(race_time_seconds) OVER (PARTITION BY track_name) as min_track_time,
+                    RANK() OVER (
+                        PARTITION BY track_name 
+                        ORDER BY 
+                            CASE 
+                                WHEN status IS NOT NULL THEN 2
+                                WHEN race_time_seconds IS NULL THEN 1 
+                                ELSE 0 
+                            END,
+                            race_time_seconds
+                    ) as position_track
+                FROM ranked_results
+            ),
+            category_results AS (
+                SELECT
+                    tr.*,
+                    MIN(race_time_seconds) OVER (PARTITION BY category_name, track_name) as min_category_time,
+                    RANK() OVER (
+                        PARTITION BY category_name, track_name
+                        ORDER BY 
+                            CASE 
+                                WHEN status IS NOT NULL THEN 2
+                                WHEN race_time_seconds IS NULL THEN 1 
+                                ELSE 0 
+                            END,
+                            race_time_seconds
+                    ) as position_category
+                FROM track_results tr
+            )
+            SELECT 
+                number,
+                firstname,
+                surname, 
+                track_name,
+                category_name,
+                lap_number,
+                number_of_laps,
+                last_seen_time,
+                status,
+                CASE 
+                    WHEN race_time_seconds IS NOT NULL THEN 
+                        TO_CHAR((race_time_seconds || ' seconds')::interval, 'HH24:MI:SS')
+                    ELSE '--:--:--'
+                END as race_time,
+                CASE 
+                    WHEN status IS NOT NULL THEN status
+                    ELSE position_track::text 
+                END as position_track,
+                CASE 
+                    WHEN status IS NOT NULL THEN NULL
+                    WHEN race_time_seconds IS NULL THEN NULL
+                    ELSE TO_CHAR(
+                        ((race_time_seconds - min_track_time) || ' seconds')::interval,
+                        'HH24:MI:SS'
+                    )
+                END as behind_time_track,
+                CASE 
+                    WHEN status IS NOT NULL THEN status
+                    ELSE position_category::text 
+                END as position_category,
+                CASE 
+                    WHEN status IS NOT NULL THEN NULL
+                    WHEN race_time_seconds IS NULL THEN NULL
+                    ELSE TO_CHAR(
+                        ((race_time_seconds - min_category_time) || ' seconds')::interval,
+                        'HH24:MI:SS'
+                    )
+                END as behind_time_category
+            FROM category_results
+            ORDER BY track_name, number;
+        """)
+        
+        results = db.session.execute(query, {
+            'race_id': str(race_id),
+            'email': email
+        }).fetchall()
+        
+        if not results:
+            return jsonify({'results': []}), 200
+
+        formatted_results = []
+        for row in results:
+            formatted_results.append({
+                'number': row.number,
+                'firstname': row.firstname,
+                'surname': row.surname,
+                'track': row.track_name,
+                'category': row.category_name or 'N/A',
+                'lap_number': row.lap_number,
+                'total_laps': row.number_of_laps,
+                'race_time': row.race_time,
+                'last_seen': row.last_seen_time.strftime('%H:%M:%S') if row.last_seen_time else '--:--:--',
+                'position_track': row.position_track,
+                'behind_time_track': row.behind_time_track or '--:--:--',
+                'position_category': row.position_category,
+                'behind_time_category': row.behind_time_category or '--:--:--',
+                'status': row.status
+            })
+        
+        return jsonify({
+            'results': formatted_results
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f'Error fetching race results by email: {str(e)}')
+        return jsonify({'error': 'Failed to fetch race results'}), 500
 
 @app.route('/<path:path>')
 def catch_all(path):

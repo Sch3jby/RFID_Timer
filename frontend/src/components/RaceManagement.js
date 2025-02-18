@@ -13,7 +13,7 @@ const emptyRace = {
 
 const emptyTrack = {
   name: '',
-  distance: 0,
+  distance: 0.0,
   min_age: 0,
   max_age: 99,
   fastest_possible_time: '00:00:45',
@@ -54,22 +54,40 @@ const RaceManagement = ({ onBack }) => {
   };
 
   const handleInputChange = (e, trackIndex = null, categoryIndex = null) => {
-    const { name, value } = e.target;
-    
-    if (trackIndex === null) {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    } else if (categoryIndex === null) {
-      const newTracks = [...formData.tracks];
-      newTracks[trackIndex] = { ...newTracks[trackIndex], [name]: value };
-      setFormData(prev => ({ ...prev, tracks: newTracks }));
-    } else {
-      const newTracks = [...formData.tracks];
-      newTracks[trackIndex].categories[categoryIndex] = {
-        ...newTracks[trackIndex].categories[categoryIndex],
-        [name]: value
+      const { name, value } = e.target;
+      
+      const processValue = (name, value) => {
+          switch(name) {
+              case 'distance':
+                  return parseFloat(value) || 0;
+              case 'min_age':
+              case 'max_age':
+              case 'number_of_laps':
+              case 'min_number':
+              case 'max_number':
+                  return parseInt(value) || 0;
+              default:
+                  return value;
+          }
       };
-      setFormData(prev => ({ ...prev, tracks: newTracks }));
-    }
+      
+      if (trackIndex === null) {
+          setFormData(prev => ({ ...prev, [name]: processValue(name, value) }));
+      } else if (categoryIndex === null) {
+          const newTracks = [...formData.tracks];
+          newTracks[trackIndex] = { 
+              ...newTracks[trackIndex], 
+              [name]: processValue(name, value) 
+          };
+          setFormData(prev => ({ ...prev, tracks: newTracks }));
+      } else {
+          const newTracks = [...formData.tracks];
+          newTracks[trackIndex].categories[categoryIndex] = {
+              ...newTracks[trackIndex].categories[categoryIndex],
+              [name]: processValue(name, value)
+          };
+          setFormData(prev => ({ ...prev, tracks: newTracks }));
+      }
   };
 
   const addTrack = () => {
@@ -144,7 +162,7 @@ const RaceManagement = ({ onBack }) => {
   return (
     <div className="race-manager">
       <div className="race-form">
-        <h2 className="text-xl font-bold mb-6">
+        <h2 className="text">
           {isEditing ? t('raceManagement.editRace') : t('raceManagement.createRace')}
         </h2>
         <button
@@ -250,13 +268,16 @@ const RaceManagement = ({ onBack }) => {
                   </div>
                   <div className="race-form-group">
                     <label className="race-form-label">{t('raceManagement.distance')}</label>
-                    <input
-                      type="number"
-                      name="distance"
-                      value={track.distance}
-                      onChange={(e) => handleInputChange(e, trackIndex)}
-                      className="race-form-input"
-                    />
+                      <input
+                          type="number"
+                          name="distance"
+                          value={track.distance}
+                          step="0.1"
+                          min="0"
+                          onChange={(e) => handleInputChange(e, trackIndex)}
+                          className="race-form-input"
+                          required
+                      />
                   </div>
                   <div className="race-form-group">
                     <label className="race-form-label">{t('raceManagement.minAge')}</label>

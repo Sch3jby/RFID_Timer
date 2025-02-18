@@ -12,7 +12,9 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
-import ProtectedRoute from './contexts/ProtectedRoutes';
+import ProfilePage from './components/ProfilePage';
+import ProtectedAdmin from './contexts/ProtectedAdmin';
+import ProtectedRegistration from './contexts/ProtectedRegistration';
 
 import './styles/Main.css';
 
@@ -26,12 +28,19 @@ function App() {
             <Route 
               path="/rfid-reader" 
               element={
-                <ProtectedRoute>
+                <ProtectedAdmin>
                   <RFIDReader />
-                </ProtectedRoute>
+                </ProtectedAdmin>
               } 
             />
-            <Route path="/registration" element={<RegistrationForm />} />
+            <Route 
+              path="/registration" 
+              element={
+                <ProtectedRegistration>
+                  <RegistrationForm />
+                </ProtectedRegistration>
+              } 
+            />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/race/:id" element={<RaceDetail />} />
             <Route path="/rfid-reader/:raceId" element={<RFIDReaderDetail />} />
@@ -39,6 +48,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </Layout>
       </Router>
