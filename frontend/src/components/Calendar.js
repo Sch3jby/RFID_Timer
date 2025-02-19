@@ -14,7 +14,7 @@ function Calendar() {
   useEffect(() => {
     const fetchRaces = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/races');
+        const response = await axios.get('http://localhost:5001/api/races');
         const racesData = response.data.races || [];
         setRaces(racesData);
         setFilteredRaces(racesData);

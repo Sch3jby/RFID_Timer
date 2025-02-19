@@ -83,7 +83,7 @@ const UserRaceResults = ({ raceId }) => {
     if (!lapTimesData[number] && !lapTimesLoading[number]) {
       setLapTimesLoading(prev => ({ ...prev, [number]: true }));
       try {
-        const response = await axios.get(`http://localhost:5001/race/${raceId}/racer/${number}/laps`);
+        const response = await axios.get(`http://localhost:5001/api/race/${raceId}/racer/${number}/laps`);
         setLapTimesData(prev => ({ 
           ...prev, 
           [number]: response.data.laps || [] 

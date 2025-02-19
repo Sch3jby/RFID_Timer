@@ -45,7 +45,7 @@ const RaceManagement = ({ onBack }) => {
 
   const fetchRaces = async () => {
     try {
-      const response = await fetch("http://localhost:5001/races");
+      const response = await fetch("http://localhost:5001/api/races");
       const data = await response.json();
       setRaces(data.races);
     } catch (error) {
@@ -125,8 +125,8 @@ const RaceManagement = ({ onBack }) => {
     e.preventDefault();
     try {
       const endpoint = isEditing 
-        ? `http://localhost:5001/race/${currentRace.id}/update`
-        : 'http://localhost:5001/race/add';
+        ? `http://localhost:5001/api/race/${currentRace.id}/update`
+        : 'http://localhost:5001/api/race/add';
       
       const response = await fetch(endpoint, {
         method: isEditing ? 'PUT' : 'POST',

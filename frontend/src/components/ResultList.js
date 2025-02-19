@@ -20,7 +20,7 @@ const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
       if (isExpanded && !lapTimes.length) {
         setLoading(true);
         try {
-          const response = await axios.get(`http://localhost:5001/race/${raceId}/racer/${result.number}/laps`);
+          const response = await axios.get(`http://localhost:5001/api/race/${raceId}/racer/${result.number}/laps`);
           setLapTimes(response.data.laps);
         } catch (err) {
           console.error('Failed to fetch lap times:', err);
@@ -80,8 +80,8 @@ const ResultList = ({ raceId }) => {
     setLoading(true);
     try {
       const endpoint = groupBy === 'category' 
-        ? `http://localhost:5001/race/${raceId}/results/by-category`
-        : `http://localhost:5001/race/${raceId}/results/by-track`;
+        ? `http://localhost:5001/api/race/${raceId}/results/by-category`
+        : `http://localhost:5001/api/race/${raceId}/results/by-track`;
       
       const response = await axios.get(endpoint);
       setResults(response.data?.results || []);

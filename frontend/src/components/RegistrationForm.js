@@ -44,7 +44,7 @@ function RegistrationForm() {
           email: userResponse.data.email
         }));
 
-        const racesResponse = await axios.get('http://localhost:5001/races', {
+        const racesResponse = await axios.get('http://localhost:5001/api/races', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -60,7 +60,7 @@ function RegistrationForm() {
           
           if (selectedRace) {
             const tracksResponse = await axios.get(
-              `http://localhost:5001/tracks?race_id=${selectedRace.id}`,
+              `http://localhost:5001/api/tracks?race_id=${selectedRace.id}`,
               {
                 headers: {
                   'Authorization': `Bearer ${token}`
@@ -118,7 +118,7 @@ function RegistrationForm() {
       try {
         const token = localStorage.getItem('access_token');
         const response = await axios.get(
-          `http://localhost:5001/tracks?race_id=${selectedRace.id}`,
+          `http://localhost:5001/api/tracks?race_id=${selectedRace.id}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -160,7 +160,7 @@ function RegistrationForm() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.post(
-        'http://localhost:5001/registration',
+        'http://localhost:5001/api/registration',
         formData,
         {
           headers: {

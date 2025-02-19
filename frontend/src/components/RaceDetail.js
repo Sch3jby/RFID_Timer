@@ -17,7 +17,7 @@ function RaceDetail() {
   useEffect(() => {
     const fetchRace = async () => {
       try {
-        const response = await axios.get(`http://localhost:5001/race/${id}`);
+        const response = await axios.get(`http://localhost:5001/api/race/${id}`);
         setRace(response.data.race);
       } catch (error) {
         setError(t('raceDetail.error'));

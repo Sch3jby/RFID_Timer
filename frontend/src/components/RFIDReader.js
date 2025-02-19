@@ -15,7 +15,7 @@ function RFIDReader() {
 
   const fetchRaces = async () => {
     try {
-      const response = await fetch("http://localhost:5001/races");
+      const response = await fetch("http://localhost:5001/api/races");
       const data = await response.json();
       setRaces(data.races);
     } catch (error) {
