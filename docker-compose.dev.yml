@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile.prod
+      dockerfile: backend/Dockerfile.dev
     ports:
       - "5001:5001"
     environment:
@@ -19,7 +19,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: frontend/Dockerfile.prod
+      dockerfile: frontend/Dockerfile.dev
     ports:
       - "3000:3000"
     networks:
