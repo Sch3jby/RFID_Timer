@@ -17,6 +17,7 @@ function RegistrationForm() {
     race_id: '',
     track_id: ''
   });
+  const [userRole, setUserRole] = useState(null);
   const [races, setRaces] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -39,6 +40,7 @@ function RegistrationForm() {
           }
         });
 
+        setUserRole(userResponse.data.role);
         setFormData(prevData => ({
           ...prevData,
           email: userResponse.data.email
@@ -286,8 +288,9 @@ function RegistrationForm() {
             type="email" 
             name="email" 
             value={formData.email} 
-            readOnly 
-            className="readonly-input"
+            onChange={handleChange}
+            readOnly={userRole !== 1}
+            className={userRole !== 1 ? "readonly-input" : ""}
           />
         </div>
 
