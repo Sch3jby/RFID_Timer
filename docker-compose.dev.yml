@@ -3,30 +3,29 @@ version: '3.8'
 services:
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile.dev
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
       - "5001:5001"
+    volumes:
+      - ./backend:/app
     environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=0
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
     networks:
       - app-network
-    restart: always
-    depends_on:
-      - db
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile.dev
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - app-network
-    restart: always
-    depends_on:
-      - backend
 
   db:
     image: postgres:17
@@ -35,7 +34,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "50000:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
