@@ -38,8 +38,9 @@ db.init_app(app)
 
 # Inicializace JWT
 jwt = JWTManager(app)
-app.config['JWT_SECRET_KEY'] = 'jwt_secret_key_here'
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_HEADER_NAME'] = 'Authorization'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
 
 # Initialize Mail
 mail = Mail()
@@ -93,6 +94,27 @@ class AlienRFID:
 alien = AlienRFID(hostname, port)
 
 # Methods
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({
+        'msg': 'The token has expired',
+        'error': 'token_expired'
+    }), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({
+        'msg': 'Signature verification failed',
+        'error': 'invalid_token'
+    }), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({
+        'msg': 'Request does not contain an access token',
+        'error': 'authorization_required'
+    }), 401
+
 def get_category(gender, birth_year):
     """
     Get appropriate category based on gender and birth year from database

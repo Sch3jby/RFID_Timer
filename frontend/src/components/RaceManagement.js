@@ -125,8 +125,8 @@ const RaceManagement = ({ onBack }) => {
     e.preventDefault();
     try {
       const endpoint = isEditing 
-        ? `http://localhost:5001/api/race/${currentRace.id}/update`
-        : 'http://localhost:5001/api/race/add';
+        ? `/api/race/${currentRace.id}/update`
+        : '/api/race/add';
       
       const response = await fetch(endpoint, {
         method: isEditing ? 'PUT' : 'POST',

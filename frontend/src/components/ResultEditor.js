@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../api/axiosConfig';
 
 const ResultEditor = ({ raceId, onClose }) => {
   const [results, setResults] = useState([]);
@@ -29,7 +29,7 @@ const ResultEditor = ({ raceId, onClose }) => {
   const fetchResults = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:5001/api/race/${raceId}/results`);
+      const response = await axios.get(`/api/race/${raceId}/results`);
       setResults(response.data.results || []);
       setError(null);
       
@@ -51,7 +51,7 @@ const ResultEditor = ({ raceId, onClose }) => {
 
   const fetchRunnerLaps = async (number) => {
     try {
-      const response = await axios.get(`http://localhost:5001/api/race/${raceId}/racer/${number}/laps`);
+      const response = await axios.get(`/api/race/${raceId}/racer/${number}/laps`);
       setLaps(prev => ({ ...prev, [number]: response.data.laps }));
     } catch (err) {
       setError(`Failed to load laps for runner ${number}`);
@@ -68,7 +68,7 @@ const ResultEditor = ({ raceId, onClose }) => {
     if (!lapToDelete || !expandedRunner) return;
 
     try {
-      await axios.post(`http://localhost:5001/api/race/${raceId}/lap/delete`, {
+      await axios.post(`/api/race/${raceId}/lap/delete`, {
         number: expandedRunner,
         lap_number: lapToDelete.lap_number
       });
@@ -138,7 +138,7 @@ const ResultEditor = ({ raceId, onClose }) => {
         payload.timestamp = addMilliseconds(editedTimestamp);
       }
 
-      await axios.post(`http://localhost:5001/api/race/${raceId}/lap/update`, payload);
+      await axios.post(`/api/race/${raceId}/lap/update`, payload);
       
       setSuccessMessage('Lap updated successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -180,7 +180,7 @@ const ResultEditor = ({ raceId, onClose }) => {
         updates.time = addMilliseconds(editedTime);
       }
 
-      await axios.post(`http://localhost:5001/api/race/${raceId}/result/update`, {
+      await axios.post(`/api/race/${raceId}/result/update`, {
         number: editingResult.number,
         track_id: editingResult.track_id,
         ...updates
@@ -256,7 +256,7 @@ const ResultEditor = ({ raceId, onClose }) => {
         payload.time = addMilliseconds(quickAdd.time);
       }
   
-      await axios.post(`http://localhost:5001/api/race/${raceId}/lap/add`, payload);
+      await axios.post(`/api/race/${raceId}/lap/add`, payload);
       
       setSuccessMessage('Lap added successfully');
       setTimeout(() => setSuccessMessage(''), 3000);

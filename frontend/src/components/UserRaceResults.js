@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 import LapTimes from './LapTimes';
 
@@ -31,7 +31,7 @@ const UserRaceResults = ({ raceId }) => {
       }
       
       try {
-        const userResponse = await axios.get('http://localhost:5001/api/me', {
+        const userResponse = await axios.get('/api/me', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -40,7 +40,7 @@ const UserRaceResults = ({ raceId }) => {
         
         const email = userResponse.data.email;
         
-        const resultsResponse = await axios.get(`http://localhost:5001/api/race/${raceId}/results/by-email/${email}`, {
+        const resultsResponse = await axios.get(`/api/race/${raceId}/results/by-email/${email}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -83,7 +83,7 @@ const UserRaceResults = ({ raceId }) => {
     if (!lapTimesData[number] && !lapTimesLoading[number]) {
       setLapTimesLoading(prev => ({ ...prev, [number]: true }));
       try {
-        const response = await axios.get(`http://localhost:5001/api/race/${raceId}/racer/${number}/laps`);
+        const response = await axios.get(`/api/race/${raceId}/racer/${number}/laps`);
         setLapTimesData(prev => ({ 
           ...prev, 
           [number]: response.data.laps || [] 
