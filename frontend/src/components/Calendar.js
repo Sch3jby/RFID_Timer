@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useTranslation } from '../contexts/LanguageContext';
 import { Link } from 'react-router-dom';
+import axios from '../api/axiosConfig';
+
 
 function Calendar() {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ function Calendar() {
   useEffect(() => {
     const fetchRaces = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/races');
+        const response = await axios.get('api/races');
         const racesData = response.data.races || [];
         setRaces(racesData);
         setFilteredRaces(racesData);
@@ -79,7 +80,7 @@ function Calendar() {
           {filteredRaces.map((race) => (
             <tr key={race.id}>
               <td>
-                <Link to={`/race/${race.id}`}>{race.name}</Link> {/* Odkaz na detail závodu */}
+                <Link to={`/race/${race.id}`}>{race.name}</Link>
               </td>
               <td>{race.date}</td>
             </tr>

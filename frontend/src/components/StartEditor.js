@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../api/axiosConfig';
 
 const StartEditor = ({ raceId, onClose }) => {
   const [startList, setStartList] = useState([]);
@@ -22,12 +22,12 @@ const StartEditor = ({ raceId, onClose }) => {
   const fetchStartList = async () => {
     try {
       setLoading(true);
-      // Fetch registrations with user details for the specific race
-      const response = await axios.get(`http://localhost:5001/race/${raceId}/startlist`);
-      setStartList(response.data.startList || []);;
+      // Using relative paths instead of hardcoded localhost URLs
+      const response = await axios.get(`/api/race/${raceId}/startlist`);
+      setStartList(response.data.startList || []);
 
       // Fetch available tracks for this race
-      const tracksResponse = await axios.get(`http://localhost:5001/tracks?race_id=${raceId}`);
+      const tracksResponse = await axios.get(`/api/tracks?race_id=${raceId}`);
       setTracks(tracksResponse.data.tracks);
 
       setError(null);
@@ -88,8 +88,8 @@ const StartEditor = ({ raceId, onClose }) => {
         updates.user_start_time = editedStartTime;
       }
 
-      // Update user details
-      await axios.post(`http://localhost:5001/race/${raceId}/startlist/update/user`, {
+      // Update user details with relative paths
+      await axios.post(`/api/race/${raceId}/startlist/update/user`, {
         user_id: editingRegistration.user_id,
         firstname: editedfirstname,
         surname: editedSurname,
@@ -97,7 +97,7 @@ const StartEditor = ({ raceId, onClose }) => {
       });
 
       // Update registration details
-      await axios.post(`http://localhost:5001/race/${raceId}/startlist/update/registration`, updates);
+      await axios.post(`/api/race/${raceId}/startlist/update/registration`, updates);
 
       setSuccessMessage('Changes saved successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -122,7 +122,7 @@ const StartEditor = ({ raceId, onClose }) => {
     }
     
     try {
-      await axios.delete(`http://localhost:5001/race/${raceId}/startlist/delete/${registrationId}`);
+      await axios.delete(`/api/race/${raceId}/startlist/delete/${registrationId}`);
       setSuccessMessage('Závodník byl úspěšně odstraněn ze závodu i z databáze');
       setTimeout(() => setSuccessMessage(''), 3000);
       await fetchStartList();

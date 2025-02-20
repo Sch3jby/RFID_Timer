@@ -21,7 +21,7 @@ function ProfilePage() {
       }
       
       try {
-        const response = await fetch('http://localhost:5001/api/me/registrations', {
+        const response = await fetch('/api/me/registrations', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

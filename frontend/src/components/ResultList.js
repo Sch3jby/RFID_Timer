@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useTranslation } from '../contexts/LanguageContext';
 import LapTimes from './LapTimes';
+import axios from '../api/axiosConfig';
 
 const formatRaceTime = (raceTime, status) => {
   if (status && ['DNF', 'DNS', 'DSQ'].includes(status.toUpperCase())) {
@@ -13,14 +13,13 @@ const formatRaceTime = (raceTime, status) => {
 const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
   const [lapTimes, setLapTimes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchLapTimes = async () => {
       if (isExpanded && !lapTimes.length) {
         setLoading(true);
         try {
-          const response = await axios.get(`http://localhost:5001/race/${raceId}/racer/${result.number}/laps`);
+          const response = await axios.get(`/api/race/${raceId}/racer/${result.number}/laps`);
           setLapTimes(response.data.laps);
         } catch (err) {
           console.error('Failed to fetch lap times:', err);
@@ -80,8 +79,8 @@ const ResultList = ({ raceId }) => {
     setLoading(true);
     try {
       const endpoint = groupBy === 'category' 
-        ? `http://localhost:5001/race/${raceId}/results/by-category`
-        : `http://localhost:5001/race/${raceId}/results/by-track`;
+        ? `/api/race/${raceId}/results/by-category`
+        : `/api/race/${raceId}/results/by-track`;
       
       const response = await axios.get(endpoint);
       setResults(response.data?.results || []);

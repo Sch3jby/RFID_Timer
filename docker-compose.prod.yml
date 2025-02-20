@@ -6,12 +6,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile.prod
     image: janschejbal/raceapp:backend
-    ports:
-      - "5001:5001"
     environment:
       - DATABASE_URL=postgresql://admin:password@db:5432/race
       - PYTHONPATH=/app
-      - FLASK_ENV=development
+      - FLASK_ENV=production
+    network_mode: "host"
     depends_on:
       - db
 
@@ -20,8 +19,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
     image: janschejbal/raceapp:frontend
-    ports:
-      - "3000:3000"
+    network_mode: "host"
+    depends_on:
+      - backend
 
   db:
     image: postgres:17
@@ -35,7 +35,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  sql-client:
+  adminer:
     image: adminer
     restart: always
     ports:
@@ -45,6 +45,3 @@ services:
 
 volumes:
   pgdata:
-networks:
-  internal:
-    driver: bridge

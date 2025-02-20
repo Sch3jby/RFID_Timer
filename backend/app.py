@@ -28,7 +28,6 @@ config.read('config.ini')
 
 # Initialize Flask application
 app = Flask(__name__, static_folder="static", template_folder="templates")
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000"], "supports_credentials": True}})
 
 # Initialize database
@@ -39,8 +38,9 @@ db.init_app(app)
 
 # Inicializace JWT
 jwt = JWTManager(app)
-app.config['JWT_SECRET_KEY'] = 'jwt_secret_key_here'
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_HEADER_NAME'] = 'Authorization'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
 
 # Initialize Mail
 mail = Mail()
@@ -94,6 +94,27 @@ class AlienRFID:
 alien = AlienRFID(hostname, port)
 
 # Methods
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({
+        'msg': 'The token has expired',
+        'error': 'token_expired'
+    }), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({
+        'msg': 'Signature verification failed',
+        'error': 'invalid_token'
+    }), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({
+        'msg': 'Request does not contain an access token',
+        'error': 'authorization_required'
+    }), 401
+
 def get_category(gender, birth_year):
     """
     Get appropriate category based on gender and birth year from database
@@ -243,7 +264,7 @@ def validate_password(password):
 def index():
     return "Welcome to the RFID Reader API!", 200
 
-@app.route('/connect', methods=['POST'])
+@app.route('/api/connect', methods=['POST'])
 def connect_reader():
     try:
         if alien.connected:
@@ -269,7 +290,7 @@ def connect_reader():
             "message": "Unexpected system error"
         }), 500
 
-@app.route('/fetch_taglist', methods=['GET'])
+@app.route('/api/fetch_taglist', methods=['GET'])
 def fetch_taglist():
     try:
         if not alien.connected:
@@ -285,7 +306,7 @@ def fetch_taglist():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/registration', methods=['POST'])
+@app.route('/api/registration', methods=['POST'])
 def registration():
     try:
         data = request.json
@@ -364,7 +385,7 @@ def registration():
         db.session.rollback()
         return jsonify({'error': f'Error registering user: {str(e)}'}), 500
     
-@app.route('/tags', methods=['GET'])
+@app.route('/api/tags', methods=['GET'])
 def get_tags():
     """Get all stored tags from database"""
     try:
@@ -383,7 +404,7 @@ def get_tags():
     except Exception as e:
         return jsonify({'error': 'Error fetching tags'}), 500
 
-@app.route('/store_results', methods=['POST'])
+@app.route('/api/store_results', methods=['POST'])
 def store_results():
     try:
         data = request.json
@@ -541,7 +562,7 @@ def store_results():
         print(f"Error storing results: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
     
-@app.route('/manual_result_store', methods=['POST'])
+@app.route('/api/manual_result_store', methods=['POST'])
 def manual_result_store():
     try:
         data = request.json
@@ -698,7 +719,7 @@ def manual_result_store():
         print(f"Error storing manual result: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/categories', methods=['GET'])
+@app.route('/api/categories', methods=['GET'])
 def get_categories():
     """Get all categories from database"""
     try:
@@ -717,7 +738,7 @@ def get_categories():
     except Exception as e:
         return jsonify({'error': f'Error fetching categories: {str(e)}'}), 500
 
-@app.route('/races', methods=['GET'])
+@app.route('/api/races', methods=['GET'])
 def get_races():
     try:
         races = Race.query.all()
@@ -759,7 +780,7 @@ def get_races():
             "message": str(e)
         }), 500
 
-@app.route('/race/add', methods=['POST'])
+@app.route('/api/race/add', methods=['POST'])
 def add_race():
     try:
         data = request.json
@@ -887,7 +908,7 @@ def add_race():
             "message": str(e)
         }), 500
 
-@app.route('/race/<int:race_id>/update', methods=['PUT'])
+@app.route('/api/race/<int:race_id>/update', methods=['PUT'])
 def update_race(race_id):
     try:
         data = request.json
@@ -997,7 +1018,7 @@ def update_race(race_id):
             "message": str(e)
         }), 500
 
-@app.route('/tracks', methods=['GET'])
+@app.route('/api/tracks', methods=['GET'])
 def get_tracks():
     race_id = request.args.get('race_id', type=int)
     if not race_id:
@@ -1016,7 +1037,7 @@ def get_tracks():
     except Exception as e:
         return jsonify({'error': 'Error fetching tracks'}), 500
     
-@app.route('/race/<int:race_id>', methods=['GET'])
+@app.route('/api/race/<int:race_id>', methods=['GET'])
 def get_race_detail(race_id):
     try:
         with db.session() as session:
@@ -1128,7 +1149,7 @@ def get_race_detail(race_id):
     except Exception as e:
         return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500
     
-@app.route('/set_track_start_time', methods=['POST'])
+@app.route('/api/set_track_start_time', methods=['POST'])
 def set_track_start_time():
     try:
         data = request.json
@@ -1168,7 +1189,7 @@ def set_track_start_time():
             'error': str(e)
         }), 500
     
-@app.route('/confirm_lineup', methods=['POST'])
+@app.route('/api/confirm_lineup', methods=['POST'])
 def confirm_lineup():
     try:
         data = request.json
@@ -1263,7 +1284,7 @@ def confirm_lineup():
         db.session.rollback()
         return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
     
-@app.route('/race/<int:race_id>/results', methods=['GET'])
+@app.route('/api/race/<int:race_id>/results', methods=['GET'])
 def get_race_results(race_id):
     try:
         table_name = f'race_results_{race_id}'
@@ -1476,7 +1497,7 @@ def get_race_results(race_id):
         current_app.logger.error(f'Error fetching race results: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
     
-@app.route('/race/<int:race_id>/results/by-category', methods=['GET'])
+@app.route('/api/race/<int:race_id>/results/by-category', methods=['GET'])
 def get_race_results_by_category(race_id):
     try:
         table_name = f'race_results_{race_id}'
@@ -1661,7 +1682,7 @@ def get_race_results_by_category(race_id):
         current_app.logger.error(f'Error fetching race results by category: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
 
-@app.route('/race/<int:race_id>/results/by-track', methods=['GET'])
+@app.route('/api/race/<int:race_id>/results/by-track', methods=['GET'])
 def get_race_results_by_track(race_id):
     try:
         table_name = f'race_results_{race_id}'
@@ -1845,7 +1866,7 @@ def get_race_results_by_track(race_id):
         current_app.logger.error(f'Error fetching race results by track: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
     
-@app.route('/race/<int:race_id>/racer/<int:number>/laps', methods=['GET'])
+@app.route('/api/race/<int:race_id>/racer/<int:number>/laps', methods=['GET'])
 def get_runner_laps(race_id, number):
     try:
         table_name = f'race_results_{race_id}'
@@ -1911,7 +1932,7 @@ def get_runner_laps(race_id, number):
         current_app.logger.error(f'Error fetching runner laps: {str(e)}')
         return jsonify({'error': 'Failed to fetch runner laps'}), 500
 
-@app.route('/race/<int:race_id>/result/update', methods=['POST'])
+@app.route('/api/race/<int:race_id>/result/update', methods=['POST'])
 def update_race_result(race_id):
     try:
         data = request.get_json()
@@ -2029,7 +2050,7 @@ def update_race_result(race_id):
         current_app.logger.error(f'Error updating result: {str(e)}')
         return jsonify({'error': str(e)}), 500
     
-@app.route('/race/<int:race_id>/lap/update', methods=['POST'])
+@app.route('/api/race/<int:race_id>/lap/update', methods=['POST'])
 def update_lap_time(race_id):
     try:
         data = request.get_json()
@@ -2230,7 +2251,7 @@ def update_lap_time(race_id):
         current_app.logger.error(f'Error updating lap: {str(e)}')
         return jsonify({'error': str(e)}), 500
     
-@app.route('/race/<int:race_id>/lap/delete', methods=['POST'])
+@app.route('/api/race/<int:race_id>/lap/delete', methods=['POST'])
 def delete_lap(race_id):
     try:
         data = request.get_json()
@@ -2356,7 +2377,7 @@ def delete_lap(race_id):
         current_app.logger.error(f'Error deleting lap: {str(e)}')
         return jsonify({'error': str(e)}), 500
     
-@app.route('/race/<int:race_id>/lap/add', methods=['POST'])
+@app.route('/api/race/<int:race_id>/lap/add', methods=['POST'])
 def add_manual_lap(race_id):
     try:
         data = request.json
@@ -2501,7 +2522,7 @@ def add_manual_lap(race_id):
         print(f"Error storing manual result: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
     
-@app.route('/race/<int:race_id>/startlist', methods=['GET'])
+@app.route('/api/race/<int:race_id>/startlist', methods=['GET'])
 def get_race_startlist(race_id):
     try:
         tracks = Track.query.filter_by(race_id=race_id).all()
@@ -2535,7 +2556,7 @@ def get_race_startlist(race_id):
     except Exception as e:
         return jsonify({'error': f'Error fetching start list: {str(e)}'}), 500
 
-@app.route('/race/<int:race_id>/startlist/update/user', methods=['POST'])
+@app.route('/api/race/<int:race_id>/startlist/update/user', methods=['POST'])
 def update_startlist_user(race_id):
     try:
         data = request.json
@@ -2554,7 +2575,7 @@ def update_startlist_user(race_id):
         db.session.rollback()
         return jsonify({'error': f'Error updating user: {str(e)}'}), 500
 
-@app.route('/race/<int:race_id>/startlist/update/registration', methods=['POST'])
+@app.route('/api/race/<int:race_id>/startlist/update/registration', methods=['POST'])
 def update_startlist_registration(race_id):
     try:
         data = request.json
@@ -2578,7 +2599,7 @@ def update_startlist_registration(race_id):
         db.session.rollback()
         return jsonify({'error': f'Error updating registration: {str(e)}'}), 500
 
-@app.route('/race/<int:race_id>/startlist/delete/<int:registration_id>', methods=['DELETE'])
+@app.route('/api/race/<int:race_id>/startlist/delete/<int:registration_id>', methods=['DELETE'])
 def delete_registration(race_id, registration_id):
     try:
         registration = Registration.query.get(registration_id)

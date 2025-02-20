@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from '../api/axiosConfig';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import Stopwatch from './Stopwatch.js';
@@ -24,10 +24,10 @@ function RFIDReaderDetail() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   useEffect(() => {
-    axios.get(`http://localhost:5001/race/${raceId}`)
+    axios.get(`/api/race/${raceId}`)
       .then(response => {
         setRaceDetail(response.data.race);
-        return axios.get(`http://localhost:5001/tracks?race_id=${raceId}`);
+        return axios.get(`/api/tracks?race_id=${raceId}`);
       })
       .then(response => {
         const fetchedTracks = response.data.tracks;
@@ -68,7 +68,7 @@ function RFIDReaderDetail() {
   }, [raceId]);
 
   const showMessage = (text, type = 'success') => {
-    const id = Date.now(); // Create unique ID for message
+    const id = Date.now();
     const newMessage = {
       id,
       text,
@@ -77,7 +77,6 @@ function RFIDReaderDetail() {
     
     setMessages(prev => [...prev, newMessage]);
 
-    // Auto-dismiss after 5 seconds
     setTimeout(() => {
       setMessages(prev => prev.filter(msg => msg.id !== id));
     }, 5000);
@@ -165,9 +164,8 @@ function RFIDReaderDetail() {
       status: entry.status || 'None'
     };
     
-    axios.post('http://localhost:5001/manual_result_store', resultData)
+    axios.post('/api/manual_result_store', resultData)
       .then(() => {
-        // Reset manual entry fields
         setManualEntries(prev => ({
           ...prev,
           [trackId]: { 
@@ -185,7 +183,7 @@ function RFIDReaderDetail() {
 
   const handleTrackStartStop = (trackId) => {
     if (!startTimeInputs[trackId].isLocked) {
-      axios.post('http://localhost:5001/set_track_start_time', {
+      axios.post('/api/set_track_start_time', {
         race_id: raceId,
         track_id: trackId,
         start_time: startTimeInputs[trackId].isAutomatic 
@@ -239,7 +237,7 @@ function RFIDReaderDetail() {
       }))
     };
 
-    axios.post('http://localhost:5001/confirm_lineup', lineupData)
+    axios.post('/api/confirm_lineup', lineupData)
       .then(() => {
         setLineupConfirmed(true);
         showMessage("Starlist confirmed");
@@ -250,7 +248,7 @@ function RFIDReaderDetail() {
   };
 
   const handleConnect = () => {
-    axios.post("http://localhost:5001/connect")
+    axios.post("/api/connect")
       .then((response) => {
         switch(response.data.status) {
           case "connected":
@@ -286,7 +284,7 @@ function RFIDReaderDetail() {
     
     if (isConnected) {
       interval = setInterval(() => {
-        axios.get("http://localhost:5001/fetch_taglist")
+        axios.get("/api/fetch_taglist")
           .then((response) => {
             if (response.data.status === "success") {
               const fetchedTags = response.data.taglist;
@@ -296,7 +294,7 @@ function RFIDReaderDetail() {
               tracks.forEach(track => {
                 const trackState = trackStates[track.id];
                 if (trackState && trackState.isStarted) {
-                  axios.post("http://localhost:5001/store_results", { 
+                  axios.post("/api/store_results", { 
                     tags: processedTags,
                     race_id: raceId,
                     track_id: track.id

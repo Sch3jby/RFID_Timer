@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from "axios";
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 
 function RegistrationForm() {
@@ -17,6 +17,7 @@ function RegistrationForm() {
     race_id: '',
     track_id: ''
   });
+  const [userRole, setUserRole] = useState(null);
   const [races, setRaces] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -33,18 +34,19 @@ function RegistrationForm() {
           return;
         }
 
-        const userResponse = await axios.get('http://localhost:5001/api/me', {
+        const userResponse = await axios.get('/api/me', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
+        setUserRole(userResponse.data.role);
         setFormData(prevData => ({
           ...prevData,
           email: userResponse.data.email
         }));
 
-        const racesResponse = await axios.get('http://localhost:5001/races', {
+        const racesResponse = await axios.get('/api/races', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -60,7 +62,7 @@ function RegistrationForm() {
           
           if (selectedRace) {
             const tracksResponse = await axios.get(
-              `http://localhost:5001/tracks?race_id=${selectedRace.id}`,
+              `/api/tracks?race_id=${selectedRace.id}`,
               {
                 headers: {
                   'Authorization': `Bearer ${token}`
@@ -118,7 +120,7 @@ function RegistrationForm() {
       try {
         const token = localStorage.getItem('access_token');
         const response = await axios.get(
-          `http://localhost:5001/tracks?race_id=${selectedRace.id}`,
+          `/api/tracks?race_id=${selectedRace.id}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -160,7 +162,7 @@ function RegistrationForm() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.post(
-        'http://localhost:5001/registration',
+        '/api/registration',
         formData,
         {
           headers: {
@@ -286,8 +288,9 @@ function RegistrationForm() {
             type="email" 
             name="email" 
             value={formData.email} 
-            readOnly 
-            className="readonly-input"
+            onChange={handleChange}
+            readOnly={userRole !== 1}
+            className={userRole !== 1 ? "readonly-input" : ""}
           />
         </div>
 

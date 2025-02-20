@@ -19,7 +19,7 @@ function Navigation() {
       const token = localStorage.getItem('access_token');
       if (isLoggedIn && token) {
         try {
-          const response = await fetch('http://localhost:5001/api/me', {
+          const response = await fetch('/api/me', {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,

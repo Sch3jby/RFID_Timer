@@ -1,7 +1,7 @@
 // RaceDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 import StartList from './StartList';
 import ResultList from './ResultList';
@@ -17,7 +17,7 @@ function RaceDetail() {
   useEffect(() => {
     const fetchRace = async () => {
       try {
-        const response = await axios.get(`http://localhost:5001/race/${id}`);
+        const response = await axios.get(`/api/race/${id}`);
         setRace(response.data.race);
       } catch (error) {
         setError(t('raceDetail.error'));
