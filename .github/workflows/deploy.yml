@@ -20,7 +20,7 @@ jobs:
 
       - name: 🚀 Deploy to Server
         run: |
-          ssh -o StrictHostKeyChecking=no user@bard.nti.tul.cz << 'EOF'
+          ssh -o StrictHostKeyChecking=no schejby@bard.nti.tul.cz << 'EOF'
             cd /home/user/RFID_Timer
             git pull origin main
             docker-compose -f docker-compose.prod.yml up -d --build
