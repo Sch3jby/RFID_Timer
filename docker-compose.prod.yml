@@ -5,45 +5,54 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    image: janschejbal/raceapp:backend
     ports:
       - "5001:5001"
     environment:
-      - DATABASE_URL=postgresql://admin:password@db:5432/race
-      - PYTHONPATH=/app
       - FLASK_ENV=production
-    depends_on:
-      - db
+    networks:
+      - app-network
     restart: always
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-    image: janschejbal/raceapp:frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
+    networks:
+      - app-network
     restart: always
 
   db:
     image: postgres:17
-    restart: always
     environment:
       POSTGRES_DB: race
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     ports:
-      - "50000:5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d race"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    networks:
+      - app-network
+    restart: always
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app-network
+    restart: always
 
 volumes:
   pgdata:
+
 networks:
-  internal:
+  app-network:
     driver: bridge
