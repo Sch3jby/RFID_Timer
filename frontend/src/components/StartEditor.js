@@ -15,6 +15,7 @@ const StartEditor = ({ raceId, onClose }) => {
   const [editedClub, setEditedClub] = useState('');
   const [editedTrackId, setEditedTrackId] = useState('');
   const [editedStartTime, setEditedStartTime] = useState('');
+  const [editedYear, setEditedYear] = useState('');
 
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -59,6 +60,7 @@ const StartEditor = ({ raceId, onClose }) => {
     setEditedClub(registration.club);
     setEditedTrackId(registration.track_id.toString());
     setEditedStartTime(registration.user_start_time || '');
+    setEditedYear(registration.year || '');
   };
 
   // Save edited registration
@@ -93,7 +95,8 @@ const StartEditor = ({ raceId, onClose }) => {
         user_id: editingRegistration.user_id,
         firstname: editedfirstname,
         surname: editedSurname,
-        club: editedClub
+        club: editedClub,
+        year: editedYear
       });
 
       // Update registration details
@@ -180,6 +183,7 @@ const StartEditor = ({ raceId, onClose }) => {
             <tr>
               <th>Number</th>
               <th>Name</th>
+              <th>Year</th>
               <th>Club</th>
               <th>Track</th>
               <th>Start Time</th>
@@ -222,6 +226,21 @@ const StartEditor = ({ raceId, onClose }) => {
                     </>
                   ) : (
                     `${registration.firstname} ${registration.surname}`
+                  )}
+                </td>
+                <td>
+                  {editingRegistration?.registration_id === registration.registration_id ? (
+                    <input
+                      type="number"
+                      value={editedYear}
+                      onChange={(e) => setEditedYear(e.target.value)}
+                      className="start-editor__input"
+                      placeholder="Year"
+                      min="1900"
+                      max={new Date().getFullYear()}
+                    />
+                  ) : (
+                    registration.year
                   )}
                 </td>
                 <td>
