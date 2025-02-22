@@ -205,6 +205,13 @@ export const translations = {
         results: "Výsledky",
         showLapTimes: "Mezičasy",
         hideLapTimes: "Zavřít"
+      },
+      resetPassword: {
+        title: "Změna hesla",
+        newPassword: "Nové heslo",
+        confirmPassword: "Potvrzení hesla",
+        submit: "Potvrdit",
+        resseting: "Probíhá změna"
       }
     },
     en: {
@@ -412,6 +419,13 @@ export const translations = {
         results: "results",
         showLapTimes: "Lap times",
         hideLapTimes: "Close"
+      },
+      resetPassword: {
+        title: "Change password",
+        newPassword: "New password",
+        confirmPassword: "Confirm password",
+        submit: "Confirm",
+        resseting: "Changing"
       }
     }
   };
