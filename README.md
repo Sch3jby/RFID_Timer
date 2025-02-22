@@ -43,10 +43,10 @@
 
 ---
 
-### ❌ Měření závodu
-- **Režim startu (hromadný/intervalový)** - ❌ Dodělat
-- **Hromadný start** - ❌ Dodělat
-- **Intervalový start** - ❌ Dodělat
+### ✅ Měření závodu
+- **Režim startu (hromadný/intervalový)** - ✅ Hotovo
+- **Hromadný start** - ✅ Hotovo
+- **Intervalový start** - ✅ Hotovo
 
 ---
 
