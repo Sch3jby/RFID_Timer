@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import Stopwatch from './Stopwatch.js';
 import Editor from './Editor';
+import StartCountdown from './StartCountdown';
 
 function RFIDReaderDetail() {
   const { raceId } = useParams();
@@ -550,6 +551,12 @@ function RFIDReaderDetail() {
                 {t('rfidReader.insert')}
               </button>
             </div>
+            {/* Start Countdown */}
+            <StartCountdown 
+              raceId={raceId}
+              trackId={track.id}
+              isRunning={trackStates[track.id]?.isStarted}
+            />
           </div>
         ))}
       </div>

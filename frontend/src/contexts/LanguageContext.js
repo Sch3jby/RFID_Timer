@@ -1,13 +1,20 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { translations } from '../locales/translations';
 
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState('cs');
+  const [language, setLanguage] = useState(() => {
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    return savedLanguage || 'cs';
+  });
 
   const toggleLanguage = () => {
-    setLanguage(prev => prev === 'cs' ? 'en' : 'cs');
+    setLanguage(prev => {
+      const newLanguage = prev === 'cs' ? 'en' : 'cs';
+      localStorage.setItem('selectedLanguage', newLanguage);
+      return newLanguage;
+    });
   };
 
   const t = (key) => {

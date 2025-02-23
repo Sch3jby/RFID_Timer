@@ -2323,3 +2323,60 @@
       margin-top: 0.25rem;
     }
   }
+
+  .start-countdown {
+    margin-top: 1rem;
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+  }
+  
+  .start-countdown__list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+  }
+  
+  .start-countdown__empty {
+    padding: 1rem;
+    text-align: center;
+    color: #666;
+  }
+  
+  .start-countdown__items {
+    padding: 0.5rem;
+  }
+  
+  .start-countdown__item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.3s ease;
+    color: black;
+  }
+  
+  .start-countdown__item:last-child {
+    border-bottom: none;
+  }
+  
+  .start-countdown__item[style*="rgb(0, 255, 0)"] {
+    color: white;
+  }
+  
+  .start-countdown__number {
+    font-weight: bold;
+    margin-right: 1rem;
+    min-width: 50px;
+  }
+  
+  .start-countdown__name {
+    flex: 1;
+  }
+  
+  .start-countdown__time {
+    font-family: monospace;
+    font-weight: bold;
+    color: #2196F3;
+  }
