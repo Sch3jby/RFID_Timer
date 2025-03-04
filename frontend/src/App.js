@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { LanguageProvider } from './contexts/LanguageContext';
+
 import Layout from './components/Layout';
 import Home from './components/Home';
 import RFIDReader from './components/RFIDReader';
@@ -13,6 +13,9 @@ import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import ProfilePage from './components/ProfilePage';
+import AboutUs from "./components/AboutUs";
+
+import { LanguageProvider } from './contexts/LanguageContext';
 import ProtectedAdmin from './contexts/ProtectedAdmin';
 import ProtectedRegistration from './contexts/ProtectedRegistration';
 
@@ -49,6 +52,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/aboutus" element={<AboutUs />} />
           </Routes>
         </Layout>
       </Router>
