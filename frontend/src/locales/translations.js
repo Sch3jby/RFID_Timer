@@ -10,7 +10,8 @@ export const translations = {
         login: "Přihlásit se",
         logout: "Odhlásit se",
         welcome: "Vítejte zpět,",
-        profile: "Profil"
+        profile: "Profil",
+        aboutus: "O nás"
       },
       home: {
         welcome: "Vítejte v systému pro závody",
@@ -212,6 +213,16 @@ export const translations = {
         confirmPassword: "Potvrzení hesla",
         submit: "Potvrdit",
         resseting: "Probíhá změna"
+      },
+      about: {
+        profileImageAlt: "Profilový obrázek",
+        quote: "Účelem závodění je strávit co nejméně času závoděním.",
+        name: "Jan Schejbal",
+        email: "Email",
+        phone: "Telefon",
+        bio: "Tuto webovou aplikaci pro RFID sportovní časomíru jsem vytvořil jako součást své bakalářské práce, ale především z lásky ke sportu a touhy přinést závodníkům i organizátorům spolehlivé a cenově dostupné řešení. Sportu se věnuji aktivně už řadu let — 7 let jsem závodně jezdil na běžkách, a díky tomu dobře vím, jak důležitý je každý detail a každá vteřina. Na vlastní kůži jsem zažil atmosféru závodů, jako je Jizerská 30 nebo Jizerská 25, a chápu, co závodníci i organizátoři potřebují. Mým cílem je propojit sportovní vášeň s technologiemi a vytvořit nástroj, který bude spolehlivý, jednoduchý na používání a přístupný všem. Ať už pořádáte velký závod nebo menší sportovní akci, moje aplikace vám pomůže s hladkým průběhem měření a zpracování výsledků.",
+        location: "Naše sídlo",
+        locationLiberec: "Liberec"
       }
     },
     en: {
@@ -224,7 +235,8 @@ export const translations = {
         login: "Login",
         logout: "Logout",
         welcome: "Welcome back,",
-        profile: "Profile"
+        profile: "Profile",
+        aboutus: "About Us"
       },
       home: {
         welcome: "Welcome to the Race System",
@@ -426,6 +438,16 @@ export const translations = {
         confirmPassword: "Confirm password",
         submit: "Confirm",
         resseting: "Changing"
+      },
+      about: {
+        profileImageAlt: "Profile image",
+        quote: "The purpose of racing is to spend as little time racing as possible.",
+        name: "Jan Schejbal",
+        email: "Email",
+        phone: "Phone",
+        bio: "I created this web application for an RFID sports timer as part of my bachelor's thesis, but mainly for the love of sports and the desire to bring a reliable and affordable solution to competitors and organizers. I have been actively involved in sports for many years — I raced cross-country skiing for 7 years, and because of that I know very well how important every detail and every second is. I have personally experienced the atmosphere of races such as Jizerská 30 or Jizerská 25, and I understand what competitors and organizers need. My goal is to combine sports passion with technology to create a tool that is reliable, easy to use and accessible to everyone. Whether you are organizing a big race or a smaller sporting event, my application will help you with the smooth process of measuring and processing the results.",
+        location: "Our Location",
+        locationLiberec: "Liberec"
       }
     }
   };

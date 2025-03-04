@@ -2380,3 +2380,151 @@
     font-weight: bold;
     color: #2196F3;
   }
+
+ /* Základní kontejner */
+.about-us-container {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Horní sekce s fotkou a citací */
+.top-section {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+/* Kontejner pro profilovou fotku - nyní čtvercový */
+.profile-image-container {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 24px;
+}
+
+/* Styly pro profilovou fotku - nyní čtvercová */
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Kontejner pro citace */
+.quote-container {
+  flex: 1;
+}
+
+/* Citace */
+.quote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 16px;
+  font-style: italic;
+  color: #555;
+  font-size: 18px;
+}
+
+/* Informační sekce pod fotkou a citací */
+.info-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Osobní informace */
+.personal-info {
+  margin-bottom: 32px;
+}
+
+/* Jméno */
+.name {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+/* Kontaktní informace */
+.contact-info {
+  margin-bottom: 20px;
+}
+
+.contact-item {
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.contact-label {
+  font-weight: 600;
+}
+
+/* Bio */
+.bio {
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Sekce s mapou */
+.location-section {
+  width: 100%;
+}
+
+.location-title {
+  font-size: 22px;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.map-container {
+  width: 100%;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Media query pro větší obrazovky */
+@media (min-width: 768px) {
+  .top-section {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  
+  .profile-image-container {
+    margin-right: 32px;
+    margin-bottom: 0;
+  }
+  
+  .info-section {
+    flex-direction: row;
+    gap: 32px;
+  }
+  
+  .personal-info {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  
+  .location-section {
+    flex: 1;
+  }
+}
+
+/* Media query pro menší mobilní zařízení */
+@media (max-width: 480px) {
+  .about-us-container {
+    padding: 16px;
+  }
+  
+  .profile-image-container {
+    width: 150px;
+    height: 150px;
+  }
+}

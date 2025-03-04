@@ -95,6 +95,12 @@ function Navigation() {
         >
           {t('nav.calendar')}
         </Link>
+        <Link 
+          to="/aboutus" 
+          className={`nav-button ${location.pathname === '/aboutus' ? 'active' : ''}`}
+        >
+          {t('nav.aboutus')}
+        </Link>
         
         <div className="user-controls">
           {isLoggedIn && userNickname && (
