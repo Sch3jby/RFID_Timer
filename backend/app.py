@@ -2,6 +2,7 @@
 from flask import Flask
 from extensions import mail, jwt, cors, db
 import configparser
+from datetime import timedelta
 from database.race_operations import setup_all_race_results_tables
 
 def create_app():
@@ -26,6 +27,8 @@ def create_app():
     app.config['JWT_TOKEN_LOCATION'] = ['headers']
     app.config['JWT_HEADER_NAME'] = 'Authorization'
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
+    app.config['JWT_SECRET_KEY'] = config.get('jwt', 'SECRET_KEY')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(seconds=config.getint('jwt', 'ACCESS_TOKEN_EXPIRES'))
     
     # Mail configuration
     app.config['MAIL_SERVER'] = config.get('mail', 'MAIL_SERVER', fallback='smtp.gmail.com')
