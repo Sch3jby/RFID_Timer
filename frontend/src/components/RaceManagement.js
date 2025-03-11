@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const emptyRace = {
@@ -45,13 +46,12 @@ const RaceManagement = ({ onBack }) => {
 
   const fetchRaces = async () => {
     try {
-      const response = await fetch("http://localhost:5001/api/races");
-      const data = await response.json();
-      setRaces(data.races);
+      const response = await axios.get('/api/races');
+      setRaces(response.data.races);
     } catch (error) {
-      console.error("Error fetching races:", error);
+      console.error('Error fetching races:', error);
     }
-  };
+  };  
 
   const handleInputChange = (e, trackIndex = null, categoryIndex = null) => {
       const { name, value } = e.target;

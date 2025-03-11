@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 
 const ProtectedRegistration = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -14,26 +15,25 @@ const ProtectedRegistration = ({ children }) => {
       }
 
       try {
-        const response = await fetch('http://localhost:5001/api/me', {
-          method: 'GET',
+        const response = await axios.get('/api/me', {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`
           }
         });
         
-        if (response.ok) {
+        if (response.status === 200) {
+          const userData = response.data;
           setIsAuthenticated(true);
         } else {
           setIsAuthenticated(false);
-          if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            navigate('/login');
-          }
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
         setIsAuthenticated(false);
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem('access_token');
+          navigate('/login');
+        }
       }
     };
 

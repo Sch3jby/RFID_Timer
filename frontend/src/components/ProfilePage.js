@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from '../api/axiosConfig';
 import { useTranslation } from "../contexts/LanguageContext";
 import UserRaceResults from "./UserRaceResults";
 
@@ -21,33 +22,29 @@ function ProfilePage() {
       }
       
       try {
-        const response = await fetch('/api/me/registrations', {
-          method: 'GET',
+        const response = await axios.get('/api/me/registrations', {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`
           }
         });
         
-        if (!response.ok) {
-          if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            navigate('/login');
-            throw new Error(t('profile.unauthorized'));
-          }
-          throw new Error(t('profile.loadError'));
-        }
-        
-        const data = await response.json();
-        setUserData(data.user);
-        setRegistrations(data.registrations);
+        // Axios automaticky parsuje JSON odpověď
+        setUserData(response.data.user);
+        setRegistrations(response.data.registrations);
       } catch (err) {
-        setError(err.message);
+        // Kontrola statusu 401 pro neautorizovaný přístup
+        if (err.response?.status === 401) {
+          localStorage.removeItem('access_token');
+          navigate('/login');
+          setError(t('profile.unauthorized'));
+        } else {
+          setError(t('profile.loadError'));
+        }
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchUserRegistrations();
   }, [navigate, t]);
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 import RaceManagement from './RaceManagement';
 
 function RFIDReader() {
@@ -15,9 +16,8 @@ function RFIDReader() {
 
   const fetchRaces = async () => {
     try {
-      const response = await fetch("/api/races");
-      const data = await response.json();
-      setRaces(data.races);
+      const response = await axios.get("/api/races");
+      setRaces(response.data.races);
     } catch (error) {
       console.error("Error fetching races:", error);
     }

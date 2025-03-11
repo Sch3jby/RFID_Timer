@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 
 function Login() {
@@ -14,28 +15,20 @@ function Login() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
+  
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post('/api/login', {
+        email,
+        password
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/');
-        window.location.reload();
-      } else {
-        setError(data.message || t('login.genericError'));
-      }
+  
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      navigate('/');
+      window.location.reload();
     } catch (err) {
-      setError(t('login.connectionError'));
+      const errorMessage = err.response?.data?.message || t('login.genericError');
+      setError(errorMessage);
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);

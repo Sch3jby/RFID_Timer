@@ -147,7 +147,8 @@ export const translations = {
         female: "Žena",
         editRace: "Upravit závod",
         categoryMinNumber: "První číslo v této kategorii",
-        categoryMaxNumber: "Poslední číslo v této kategorii"
+        categoryMaxNumber: "Poslední číslo v této kategorii",
+        intervalTime: "Interval"
       },
       login: {
         submit: "Přihlásit se",
@@ -167,7 +168,8 @@ export const translations = {
         password: "Heslo",
         confirmPassword: "Potvrdit heslo",
         haveAccount: "Již máte vytvořený účet?",
-        login: "Přihlásit se"
+        login: "Přihlásit se",
+        registering: "Registrování..."
       },
       forgotPassword: {
         title: "Obnova hesla",
@@ -372,7 +374,8 @@ export const translations = {
         female: "Female",
         editRace: "Edit race",
         categoryMinNumber: "First number for this category",
-        categoryMaxNumber: "Last number for this category"
+        categoryMaxNumber: "Last number for this category",
+        intervalTime: "Interval"
       },
       login: {
         submit: "Login",
@@ -392,7 +395,8 @@ export const translations = {
         password: "Password",
         confirmPassword: "Confirm password",
         haveAccount: "Already have account?",
-        login: "Login"
+        login: "Login",
+        registering: "Registering..."
       },
       forgotPassword: {
         title: "Password reset",

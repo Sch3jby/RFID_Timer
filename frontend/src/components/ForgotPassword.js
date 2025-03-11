@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 
 function ForgotPassword() {
@@ -13,25 +14,16 @@ function ForgotPassword() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
+  
     try {
-      const response = await fetch('/api/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      const response = await axios.post('/api/forgot-password', {
+        email
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess(true);
-      } else {
-        setError(data.message || t('forgotPassword.genericError'));
-      }
+      
+      setSuccess(true);
     } catch (err) {
-      setError(t('forgotPassword.connectionError'));
+      const errorMessage = err.response?.data?.message || t('forgotPassword.genericError');
+      setError(errorMessage);
       console.error('Forgot password error:', err);
     } finally {
       setIsLoading(false);

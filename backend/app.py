@@ -14,7 +14,7 @@ def create_app():
     config.read('config.ini')
     
     # Configure CORS
-    cors.init_app(app, resources={r"/api/*": {"origins": ["http://localhost:3000"], "supports_credentials": True}})
+    cors.init_app(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "https://checkpoint.nti.tul.cz"], "supports_credentials": True}})
     
     # Database configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = config.get('database', 'DATABASE_URL')

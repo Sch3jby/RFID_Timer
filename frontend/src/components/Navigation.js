@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import axios from '../api/axiosConfig';
 import { useTranslation } from "../contexts/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import logo from '../styles/other/stopwatch.png'
@@ -19,32 +20,26 @@ function Navigation() {
       const token = localStorage.getItem('access_token');
       if (isLoggedIn && token) {
         try {
-          const response = await fetch('/api/me', {
-            method: 'GET',
+          const response = await axios.get('/api/me', {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Authorization': `Bearer ${token}`
             }
           });
           
-          if (response.ok) {
-            const userData = await response.json();
-            setUserNickname(userData.nickname);
-            setUserRole(userData.role);
-            
-            if (location.pathname === '/rfid-reader' && userData.role !== 1) {
-              navigate('/');
-            }
-          } else {
-            console.error('Failed to fetch user data:', await response.text());
-            if (response.status === 401) {
-              localStorage.removeItem('access_token');
-              setIsLoggedIn(false);
-              navigate('/login');
-            }
+          setUserNickname(response.data.nickname);
+          setUserRole(response.data.role);
+          
+          if (location.pathname === '/rfid-reader' && response.data.role !== 1) {
+            navigate('/');
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
+          
+          if (error.response?.status === 401) {
+            localStorage.removeItem('access_token');
+            setIsLoggedIn(false);
+            navigate('/login');
+          }
         }
       }
     };

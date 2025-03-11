@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 
 function ResetPassword() {
@@ -22,32 +23,24 @@ function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+  
     if (password !== confirmPassword) {
       setError(t('resetPassword.passwordMismatch'));
       return;
     }
-
+  
     setIsLoading(true);
-
+  
     try {
-      const response = await fetch('/api/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, password }),
+      const response = await axios.post('/api/reset-password', {
+        token,
+        password
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        navigate('/login', { state: { resetSuccess: true } });
-      } else {
-        setError(data.message || t('resetPassword.genericError'));
-      }
+  
+      navigate('/login', { state: { resetSuccess: true } });
     } catch (err) {
-      setError(t('resetPassword.connectionError'));
+      const errorMessage = err.response?.data?.message || t('resetPassword.genericError');
+      setError(errorMessage);
       console.error('Reset password error:', err);
     } finally {
       setIsLoading(false);
