@@ -1743,6 +1743,210 @@
     align-self: flex-end;
   }
 
+  /* Race Manager - Základní container */
+.race-manager {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Formulář závodu */
+.race-form {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Základní informace o závodu */
+.race-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Sekce tratí - vizuálně oddělená */
+.race-track-section {
+  margin-top: 2.5rem;
+  border-top: 2px solid #e5e7eb;
+  padding-top: 1.5rem;
+}
+
+.race-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  background-color: #f3f4f6;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+}
+
+/* Jednotlivé tratě - výraznější oddělení */
+.race-track-item {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #003797; /* Modrý pruh pro odlišení tratě */
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.race-track-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.race-track-header h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #003797; /* Modrá barva pro název tratě */
+  margin: 0;
+}
+
+/* Číslo tratě vedle názvu */
+.race-track-number {
+  background-color: #003797;
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Sekce kategorií pod tratí */
+.race-category-section {
+  margin-top: 1.5rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.race-category-section .race-section-header {
+  background-color: #f0f9ff; /* Světle modrá pro odlišení od tratí */
+  margin: -1rem -1rem 1rem -1rem;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+/* Jednotlivé kategorie - ještě více vizuálně oddělené */
+.race-category-item {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #0f7452; /* Zelený pruh pro odlišení kategorií */
+  border-radius: 0.375rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+/* Číslo kategorie pro lepší orientaci */
+.race-category-number {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: #10b981;
+  color: white;
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Tlačítka pro přidání a úpravu - vizuálně vylepšená */
+.race-add-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.race-add-btn:before {
+  content: "+";
+  font-size: 1.25rem;
+}
+
+.race-add-btn:hover {
+  background-color: #45a049;
+}
+
+/* Úprava tlačítka pro lepší pozicování */
+.race-remove-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+/* Indikace zanoření - vizuální navigace */
+.race-hierarchy-indicator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.race-hierarchy-indicator span {
+  display: flex;
+  align-items: center;
+}
+
+.race-hierarchy-indicator span:after {
+  content: "›";
+  margin: 0 0.5rem;
+}
+
+.race-hierarchy-indicator span:last-child:after {
+  content: none;
+}
+
+/* Responsivní úpravy */
+@media (min-width: 640px) {
+  .race-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .race-form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  /* Alternativní zobrazení pro větší obrazovky */
+  .race-track-item {
+    padding: 1.75rem;
+  }
+  
+  .race-category-section {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+}
+
   /* Login */
   .user-controls {
     display: flex;

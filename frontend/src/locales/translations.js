@@ -148,7 +148,9 @@ export const translations = {
         editRace: "Upravit závod",
         categoryMinNumber: "První číslo v této kategorii",
         categoryMaxNumber: "Poslední číslo v této kategorii",
-        intervalTime: "Interval"
+        intervalTime: "Interval",
+        race: "Závod",
+        category: "Kategorie"
       },
       login: {
         submit: "Přihlásit se",
@@ -375,7 +377,9 @@ export const translations = {
         editRace: "Edit race",
         categoryMinNumber: "First number for this category",
         categoryMaxNumber: "Last number for this category",
-        intervalTime: "Interval"
+        intervalTime: "Interval",
+        race: "Race",
+        category: "Category"
       },
       login: {
         submit: "Login",

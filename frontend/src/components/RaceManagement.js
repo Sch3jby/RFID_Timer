@@ -39,6 +39,7 @@ const RaceManagement = ({ onBack }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentRace, setCurrentRace] = useState(null);
   const [formData, setFormData] = useState(emptyRace);
+  const [errorMessage, setErrorMessage] = useState(''); // Added missing state for error messages
 
   useEffect(() => {
     fetchRaces();
@@ -50,6 +51,7 @@ const RaceManagement = ({ onBack }) => {
       setRaces(response.data.races);
     } catch (error) {
       console.error('Error fetching races:', error);
+      setErrorMessage(t('raceManagement.errorFetchingRaces')); // Added error handling
     }
   };  
 
@@ -90,6 +92,17 @@ const RaceManagement = ({ onBack }) => {
       }
   };
 
+  // Added missing function for preparing form data
+  const prepareFormDataForSubmission = (data) => {
+    // Clone the data to avoid modifying the original
+    const formattedData = JSON.parse(JSON.stringify(data));
+    
+    // Perform any necessary transformations here
+    // For example, ensure dates are in the correct format, etc.
+    
+    return formattedData;
+  };
+
   const addTrack = () => {
     setFormData(prev => ({
       ...prev,
@@ -124,22 +137,27 @@ const RaceManagement = ({ onBack }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const endpoint = isEditing 
-        ? `/api/race/${currentRace.id}/update`
-        : '/api/race/add';
+      setErrorMessage(''); // Clear any previous errors
       
-      const response = await fetch(endpoint, {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const dataToSubmit = prepareFormDataForSubmission(formData);
       
-      if (response.ok) {
-        await fetchRaces();
-        resetForm();
+      if (isEditing) {
+        await axios.put(`/api/race/${currentRace.id}/update`, dataToSubmit);
+      } else {
+        await axios.post('/api/race/add', dataToSubmit);
       }
+      
+      await fetchRaces();
+      resetForm();
     } catch (error) {
       console.error("Error saving race:", error);
+      setErrorMessage(t('raceManagement.errorSavingRace'));
+      
+      if (error.response && error.response.data && error.response.data.message) {
+        setErrorMessage(`${t('raceManagement.errorSavingRace')}: ${error.response.data.message}`);
+      } else {
+        setErrorMessage(t('raceManagement.errorSavingRace'));
+      }
     }
   };
 
@@ -147,6 +165,7 @@ const RaceManagement = ({ onBack }) => {
     setIsEditing(false);
     setFormData(emptyRace);
     setCurrentRace(null);
+    setErrorMessage(''); // Clear any error messages when resetting the form
   };
 
   const handleEdit = (race) => {
@@ -171,8 +190,16 @@ const RaceManagement = ({ onBack }) => {
         >
           {t('common.back')}
         </button>
+        
+        {/* Display error message if exists */}
+        {errorMessage && (
+          <div className="error-message text-red-500 mt-2 mb-4">
+            {errorMessage}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit}>
-          {/* Základní informace o závodu */}
+          {/* ZÃ¡kladnÃ­ informace o zÃ¡vodu */}
           <div className="race-form-grid">
             <div className="race-form-group">
               <label className="race-form-label">{t('raceManagement.name')}</label>
@@ -227,10 +254,12 @@ const RaceManagement = ({ onBack }) => {
             )}
           </div>
 
-          {/* Sekce tratí */}
+          {/* Sekce tratÃ­ */}
           <div className="race-track-section">
             <div className="race-section-header">
-              <h3 className="text-lg font-semibold">{t('raceManagement.tracks')}</h3>
+              <h3 className="text-lg font-semibold">
+                {t('raceManagement.tracks')}
+              </h3>
               <button 
                 type="button" 
                 onClick={addTrack}
@@ -244,7 +273,8 @@ const RaceManagement = ({ onBack }) => {
               <div key={trackIndex} className="race-track-item">
                 <div className="race-track-header">
                   <h4 className="text-md font-medium">
-                    {t('raceManagement.track')} {trackIndex + 1}
+                    <span className="race-track-number">{trackIndex + 1}</span>
+                    {track.name || t('raceManagement.track')}
                   </h4>
                   <button 
                     type="button"
@@ -253,6 +283,11 @@ const RaceManagement = ({ onBack }) => {
                   >
                     {t('common.remove')}
                   </button>
+                </div>
+                
+                <div className="race-hierarchy-indicator">
+                  <span>{t('raceManagement.race')}</span>
+                  <span>{t('raceManagement.track')} {trackIndex + 1}</span>
                 </div>
 
                 <div className="race-form-grid">
@@ -333,10 +368,12 @@ const RaceManagement = ({ onBack }) => {
                   </div>
                 </div>
 
-                {/* Kategorie */}
+                {/* Kategorie - zlepÅ¡enÃ¡ vizuÃ¡lnÃ­ struktura */}
                 <div className="race-category-section">
                   <div className="race-section-header">
-                    <h5 className="text-md font-medium">{t('raceManagement.categories')}</h5>
+                    <h5 className="text-md font-medium">
+                      {t('raceManagement.categories')}
+                    </h5>
                     <button
                       type="button"
                       onClick={() => addCategory(trackIndex)}
@@ -349,12 +386,17 @@ const RaceManagement = ({ onBack }) => {
                   {track.categories?.map((category, categoryIndex) => (
                     <div key={categoryIndex} className="race-category-item">
                       <button
-                          type="button"
-                          onClick={() => removeCategory(trackIndex, categoryIndex)}
-                          className="race-remove-btn"
-                        >
-                          {t('common.remove')}
-                        </button>
+                        type="button"
+                        onClick={() => removeCategory(trackIndex, categoryIndex)}
+                        className="race-remove-btn"
+                      >
+                        {t('common.remove')}
+                      </button>
+                      
+                      <div className="race-hierarchy-indicator">
+                        <span>{t('raceManagement.track')} {trackIndex + 1}</span>
+                        <span>{t('raceManagement.category')} {categoryIndex + 1}</span>
+                      </div>
                       <div className="race-form-grid">
                         <div className="race-form-group">
                           <label className="race-form-label">{t('raceManagement.categoryName')}</label>
@@ -443,7 +485,7 @@ const RaceManagement = ({ onBack }) => {
         </form>
       </div>
 
-      {/* Seznam závodů */}
+      {/* Seznam zÃ¡vodu */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
         {races.map(race => (
           <div key={race.id} className="race-race-card">
