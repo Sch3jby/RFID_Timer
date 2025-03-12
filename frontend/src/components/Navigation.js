@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from '../api/axiosConfig';
 import { useTranslation } from "../contexts/LanguageContext";
@@ -14,6 +14,9 @@ function Navigation() {
   );
   const [userNickname, setUserNickname] = useState('');
   const [userRole, setUserRole] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNavHidden, setIsNavHidden] = useState(false);
+  const lastScrollY = useRef(0);
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -47,6 +50,29 @@ function Navigation() {
     fetchUserData();
   }, [isLoggedIn, navigate, location]);
   
+  // Scroll event handler for hiding/showing navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        // Scrolling down
+        setIsNavHidden(true);
+      } else {
+        // Scrolling up
+        setIsNavHidden(false);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
@@ -60,63 +86,86 @@ function Navigation() {
     navigate('/login');
   };
   
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+  
+  // Close mobile menu when changing pages
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
+  
   return (
-    <nav className="navigation">
+    <nav className={`navigation ${isNavHidden ? 'nav-hidden' : ''}`}>
       <div className="nav-container">
-        <img src={logo} alt="Logo" id="logo" />
-        <Link 
-          to="/" 
-          className={`nav-button ${location.pathname === '/' ? 'active' : ''}`}
-        >
-          {t('nav.home')}
-        </Link>
-        {userRole === 1 && (
-          <Link 
-            to="/rfid-reader" 
-            className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
-          >
-            {t('nav.organizer')}
-          </Link>
-        )}
-        <Link 
-          to="/registration" 
-          className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}
-        >
-          {t('nav.competitor')}
-        </Link>
-        <Link 
-          to="/calendar" 
-          className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
-        >
-          {t('nav.calendar')}
-        </Link>
-        <Link 
-          to="/aboutus" 
-          className={`nav-button ${location.pathname === '/aboutus' ? 'active' : ''}`}
-        >
-          {t('nav.aboutus')}
-        </Link>
-        
-        <div className="user-controls">
-          {isLoggedIn && userNickname && (
-            <span className="user-nickname">{t('nav.welcome')} {userNickname}</span>
-          )}
-          {isLoggedIn && (
-            <Link 
-              to="/profile" 
-              className={`prof-button ${location.pathname === '/profile' ? 'active' : ''}`}
-            >
-              {t('nav.profile')}
-            </Link>
-          )}
+        <div className="nav-header">
+          <img src={logo} alt="Logo" id="logo" />
           <button 
-            className="login-button"
-            onClick={isLoggedIn ? handleLogout : handleLogin}
+            className={`hamburger ${isMenuOpen ? 'active' : ''}`}
+            onClick={toggleMenu}
+            aria-label="Toggle navigation menu"
           >
-            {isLoggedIn ? t('nav.logout') : t('nav.login')}
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
           </button>
         </div>
-        <LanguageSwitcher />
+        
+        <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
+          <Link 
+            to="/" 
+            className={`nav-button ${location.pathname === '/' ? 'active' : ''}`}
+          >
+            {t('nav.home')}
+          </Link>
+          {userRole === 1 && (
+            <Link 
+              to="/rfid-reader" 
+              className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
+            >
+              {t('nav.organizer')}
+            </Link>
+          )}
+          <Link 
+            to="/registration" 
+            className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}
+          >
+            {t('nav.competitor')}
+          </Link>
+          <Link 
+            to="/calendar" 
+            className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
+          >
+            {t('nav.calendar')}
+          </Link>
+          <Link 
+            to="/aboutus" 
+            className={`nav-button ${location.pathname === '/aboutus' ? 'active' : ''}`}
+          >
+            {t('nav.aboutus')}
+          </Link>
+          
+          <div className="user-controls">
+            {isLoggedIn && userNickname && (
+              <span className="user-nickname">{t('nav.welcome')} {userNickname}</span>
+            )}
+            {isLoggedIn && (
+              <Link 
+                to="/profile" 
+                className={`prof-button ${location.pathname === '/profile' ? 'active' : ''}`}
+              >
+                {t('nav.profile')}
+              </Link>
+            )}
+            <button 
+              className="login-button"
+              onClick={isLoggedIn ? handleLogout : handleLogin}
+            >
+              {isLoggedIn ? t('nav.logout') : t('nav.login')}
+            </button>
+            <LanguageSwitcher />
+          </div>
+        </div>
       </div>
     </nav>
   );
