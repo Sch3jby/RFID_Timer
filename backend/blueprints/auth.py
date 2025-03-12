@@ -309,7 +309,7 @@ def get_user_registrations():
                     'club': user.club,
                     'year': user.year,
                     'email': user.email,
-                    'gender': 'Muž' if user.gender == 'M' else 'Žena'
+                    'gender': 'M' if user.gender == 'M' else 'F'
                 }
             })
         

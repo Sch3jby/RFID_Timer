@@ -4,7 +4,10 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install flask-cors python-dotenv gunicorn
 
 COPY . .
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5001", "app:app"]
+EXPOSE 5001
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "app:app"]

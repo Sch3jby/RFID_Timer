@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from '../api/axiosConfig';
 import { Navigate, useNavigate } from 'react-router-dom';
 
 const ProtectedAdmin = ({ children }) => {
@@ -14,27 +15,25 @@ const ProtectedAdmin = ({ children }) => {
       }
 
       try {
-        const response = await fetch('http://localhost:5001/api/me', {
-          method: 'GET',
+        const response = await axios.get('/api/me', {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`
           }
         });
         
-        if (response.ok) {
-          const userData = await response.json();
-          setIsAuthorized(userData.role === 1);
+        if (response.status === 200) {
+          const userData = response.data;
+          setIsAuthorized(true);
         } else {
           setIsAuthorized(false);
-          if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            navigate('/login');
-          }
         }
       } catch (error) {
-        console.error('Error checking authorization:', error);
+        console.error('Error checking authentication:', error);
         setIsAuthorized(false);
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem('access_token');
+          navigate('/login');
+        }
       }
     };
 

@@ -136,8 +136,8 @@ def add_race():
         db.session.execute(create_results_table)
 
         if 'tracks' in data:
-            for track_data in data['tracks']:
-                track_id = int(f"{race_id}{str(track_data['distance']).zfill(2)}")
+            for i, track_data in enumerate(data['tracks'], 1):
+                track_id = int(f"{race_id}{i:02d}")
                 
                 track = Track(
                     id=track_id,
@@ -212,11 +212,10 @@ def update_race(race_id):
         existing_track_ids = {track.id for track in race.tracks}
         updated_track_ids = set()
 
-        for track_data in data.get('tracks', []):
-            distance = float(track_data['distance'])
-            track_id = int(f"{race_id}{str(int(distance * 10)).zfill(2)}")
+        for i, track_data in enumerate(data.get('tracks', []), 1):
+            track_id = int(f"{race_id}{i:02d}")
             
-            if 'id' in track_data:
+            if 'id' in track_data and track_data['id'] in existing_track_ids:
                 track = Track.query.get(track_data['id'])
                 if track and track.race_id == race_id:
                     track.name = track_data['name']
@@ -241,6 +240,7 @@ def update_race(race_id):
                 )
                 db.session.add(track)
                 db.session.flush()
+                updated_track_ids.add(track_id)
 
             if track:
                 existing_category_ids = {cat.id for cat in track.categories}
@@ -265,7 +265,7 @@ def update_race(race_id):
                             min_number=cat_data['min_number'],
                             max_number=cat_data['max_number'],
                             gender=cat_data['gender'],
-                            track_id=track_id
+                            track_id=track.id
                         )
                         db.session.add(category)
 

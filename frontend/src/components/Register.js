@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 
 function Register() {
@@ -15,32 +16,25 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+  
     if (password !== confirmPassword) {
       setError(t('register.passwordMismatch'));
       return;
     }
-
+  
     setIsLoading(true);
-
+  
     try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ nickname, email, password }),
+      const response = await axios.post('/api/register', {
+        nickname,
+        email,
+        password
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        navigate('/login', { state: { registrationSuccess: true } });
-      } else {
-        setError(data.message || t('register.genericError'));
-      }
+  
+      navigate('/login', { state: { registrationSuccess: true } });
     } catch (err) {
-      setError(t('register.connectionError'));
+      const errorMessage = err.response?.data?.message || t('register.connectionError');
+      setError(errorMessage);
       console.error('Registration error:', err);
     } finally {
       setIsLoading(false);
