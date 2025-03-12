@@ -98,52 +98,43 @@ function Navigation() {
   return (
     <nav className={`navigation ${isNavHidden ? 'nav-hidden' : ''}`}>
       <div className="nav-container">
-        <div className="nav-header">
-          <img src={logo} alt="Logo" id="logo" />
-          <button 
-            className={`hamburger ${isMenuOpen ? 'active' : ''}`}
-            onClick={toggleMenu}
-            aria-label="Toggle navigation menu"
-          >
-            <span className="hamburger-line"></span>
-            <span className="hamburger-line"></span>
-            <span className="hamburger-line"></span>
-          </button>
-        </div>
+        <img src={logo} alt="Logo" id="logo" />
         
-        <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-          <Link 
-            to="/" 
-            className={`nav-button ${location.pathname === '/' ? 'active' : ''}`}
-          >
-            {t('nav.home')}
-          </Link>
-          {userRole === 1 && (
+        <div className="desktop-nav">
+          <div className="nav-links">
             <Link 
-              to="/rfid-reader" 
-              className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
+              to="/" 
+              className={`nav-button ${location.pathname === '/' ? 'active' : ''}`}
             >
-              {t('nav.organizer')}
+              {t('nav.home')}
             </Link>
-          )}
-          <Link 
-            to="/registration" 
-            className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}
-          >
-            {t('nav.competitor')}
-          </Link>
-          <Link 
-            to="/calendar" 
-            className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
-          >
-            {t('nav.calendar')}
-          </Link>
-          <Link 
-            to="/aboutus" 
-            className={`nav-button ${location.pathname === '/aboutus' ? 'active' : ''}`}
-          >
-            {t('nav.aboutus')}
-          </Link>
+            {userRole === 1 && (
+              <Link 
+                to="/rfid-reader" 
+                className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
+              >
+                {t('nav.organizer')}
+              </Link>
+            )}
+            <Link 
+              to="/registration" 
+              className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}
+            >
+              {t('nav.competitor')}
+            </Link>
+            <Link 
+              to="/calendar" 
+              className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
+            >
+              {t('nav.calendar')}
+            </Link>
+            <Link 
+              to="/aboutus" 
+              className={`nav-button ${location.pathname === '/aboutus' ? 'active' : ''}`}
+            >
+              {t('nav.aboutus')}
+            </Link>
+          </div>
           
           <div className="user-controls">
             {isLoggedIn && userNickname && (
@@ -164,6 +155,78 @@ function Navigation() {
               {isLoggedIn ? t('nav.logout') : t('nav.login')}
             </button>
             <LanguageSwitcher />
+          </div>
+        </div>
+        
+        <button 
+          className={`hamburger ${isMenuOpen ? 'active' : ''}`}
+          onClick={toggleMenu}
+          aria-label="Toggle navigation menu"
+        >
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </button>
+        
+        {/* Mobile Menu */}
+        <div className={`mobile-menu ${isMenuOpen ? 'active' : ''}`}>
+          <div className="mobile-nav-links">
+            <Link 
+              to="/" 
+              className={`nav-button ${location.pathname === '/' ? 'active' : ''}`}
+            >
+              {t('nav.home')}
+            </Link>
+            {userRole === 1 && (
+              <Link 
+                to="/rfid-reader" 
+                className={`nav-button ${location.pathname === '/rfid-reader' ? 'active' : ''}`}
+              >
+                {t('nav.organizer')}
+              </Link>
+            )}
+            <Link 
+              to="/registration" 
+              className={`nav-button ${location.pathname === '/registration' ? 'active' : ''}`}
+            >
+              {t('nav.competitor')}
+            </Link>
+            <Link 
+              to="/calendar" 
+              className={`nav-button ${location.pathname === '/calendar' ? 'active' : ''}`}
+            >
+              {t('nav.calendar')}
+            </Link>
+            <Link 
+              to="/aboutus" 
+              className={`nav-button ${location.pathname === '/aboutus' ? 'active' : ''}`}
+            >
+              {t('nav.aboutus')}
+            </Link>
+            
+            {isLoggedIn && (
+              <Link 
+                to="/profile" 
+                className={`prof-button ${location.pathname === '/profile' ? 'active' : ''}`}
+              >
+                {t('nav.profile')}
+              </Link>
+            )}
+            <button 
+              className="login-button"
+              onClick={isLoggedIn ? handleLogout : handleLogin}
+            >
+              {isLoggedIn ? t('nav.logout') : t('nav.login')}
+            </button>
+            
+            <div className="mobile-user-info">
+              {isLoggedIn && userNickname && (
+                <span className="user-nickname">{t('nav.welcome')} {userNickname}</span>
+              )}
+              <div className="mobile-language-switcher">
+                <LanguageSwitcher />
+              </div>
+            </div>
           </div>
         </div>
       </div>
