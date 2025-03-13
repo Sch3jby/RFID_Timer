@@ -57,7 +57,7 @@ function RaceDetail() {
         <h1>{race.name}</h1>
       </div>
       <div className="race-info">
-        <h3><strong>{t('raceDetail.date')}:</strong> {race.date}</h3>
+        <h3><strong>{t('raceDetail.date')}:</strong> {race.date}</h3>;
         <h3>
           {t('raceManagement.startType')}: {' '}
           {race.start === 'M' ? t('raceManagement.massStart') : t('raceManagement.intervalStart')}
