@@ -58,7 +58,10 @@ function RaceDetail() {
       </div>
       <div className="race-info">
         <h3><strong>{t('raceDetail.date')}:</strong> {race.date}</h3>
-        <h3><strong>{t('raceDetail.startType')}:</strong> {race.start}</h3>
+        <h3>
+          {t('raceManagement.startType')}: {' '}
+          {race.start === 'M' ? t('raceManagement.massStart') : t('raceManagement.intervalStart')}
+        </h3>
         <h3><strong>{t('raceDetail.description')}:</strong></h3>
         <p>{race.description}</p>
         
