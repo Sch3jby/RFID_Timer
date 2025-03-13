@@ -75,6 +75,23 @@ const ResultList = ({ raceId }) => {
   const [groupBy, setGroupBy] = useState('category');
   const [expandedRunner, setExpandedRunner] = useState(null);
 
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      const dateElements = document.querySelectorAll('.results-page');
+      const currentDate = new Date().toLocaleString();
+      
+      dateElements.forEach(el => {
+        el.setAttribute('data-print-date', currentDate);
+      });
+    };
+    
+    window.addEventListener('beforeprint', handleBeforePrint);
+    
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+    };
+  }, []);
+
   const fetchResults = async () => {
     setLoading(true);
     try {
