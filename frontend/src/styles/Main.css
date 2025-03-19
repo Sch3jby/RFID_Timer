@@ -144,7 +144,7 @@
 }
 
 .login-button:hover {
-  background-color: var(--primary-dark);
+  background-color: var(--primary-hover);
 }
 
 /* Hamburger Button */
