@@ -24,7 +24,8 @@ export const translations = {
         remove: "Smazat",
         cancel: "Zrušit",
         save: "Uložit",
-        back: "Zpět"
+        back: "Zpět",
+        delete: "Smazat"
       },
       registration: {
         title: "Registrace",
@@ -150,7 +151,10 @@ export const translations = {
         categoryMaxNumber: "Poslední číslo v této kategorii",
         intervalTime: "Interval",
         race: "Závod",
-        category: "Kategorie"
+        category: "Kategorie",
+        confirmDelete: "Opravdu chcete smazat tento závod? Tato akce je nevratná.",
+        raceDeletedSuccessfully: "Závod byl úspěšně smazán",
+        errorDeletingRace: "Nepodařilo se smazat závod"
       },
       login: {
         submit: "Přihlásit se",
@@ -253,7 +257,8 @@ export const translations = {
         remove: "Remove",
         cancel: "Cancel",
         save: "Save",
-        back: "Back"
+        back: "Back",
+        delete: "Delete"
       },
       registration: {
         title: "Registration",
@@ -379,7 +384,10 @@ export const translations = {
         categoryMaxNumber: "Last number for this category",
         intervalTime: "Interval",
         race: "Race",
-        category: "Category"
+        category: "Category",
+        confirmDelete: "Are you sure you want to delete this race? This action is irreversible.",
+        raceDeletedSuccessfully: "Race successfully deleted",
+        errorDeletingRace: "Failed to delete race"
       },
       login: {
         submit: "Login",

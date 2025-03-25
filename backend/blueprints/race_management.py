@@ -290,6 +290,47 @@ def update_race(race_id):
             "status": "error",
             "message": str(e)
         }), 500
+    
+@race_management_bp.route('/race/<int:race_id>/delete', methods=['DELETE'])
+def delete_race(race_id):
+    try:
+        race = Race.query.get(race_id)
+        
+        if not race:
+            return jsonify({
+                "status": "error",
+                "message": "Race not found"
+            }), 404
+
+        tracks = Track.query.filter_by(race_id=race_id).all()
+        track_ids = [track.id for track in tracks]
+        
+        Registration.query.filter(Registration.track_id.in_(track_ids)).delete(synchronize_session=False)
+        
+        Category.query.filter(Category.track_id.in_(track_ids)).delete(synchronize_session=False)
+        
+        Track.query.filter_by(race_id=race_id).delete(synchronize_session=False)
+        
+        if race.results_table_name:
+            drop_table_query = text(f"DROP TABLE IF EXISTS {race.results_table_name}")
+            db.session.execute(drop_table_query)
+        
+        db.session.delete(race)
+        
+        db.session.commit()
+        
+        return jsonify({
+            "status": "success",
+            "message": "Race deleted successfully"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting race: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 @race_management_bp.route('/tracks', methods=['GET'])
 def get_tracks():

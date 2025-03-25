@@ -39,7 +39,7 @@ const RaceManagement = ({ onBack }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentRace, setCurrentRace] = useState(null);
   const [formData, setFormData] = useState(emptyRace);
-  const [errorMessage, setErrorMessage] = useState(''); // Added missing state for error messages
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     fetchRaces();
@@ -51,56 +51,50 @@ const RaceManagement = ({ onBack }) => {
       setRaces(response.data.races);
     } catch (error) {
       console.error('Error fetching races:', error);
-      setErrorMessage(t('raceManagement.errorFetchingRaces')); // Added error handling
+      setErrorMessage(t('raceManagement.errorFetchingRaces'));
     }
-  };  
-
-  const handleInputChange = (e, trackIndex = null, categoryIndex = null) => {
-      const { name, value } = e.target;
-      
-      const processValue = (name, value) => {
-          switch(name) {
-              case 'distance':
-                  return parseFloat(value) || 0;
-              case 'min_age':
-              case 'max_age':
-              case 'number_of_laps':
-              case 'min_number':
-              case 'max_number':
-                  return parseInt(value) || 0;
-              default:
-                  return value;
-          }
-      };
-      
-      if (trackIndex === null) {
-          setFormData(prev => ({ ...prev, [name]: processValue(name, value) }));
-      } else if (categoryIndex === null) {
-          const newTracks = [...formData.tracks];
-          newTracks[trackIndex] = { 
-              ...newTracks[trackIndex], 
-              [name]: processValue(name, value) 
-          };
-          setFormData(prev => ({ ...prev, tracks: newTracks }));
-      } else {
-          const newTracks = [...formData.tracks];
-          newTracks[trackIndex].categories[categoryIndex] = {
-              ...newTracks[trackIndex].categories[categoryIndex],
-              [name]: processValue(name, value)
-          };
-          setFormData(prev => ({ ...prev, tracks: newTracks }));
-      }
   };
 
-  // Added missing function for preparing form data
   const prepareFormDataForSubmission = (data) => {
-    // Clone the data to avoid modifying the original
     const formattedData = JSON.parse(JSON.stringify(data));
-    
-    // Perform any necessary transformations here
-    // For example, ensure dates are in the correct format, etc.
-    
     return formattedData;
+  };
+
+  const handleInputChange = (e, trackIndex = null, categoryIndex = null) => {
+    const { name, value } = e.target;
+    
+    const processValue = (name, value) => {
+      switch(name) {
+        case 'distance':
+          return parseFloat(value) || 0;
+        case 'min_age':
+        case 'max_age':
+        case 'number_of_laps':
+        case 'min_number':
+        case 'max_number':
+          return parseInt(value) || 0;
+        default:
+          return value;
+      }
+    };
+    
+    if (trackIndex === null) {
+      setFormData(prev => ({ ...prev, [name]: processValue(name, value) }));
+    } else if (categoryIndex === null) {
+      const newTracks = [...formData.tracks];
+      newTracks[trackIndex] = { 
+        ...newTracks[trackIndex], 
+        [name]: processValue(name, value) 
+      };
+      setFormData(prev => ({ ...prev, tracks: newTracks }));
+    } else {
+      const newTracks = [...formData.tracks];
+      newTracks[trackIndex].categories[categoryIndex] = {
+        ...newTracks[trackIndex].categories[categoryIndex],
+        [name]: processValue(name, value)
+      };
+      setFormData(prev => ({ ...prev, tracks: newTracks }));
+    }
   };
 
   const addTrack = () => {
@@ -137,7 +131,7 @@ const RaceManagement = ({ onBack }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setErrorMessage(''); // Clear any previous errors
+      setErrorMessage('');
       
       const dataToSubmit = prepareFormDataForSubmission(formData);
       
@@ -151,7 +145,6 @@ const RaceManagement = ({ onBack }) => {
       resetForm();
     } catch (error) {
       console.error("Error saving race:", error);
-      setErrorMessage(t('raceManagement.errorSavingRace'));
       
       if (error.response && error.response.data && error.response.data.message) {
         setErrorMessage(`${t('raceManagement.errorSavingRace')}: ${error.response.data.message}`);
@@ -161,11 +154,32 @@ const RaceManagement = ({ onBack }) => {
     }
   };
 
+  const handleDelete = async (raceId) => {
+    try {
+      const confirmDelete = window.confirm(t('raceManagement.confirmDelete'));
+      
+      if (confirmDelete) {
+        setErrorMessage('');
+        
+        await axios.delete(`/api/race/${raceId}/delete`);
+        
+        await fetchRaces();
+        
+        resetForm();
+        
+        alert(t('raceManagement.raceDeletedSuccessfully'));
+      }
+    } catch (error) {
+      console.error("Error deleting race:", error);
+      setErrorMessage(t('raceManagement.errorDeletingRace'));
+    }
+  };
+
   const resetForm = () => {
     setIsEditing(false);
     setFormData(emptyRace);
     setCurrentRace(null);
-    setErrorMessage(''); // Clear any error messages when resetting the form
+    setErrorMessage('');
   };
 
   const handleEdit = (race) => {
@@ -191,7 +205,6 @@ const RaceManagement = ({ onBack }) => {
           {t('common.back')}
         </button>
         
-        {/* Display error message if exists */}
         {errorMessage && (
           <div className="error-message text-red-500 mt-2 mb-4">
             {errorMessage}
@@ -199,7 +212,6 @@ const RaceManagement = ({ onBack }) => {
         )}
         
         <form onSubmit={handleSubmit}>
-          {/* ZÃ¡kladnÃ­ informace o zÃ¡vodu */}
           <div className="race-form-grid">
             <div className="race-form-group">
               <label className="race-form-label">{t('raceManagement.name')}</label>
@@ -254,7 +266,6 @@ const RaceManagement = ({ onBack }) => {
             )}
           </div>
 
-          {/* Sekce tratÃ­ */}
           <div className="race-track-section">
             <div className="race-section-header">
               <h3 className="text-lg font-semibold">
@@ -284,7 +295,7 @@ const RaceManagement = ({ onBack }) => {
                     {t('common.remove')}
                   </button>
                 </div>
-                
+
                 <div className="race-hierarchy-indicator">
                   <span>{t('raceManagement.race')}</span>
                   <span>{t('raceManagement.track')} {trackIndex + 1}</span>
@@ -303,16 +314,16 @@ const RaceManagement = ({ onBack }) => {
                   </div>
                   <div className="race-form-group">
                     <label className="race-form-label">{t('raceManagement.distance')}</label>
-                      <input
-                          type="number"
-                          name="distance"
-                          value={track.distance}
-                          step="0.1"
-                          min="0"
-                          onChange={(e) => handleInputChange(e, trackIndex)}
-                          className="race-form-input"
-                          required
-                      />
+                    <input
+                      type="number"
+                      name="distance"
+                      value={track.distance}
+                      step="0.1"
+                      min="0"
+                      onChange={(e) => handleInputChange(e, trackIndex)}
+                      className="race-form-input"
+                      required
+                    />
                   </div>
                   <div className="race-form-group">
                     <label className="race-form-label">{t('raceManagement.minAge')}</label>
@@ -368,7 +379,6 @@ const RaceManagement = ({ onBack }) => {
                   </div>
                 </div>
 
-                {/* Kategorie - zlepÅ¡enÃ¡ vizuÃ¡lnÃ­ struktura */}
                 <div className="race-category-section">
                   <div className="race-section-header">
                     <h5 className="text-md font-medium">
@@ -485,18 +495,25 @@ const RaceManagement = ({ onBack }) => {
         </form>
       </div>
 
-      {/* Seznam zÃ¡vodu */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
         {races.map(race => (
           <div key={race.id} className="race-race-card">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium">{race.name}</h3>
-              <button 
-                onClick={() => handleEdit(race)}
-                className="race-edit-btn"
-              >
-                {t('common.edit')}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleEdit(race)}
+                  className="race-edit-btn"
+                >
+                  {t('common.edit')}
+                </button>
+                <button 
+                  onClick={() => handleDelete(race.id)}
+                  className="race-delete-btn"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
             </div>
             <p>{t('raceManagement.date')}: {race.date}</p>
             <p>
