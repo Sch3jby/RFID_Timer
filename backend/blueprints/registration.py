@@ -35,7 +35,7 @@ def registration():
 
         race = Race.query.get(race_id)
         track = Track.query.get(track_id)
-        
+
         if not race or not track or track.race_id != race_id:
             return jsonify({'error': 'Invalid race or track selection'}), 404
 
@@ -46,14 +46,14 @@ def registration():
             return jsonify({
                 'error': f'Age not eligible for this track. Must be between {track.min_age} and {track.max_age} years old.'
             }), 400
-        
+
         category = Category.query.filter(
             Category.track_id == track_id,
             Category.min_age <= user_age,
             Category.max_age >= user_age,
             Category.gender == gender
         ).first()
-        
+
         if not category:
             return jsonify({
                 'error': 'No suitable category found for this user'
@@ -89,4 +89,3 @@ def registration():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error registering user: {str(e)}'}), 500
-    

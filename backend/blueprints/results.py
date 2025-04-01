@@ -45,27 +45,27 @@ def store_results():
             return jsonify({"status": "error", "message": "Category not found for this track"}), 404
 
         table_name = f'race_results_{race_id}'
-        
+
         pattern = r"Tag:([\w\s]+), Disc:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Last:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Count:(\d+), Ant:(\d+), Proto:(\d+)"
-        
+
         stored_results = 0
         tags_found = []
-        
+
         for line in tags_raw:
             line = line.strip()
             if not line:
                 continue
-                
+
             match = re.match(pattern, line)
             if not match:
                 continue
 
             try:
                 tag_id, discovery_time, last_seen_time, count, ant, proto = match.groups()
-                
+
                 number = tag_id.strip().split()[-1]
                 tag_id = tag_id.strip()
-                
+
                 last_seen_datetime = datetime.strptime(last_seen_time, "%Y/%m/%d %H:%M:%S.%f")
                 current_time = (datetime.now() + timedelta(hours=1))
 
@@ -83,7 +83,7 @@ def store_results():
 
                 if not track.actual_start_time:
                     return jsonify({"status": "error", "message": "Actual start time not set for category"}), 400
-                
+
                 user_start_delta = timedelta(
                     hours=registration.user_start_time.hour, 
                     minutes=registration.user_start_time.minute, 
@@ -131,10 +131,10 @@ def store_results():
                     lap_number = 1
                 else:
                     last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
-                    
+
                     if last_seen_datetime <= last_tag_time + min_lap_duration:
                         continue
-                    
+
                     lap_number = last_entry.lap_number + 1
 
                 insert_sql = text(f'''
@@ -155,7 +155,7 @@ def store_results():
                         :lap_number
                     )
                 ''')
-                
+
                 db.session.execute(insert_sql, {
                     'number': number,
                     'tag_id': tag_id, 
@@ -164,25 +164,25 @@ def store_results():
                     'last_seen_time': last_seen_datetime,
                     'lap_number': lap_number
                 })
-                
+
                 stored_results += 1
                 tags_found.append(tag_id)
-                
+
             except Exception as e:
                 print(f"Error processing tag: {e}")
-        
+
         db.session.commit()
         return jsonify({
             "status": "success", 
             "message": f"Stored {stored_results} results for race {race_id}, track {track_id}",
             "tags_found": tags_found
         })
-    
+
     except Exception as e:
         db.session.rollback()
         print(f"Error storing results: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-    
+
 @results_bp.route('/manual_result_store', methods=['POST'])
 def manual_result_store():
     try:
@@ -215,7 +215,7 @@ def manual_result_store():
             track_id=track_id, 
             number=number
         ).first()
-        
+
         if not registration:
             return jsonify({"status": "error", "message": "Registration not found"}), 404
 
@@ -277,14 +277,14 @@ def manual_result_store():
                 }), 400
 
             last_tag_time = datetime.strptime(str(last_entry.last_seen_time), "%Y-%m-%d %H:%M:%S.%f")
-            
+
             if status not in ['DNS', 'DSQ', 'DNF']:
                 if timestamp <= last_tag_time + min_lap_duration:
                     return jsonify({
                         "status": "error",
                         "message": "Time between laps is less than minimum allowed"
                     }), 400
-                    
+
             lap_number = last_entry.lap_number + 1
         else:
             if timestamp <= race_start_datetime + min_lap_duration:
@@ -314,9 +314,9 @@ def manual_result_store():
                 :status
             )
         ''')
-        
+
         tag_id = f"manually added Tag: {number}"
-        
+
         db.session.execute(insert_sql, {
             'number': number,
             'tag_id': tag_id,
@@ -328,13 +328,13 @@ def manual_result_store():
         })
 
         db.session.commit()
-        
+
         return jsonify({
             "status": "success", 
             "message": f"Manually stored result for race {race_id}, track {track_id}, number {number}",
             "tag_id": tag_id
         })
-    
+
     except Exception as e:
         db.session.rollback()
         print(f"Error storing manual result: {e}")
@@ -344,7 +344,7 @@ def manual_result_store():
 def get_race_results(race_id):
     try:
         table_name = f'race_results_{race_id}'
-        
+
         table_exists_query = text("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
@@ -353,7 +353,7 @@ def get_race_results(race_id):
         """)
         table_exists = db.session.execute(table_exists_query, 
             {'table_name': table_name}).scalar()
-            
+
         if not table_exists:
             return jsonify({'error': f'No results found for race {race_id}'}), 404
 
@@ -521,9 +521,9 @@ def get_race_results(race_id):
                 END,
                 race_time_seconds;
         """)
-        
+
         results = db.session.execute(query, {'race_id': race_id}).fetchall()
-        
+
         if not results:
             return jsonify({'results': []}), 204
 
@@ -544,20 +544,20 @@ def get_race_results(race_id):
                 'behind_time_category': row.behind_time_category or ' ',
                 'status': row.status
             })
-        
+
         return jsonify({
             'results': formatted_results
         }), 200
-        
+
     except Exception as e:
         current_app.logger.error(f'Error fetching race results: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
-    
+
 @results_bp.route('/race/<int:race_id>/results/by-category', methods=['GET'])
 def get_race_results_by_category(race_id):
     try:
         table_name = f'race_results_{race_id}'
-        
+
         table_exists_query = text("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
@@ -566,7 +566,7 @@ def get_race_results_by_category(race_id):
         """)
         table_exists = db.session.execute(table_exists_query, 
             {'table_name': table_name}).scalar()
-            
+
         if not table_exists:
             return jsonify({'error': f'No results found for race {race_id}'}), 404
 
@@ -708,9 +708,9 @@ def get_race_results_by_category(race_id):
                 END,
                 race_time_seconds;
         """)
-        
+
         results = db.session.execute(query, {'race_id': race_id}).fetchall()
-        
+
         if not results:
             return jsonify({'results': []}), 204
 
@@ -729,11 +729,11 @@ def get_race_results_by_category(race_id):
                 'behind_time_category': row.behind_time_category or ' ',
                 'status': row.status
             })
-        
+
         return jsonify({
             'results': formatted_results
         }), 200
-        
+
     except Exception as e:
         current_app.logger.error(f'Error fetching race results by category: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
@@ -742,7 +742,7 @@ def get_race_results_by_category(race_id):
 def get_race_results_by_track(race_id):
     try:
         table_name = f'race_results_{race_id}'
-        
+
         table_exists_query = text("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
@@ -751,7 +751,7 @@ def get_race_results_by_track(race_id):
         """)
         table_exists = db.session.execute(table_exists_query, 
             {'table_name': table_name}).scalar()
-            
+
         if not table_exists:
             return jsonify({'error': f'No results found for race {race_id}'}), 404
 
@@ -892,9 +892,9 @@ def get_race_results_by_track(race_id):
                 END,
                 race_time_seconds;
         """)
-        
+
         results = db.session.execute(query, {'race_id': race_id}).fetchall()
-        
+
         if not results:
             return jsonify({'results': []}), 204
 
@@ -913,20 +913,20 @@ def get_race_results_by_track(race_id):
                 'behind_time_track': row.behind_time_track or ' ',
                 'status': row.status
             })
-        
+
         return jsonify({
             'results': formatted_results
         }), 200
-        
+
     except Exception as e:
         current_app.logger.error(f'Error fetching race results by track: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500
-    
+
 @results_bp.route('/race/<int:race_id>/racer/<int:number>/laps', methods=['GET'])
 def get_runner_laps(race_id, number):
     try:
         table_name = f'race_results_{race_id}'
-        
+
         query = text(f"""
             WITH runner_laps AS (
                 SELECT 
@@ -966,7 +966,7 @@ def get_runner_laps(race_id, number):
             FROM lap_times
             ORDER BY lap_number;
         """)
-        
+
         results = db.session.execute(query, {
             'race_id': race_id,
             'number': number
@@ -981,9 +981,9 @@ def get_runner_laps(race_id, number):
             'lap_time': row.lap_time,
             'total_time': row.total_time
         } for row in results]
-        
+
         return jsonify({'laps': laps}), 200
-        
+
     except Exception as e:
         current_app.logger.error(f'Error fetching runner laps: {str(e)}')
         return jsonify({'error': 'Failed to fetch runner laps'}), 500
@@ -1043,10 +1043,10 @@ def update_race_result(race_id):
         if new_time:
             try:
                 time_obj = parse_time_with_ms(new_time)
-                
+
                 actual_start_time = track.actual_start_time
                 user_start_time = registration.user_start_time
-                
+
                 if not actual_start_time or not user_start_time:
                     return jsonify({'error': 'Missing start time information'}), 400
 
@@ -1054,28 +1054,28 @@ def update_race_result(race_id):
                                     minutes=actual_start_time.minute,
                                     seconds=actual_start_time.second,
                                     microseconds=actual_start_time.microsecond)
-                
+
                 user_delta = timedelta(hours=user_start_time.hour,
                                     minutes=user_start_time.minute,
                                     seconds=user_start_time.second,
                                     microseconds=user_start_time.microsecond)
-                
+
                 time_delta = timedelta(hours=time_obj.hour,
                                     minutes=time_obj.minute,
                                     seconds=time_obj.second,
                                     microseconds=time_obj.microsecond)
-                
+
                 total_time = actual_delta + user_delta + time_delta
-                
+
                 current_date = datetime.now().date()
                 final_timestamp = datetime.combine(current_date, datetime.min.time()) + total_time
-                
+
                 updates.append("timestamp = :new_timestamp")
                 params['new_timestamp'] = final_timestamp
-                
+
                 updates.append("last_seen_time = :new_last_seen_time")
                 params['new_last_seen_time'] = final_timestamp
-                
+
             except ValueError as e:
                 return jsonify({'error': f'Invalid time format for new_time: {str(e)}'}), 400
 
@@ -1090,11 +1090,11 @@ def update_race_result(race_id):
                     WHERE number = :number
                 )
             """)
-            
+
             db.session.execute(update_query, params)
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'message': 'Update successful',
             'timestamp': params.get('new_timestamp') or params.get('timestamp'),
@@ -1143,9 +1143,9 @@ def update_lap_time(race_id):
             WHERE number = :number
             ORDER BY lap_number
         """)
-        
+
         laps = db.session.execute(query, {'number': number}).fetchall()
-        
+
         target_lap = None
         for lap in laps:
             if lap.lap_number == lap_number:
@@ -1175,7 +1175,7 @@ def update_lap_time(race_id):
                 
                 if not result:
                     return jsonify({'error': 'Failed to update timestamp'}), 500
-                
+
                 new_timestamp = result[0]
 
             except ValueError as e:
@@ -1195,14 +1195,14 @@ def update_lap_time(race_id):
                     seconds=registration.user_start_time.second,
                     microseconds=registration.user_start_time.microsecond
                 )
-                
+
                 time_delta = timedelta(
                     hours=time_obj.hour,
                     minutes=time_obj.minute,
                     seconds=time_obj.second,
                     microseconds=time_obj.microsecond
                 )
-                
+
                 new_timestamp = actual_start + user_start_delta + time_delta
             else:
                 prev_lap = None
@@ -1210,7 +1210,7 @@ def update_lap_time(race_id):
                     if lap.lap_number == lap_number - 1:
                         prev_lap = lap
                         break
-                
+
                 if not prev_lap:
                     return jsonify({'error': 'Previous lap not found'}), 404
 
@@ -1220,7 +1220,7 @@ def update_lap_time(race_id):
                     seconds=time_obj.second,
                     microseconds=time_obj.microsecond
                 )
-                
+
                 new_timestamp = prev_lap.timestamp + time_delta
 
             update_query = text(f"""
@@ -1231,7 +1231,7 @@ def update_lap_time(race_id):
                 WHERE number = :number
                 AND lap_number = :lap_number
             """)
-            
+
             db.session.execute(update_query, {
                 'new_timestamp': new_timestamp,
                 'number': number,
@@ -1247,12 +1247,12 @@ def update_lap_time(race_id):
                 WHERE number = :number
                 AND lap_number = :lap_number
             """)
-            
+
             result = db.session.execute(query, {
                 'number': number,
                 'lap_number': next_lap.lap_number
             }).first()
-            
+
             if result and result.lap_time:
                 update_query = text(f"""
                     UPDATE {table_name}
@@ -1272,7 +1272,7 @@ def update_lap_time(race_id):
                     WHERE number = :number
                     AND lap_number = :lap_number
                 """)
-                
+
                 db.session.execute(update_query, {
                     'lap_time': result.lap_time,
                     'number': number,
@@ -1292,11 +1292,11 @@ def update_lap_time(race_id):
                 WHERE number = :number
             )
         """)
-        
+
         db.session.execute(final_lap_query, {'number': number})
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'message': 'Lap updated successfully',
             'new_timestamp': new_timestamp.strftime('%H:%M:%S.%f')[:-3]
@@ -1306,7 +1306,7 @@ def update_lap_time(race_id):
         db.session.rollback()
         current_app.logger.error(f'Error updating lap: {str(e)}')
         return jsonify({'error': str(e)}), 500
-    
+
 @results_bp.route('/race/<int:race_id>/lap/delete', methods=['POST'])
 def delete_lap(race_id):
     try:
@@ -1335,7 +1335,7 @@ def delete_lap(race_id):
             WHERE number = :number
             ORDER BY lap_number
         """)
-        
+
         laps = db.session.execute(query, {'number': number}).fetchall()
         
         target_lap = None
@@ -1352,14 +1352,14 @@ def delete_lap(race_id):
             WHERE number = :number
             AND lap_number = :lap_number
         """)
-        
+
         db.session.execute(delete_query, {
             'number': number,
             'lap_number': lap_number
         })
 
         subsequent_laps = [lap for lap in laps if lap.lap_number > lap_number]
-        
+
         if subsequent_laps:
             prev_lap_query = text(f"""
                 SELECT timestamp
@@ -1369,7 +1369,7 @@ def delete_lap(race_id):
                 ORDER BY lap_number DESC
                 LIMIT 1
             """)
-            
+
             prev_lap = db.session.execute(prev_lap_query, {
                 'number': number,
                 'deleted_lap_number': lap_number
@@ -1385,7 +1385,7 @@ def delete_lap(race_id):
                     WHERE number = :number
                     AND lap_number = :lap_number
                 """)
-                
+
                 result = db.session.execute(lap_time_query, {
                     'number': number,
                     'lap_number': next_lap.lap_number
@@ -1402,7 +1402,7 @@ def delete_lap(race_id):
                     """)
 
                     new_timestamp = prev_timestamp + result.lap_time
-                    
+
                     db.session.execute(update_query, {
                         'new_timestamp': new_timestamp,
                         'number': number,
@@ -1421,18 +1421,18 @@ def delete_lap(race_id):
                 WHERE number = :number
             )
         """)
-        
+
         db.session.execute(final_lap_query, {'number': number})
 
         db.session.commit()
-        
+
         return jsonify({'message': 'Lap deleted successfully'}), 200
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Error deleting lap: {str(e)}')
         return jsonify({'error': str(e)}), 500
-    
+
 @results_bp.route('/race/<int:race_id>/lap/add', methods=['POST'])
 def add_manual_lap(race_id):
     try:
@@ -1461,7 +1461,7 @@ def add_manual_lap(race_id):
             track_id=track_id, 
             number=number
         ).first()
-        
+
         if not registration:
             return jsonify({"status": "error", "message": "Registration not found"}), 404
 
@@ -1475,7 +1475,7 @@ def add_manual_lap(race_id):
             WHERE number = :number
             ORDER BY lap_number
         """)
-        
+
         laps = db.session.execute(query, {'number': number}).fetchall()
 
         if timestamp_str:
@@ -1506,14 +1506,14 @@ def add_manual_lap(race_id):
                     seconds=registration.user_start_time.second,
                     microseconds=registration.user_start_time.microsecond
                 )
-                
+
                 time_delta = timedelta(
                     hours=time_obj.hour,
                     minutes=time_obj.minute,
                     seconds=time_obj.second,
                     microseconds=time_obj.microsecond
                 )
-                
+
                 timestamp = actual_start + user_start_delta + time_delta
             else:
                 prev_lap = None
@@ -1521,7 +1521,7 @@ def add_manual_lap(race_id):
                     if lap.lap_number == lap_number - 1:
                         prev_lap = lap
                         break
-                
+
                 if not prev_lap:
                     return jsonify({'error': 'Previous lap not found'}), 404
 
@@ -1531,11 +1531,11 @@ def add_manual_lap(race_id):
                     seconds=time_obj.second,
                     microseconds=time_obj.microsecond
                 )
-                
+
                 timestamp = prev_lap.timestamp + time_delta
 
         tag_id = f"manually added Tag: {number}"
-        
+
         insert_sql = text(f'''
             INSERT INTO {table_name} (
                 number,
@@ -1554,7 +1554,7 @@ def add_manual_lap(race_id):
                 :lap_number
             )
         ''')
-        
+
         db.session.execute(insert_sql, {
             'number': number,
             'tag_id': tag_id,
@@ -1565,14 +1565,14 @@ def add_manual_lap(race_id):
         })
 
         db.session.commit()
-        
+
         return jsonify({
             "status": "success", 
             "message": f"Manually stored result for race {race_id}, track {track_id}, number {number}",
             "tag_id": tag_id,
             "timestamp": timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         })
-    
+
     except Exception as e:
         db.session.rollback()
         print(f"Error storing manual result: {e}")
@@ -1584,9 +1584,9 @@ def get_race_results_by_email(race_id, email):
         user = db.session.query(Users).filter_by(email=email).first()
         if not user:
             return jsonify({'error': f'User with email {email} not found'}), 404
-            
+
         table_name = f'race_results_{race_id}'
-        
+
         table_exists_query = text("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
@@ -1594,10 +1594,10 @@ def get_race_results_by_email(race_id, email):
                 AND table_name = :table_name
             );
         """)
-        
+
         table_exists = db.session.execute(table_exists_query, 
             {'table_name': table_name}).scalar()
-            
+
         if not table_exists:
             return jsonify({'error': f'No results found for race {race_id}'}), 404
 
@@ -1745,12 +1745,12 @@ def get_race_results_by_email(race_id, email):
             FROM category_results
             ORDER BY track_name, number;
         """)
-        
+
         results = db.session.execute(query, {
             'race_id': str(race_id),
             'email': email
         }).fetchall()
-        
+
         if not results:
             return jsonify({'results': []}), 200
 
@@ -1772,11 +1772,11 @@ def get_race_results_by_email(race_id, email):
                 'behind_time_category': row.behind_time_category or '--:--:--',
                 'status': row.status
             })
-        
+
         return jsonify({
             'results': formatted_results
         }), 200
-        
+
     except Exception as e:
         current_app.logger.error(f'Error fetching race results by email: {str(e)}')
         return jsonify({'error': 'Failed to fetch race results'}), 500

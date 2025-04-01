@@ -7,15 +7,15 @@ from database.registration import Registration
 def test_get_race_startlist(client):
     """Test získání startovní listiny závodu."""
     response = client.get('/api/race/240401/startlist')
-    
+
     if response.status_code != 200:
         print(f"Error response: {response.status_code}")
         print(f"Response data: {response.data}")
-    
+
     assert response.status_code == 200
     data = json.loads(response.data)
     assert 'startList' in data
-    
+
     if data['startList']:
         entry = data['startList'][0]
         assert 'registration_id' in entry
@@ -33,12 +33,12 @@ def test_update_startlist_user(client, auth_headers):
     """Test aktualizace údajů uživatele ve startovní listině."""
     response = client.get('/api/race/240401/startlist')
     startlist = json.loads(response.data)['startList']
-    
+
     if not startlist:
         pytest.skip("No existing users in the startlist")
-    
+
     user_id = startlist[0]['user_id']
-    
+
     response = client.post('/api/race/240401/startlist/update/user', json={
         'user_id': user_id,
         'firstname': 'Updated',
@@ -46,16 +46,16 @@ def test_update_startlist_user(client, auth_headers):
         'club': 'Updated Club',
         'year': 1988
     }, headers=auth_headers)
-    
+
     if response.status_code != 200:
         print(f"Error response: {response.status_code}")
         print(f"Response data: {response.data}")
-    
+
     assert response.status_code == 200
     data = json.loads(response.data)
     assert 'message' in data
     assert 'updated successfully' in data['message']
-    
+
     with client.application.app_context():
         user = Users.query.get(user_id)
         assert user.firstname == 'Updated'
@@ -67,27 +67,27 @@ def test_update_startlist_registration(client, auth_headers):
     """Test aktualizace registrace ve startovní listině."""
     response = client.get('/api/race/240401/startlist')
     startlist = json.loads(response.data)['startList']
-    
+
     if not startlist:
         pytest.skip("No existing registrations in the startlist")
-    
+
     registration_id = startlist[0]['registration_id']
-    
+
     response = client.post('/api/race/240401/startlist/update/registration', json={
         'registration_id': registration_id,
         'number': 42,
         'user_start_time': '00:05:00'
     }, headers=auth_headers)
-    
+
     if response.status_code != 200:
         print(f"Error response: {response.status_code}")
         print(f"Response data: {response.data}")
-    
+
     assert response.status_code == 200
     data = json.loads(response.data)
     assert 'message' in data
     assert 'updated successfully' in data['message']
-    
+
     with client.application.app_context():
         registration = Registration.query.get(registration_id)
         assert registration.number == 42
@@ -98,7 +98,7 @@ def test_delete_registration(client, auth_headers):
     with client.application.app_context():
         from database import db
         from datetime import datetime
-        
+    
         test_user = Users(
             firstname='ToDelete',
             surname='User',
@@ -109,7 +109,7 @@ def test_delete_registration(client, auth_headers):
         )
         db.session.add(test_user)
         db.session.flush()
-        
+
         test_registration = Registration(
             user_id=test_user.id,
             track_id=24040101,
@@ -120,23 +120,23 @@ def test_delete_registration(client, auth_headers):
         )
         db.session.add(test_registration)
         db.session.commit()
-        
+
         registration_id = test_registration.id
-    
+
     response = client.delete(f'/api/race/240401/startlist/delete/{registration_id}', headers=auth_headers)
-    
+
     if response.status_code != 200:
         print(f"Error response: {response.status_code}")
         print(f"Response data: {response.data}")
-    
+
     assert response.status_code == 200
     data = json.loads(response.data)
     assert 'message' in data
     assert 'deleted successfully' in data['message']
-    
+
     with client.application.app_context():
         registration = Registration.query.get(registration_id)
         assert registration is None
-        
+
         user = Users.query.filter_by(email='todelete@example.com').first()
         assert user is None
