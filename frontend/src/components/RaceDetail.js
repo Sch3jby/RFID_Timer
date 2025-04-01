@@ -5,6 +5,7 @@ import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
 import StartList from './StartList';
 import ResultList from './ResultList';
+import logo from '../styles/other/stopwatch.png';
 
 function RaceDetail() {
   const { t } = useTranslation();
@@ -51,10 +52,16 @@ function RaceDetail() {
 
   return (
     <div className="race-detail-container">
-      <h1>{race.name}</h1>
+      <div className="header-container">
+        <img src={logo} alt="Logo" className="logo-image" />
+        <h1>{race.name}</h1>
+      </div>
       <div className="race-info">
-        <h3><strong>{t('raceDetail.date')}:</strong> {race.date}</h3>
-        <h3><strong>{t('raceDetail.startType')}:</strong> {race.start}</h3>
+        <h3><strong>{t('raceDetail.date')}:</strong> {race.date}</h3>;
+        <h3>
+          {t('raceManagement.startType')}: {' '}
+          {race.start === 'M' ? t('raceManagement.massStart') : t('raceManagement.intervalStart')}
+        </h3>
         <h3><strong>{t('raceDetail.description')}:</strong></h3>
         <p>{race.description}</p>
         

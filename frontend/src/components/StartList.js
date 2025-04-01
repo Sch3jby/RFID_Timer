@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// StartList.js
+import React, { useState, useEffect } from 'react';  // Added useEffect import
 import { useTranslation } from '../contexts/LanguageContext';
 
 function StartList({ participants, raceId }) {
@@ -6,6 +7,24 @@ function StartList({ participants, raceId }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortColumn, setSortColumn] = useState('start_time');
   const [sortDirection, setSortDirection] = useState('asc');
+
+  // Moved the useEffect hook inside the component
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      const dateElements = document.querySelectorAll('.results-page');
+      const currentDate = new Date().toLocaleString();
+      
+      dateElements.forEach(el => {
+        el.setAttribute('data-print-date', currentDate);
+      });
+    };
+    
+    window.addEventListener('beforeprint', handleBeforePrint);
+    
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+    };
+  }, []);
 
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();

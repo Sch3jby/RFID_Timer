@@ -70,11 +70,12 @@ def registration():
         db.session.add(user)
         db.session.commit()
 
+        current_time = datetime.now()
         registration = Registration(
             user_id=user.id,
             track_id=track_id,
             race_id=race_id,
-            registration_time=datetime.now() + timedelta(hours=1)
+            registration_time=current_time.time()
         )
         db.session.add(registration)
         db.session.commit()
