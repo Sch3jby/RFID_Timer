@@ -1,18 +1,18 @@
-// src/__tests__/Login.test.js
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import Login from '../components/Login';
+import Login from './Login';
+import { LanguageProvider } from '../contexts/LanguageContext';
 
-// Mock the dependencies
-jest.mock('axios', () => ({
-  post: jest.fn(() => Promise.resolve({ 
-    data: { 
-      access_token: 'fake-token',
-      user: { id: 1, email: 'test@example.com' }
-    }
-  }))
-}));
+// Mock axiosConfig directly
+jest.mock('../api/axiosConfig', () => {
+  return {
+    post: jest.fn()
+  };
+});
+
+// Import the mocked module
+import axios from '../api/axiosConfig';
 
 // Mock useNavigate
 const mockNavigate = jest.fn();
@@ -21,97 +21,141 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate
 }));
 
-// Mock the translation context
-jest.mock('../contexts/LanguageContext', () => ({
-  useTranslation: () => ({
-    t: (key) => {
-      return {
-        'login.logTitle': 'Login',
-        'login.email': 'Email',
-        'login.password': 'Password',
-        'login.submit': 'Login',
-        'login.genericError': 'An error occurred during login',
-        'login.forgotPassword': 'Forgot password?',
-        'login.register': 'Registration',
-        'login.noAccount': 'Dont have account?',
-        'login.loggingIn': 'Logging in...'
-      }[key] || key;
-    }
-  })
-}));
-
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn()
-};
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-
-const originalLocation = window.location;
-delete window.location;
-window.location = { reload: jest.fn() };
-
 describe('Login Component', () => {
   beforeEach(() => {
+    // Mock localStorage
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        setItem: jest.fn(),
+        getItem: jest.fn(),
+        removeItem: jest.fn()
+      },
+      writable: true
+    });
+    
+    // Reset mocks
     jest.clearAllMocks();
   });
 
-  afterAll(() => {
-    window.location = originalLocation;
-  });
-
-  it('allows entering email and password', () => {
+  test('renders login form correctly', () => {
     render(
-      <BrowserRouter>
-        <Login />
-      </BrowserRouter>
+      <LanguageProvider>
+        <BrowserRouter>
+          <Login />
+        </BrowserRouter>
+      </LanguageProvider>
     );
     
-    // Use getByLabelText with exact: false to match labels even with extra spaces/colons
+    // Look for email and password inputs
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
     
+    // Look for the submit button
+    const submitButton = screen.getByRole('button');
+    
+    expect(emailInput).toBeInTheDocument();
+    expect(passwordInput).toBeInTheDocument();
+    expect(submitButton).toBeInTheDocument();
+  });
+
+  test('handles input changes', () => {
+    render(
+      <LanguageProvider>
+        <BrowserRouter>
+          <Login />
+        </BrowserRouter>
+      </LanguageProvider>
+    );
+    
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    
+    // Simulate typing in the inputs
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
     
+    // Check if the input values were updated
     expect(emailInput.value).toBe('test@example.com');
     expect(passwordInput.value).toBe('password123');
   });
 
-  it('submits the form with correct data', async () => {
-    const axios = require('axios');
+  test('handles form submission successfully', async () => {
+    // Mock successful API response
+    axios.post.mockResolvedValueOnce({
+      data: {
+        access_token: 'fake-token',
+        user: { id: 1, email: 'test@example.com' }
+      }
+    });
     
     render(
-      <BrowserRouter>
-        <Login />
-      </BrowserRouter>
+      <LanguageProvider>
+        <BrowserRouter>
+          <Login />
+        </BrowserRouter>
+      </LanguageProvider>
     );
     
     // Fill in the form
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
+    // Submit the form
+    act(() => {
+      fireEvent.click(screen.getByRole('button'));
+    });
     
-    // Submit the form - use getByRole to find the button
-    const submitButton = screen.getByRole('button', { name: /login/i });
-    fireEvent.click(submitButton);
-    
-    // Verify axios was called with the right data
+    // Wait for the API call to complete
     await waitFor(() => {
+      // Check if axios.post was called correctly
       expect(axios.post).toHaveBeenCalledWith('/api/login', {
         email: 'test@example.com',
         password: 'password123'
       });
       
-      // Verify localStorage was called
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('access_token', 'fake-token');
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('user', JSON.stringify({ id: 1, email: 'test@example.com' }));
+      // Check if token and user data were stored in localStorage
+      expect(localStorage.setItem).toHaveBeenCalledWith('access_token', 'fake-token');
+      expect(localStorage.setItem).toHaveBeenCalledWith('user', JSON.stringify({ id: 1, email: 'test@example.com' }));
       
-      // Verify navigation occurred
+      // Check if navigation occurred
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
+  });
+
+  test('handles login error', async () => {
+    // Mock API error response
+    axios.post.mockRejectedValueOnce({
+      response: {
+        data: {
+          message: 'Invalid credentials'
+        }
+      }
+    });
+    
+    render(
+      <LanguageProvider>
+        <BrowserRouter>
+          <Login />
+        </BrowserRouter>
+      </LanguageProvider>
+    );
+    
+    // Fill in the form
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrong-password' } });
+    
+    // Submit the form
+    act(() => {
+      fireEvent.click(screen.getByRole('button'));
+    });
+    
+    // Wait for the error message to appear
+    await waitFor(() => {
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+    });
+    
+    // Verify localStorage was not called
+    expect(localStorage.setItem).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
