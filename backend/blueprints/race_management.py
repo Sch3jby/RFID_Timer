@@ -57,7 +57,7 @@ def get_races():
 def add_race():
     try:
         data = request.json
-        
+
         required_fields = ['name', 'date', 'start']
         for field in required_fields:
             if field not in data:
@@ -69,25 +69,25 @@ def add_race():
         try:
             date = datetime.strptime(data['date'], "%Y-%m-%d").date()
             base_race_id = int(date.strftime("%y%m%d"))
-            
+
             existing_races = Race.query.filter(
                 Race.id.between(base_race_id * 10, (base_race_id * 10) + 9)
             ).all()
-            
+
             if not existing_races:
                 sequence = 1
             else:
                 sequences = [race.id % 10 for race in existing_races]
                 sequence = max(sequences) + 1
-                
+
             if sequence > 9:
                 return jsonify({
                     "status": "error",
                     "message": f"Maximum number of races (9) for date {data['date']} reached"
                 }), 400
-                
+
             race_id = (base_race_id * 10) + sequence
-            
+
         except ValueError:
             return jsonify({
                 "status": "error",
@@ -214,7 +214,7 @@ def update_race(race_id):
 
         for i, track_data in enumerate(data.get('tracks', []), 1):
             track_id = int(f"{race_id}{i:02d}")
-            
+
             if 'id' in track_data and track_data['id'] in existing_track_ids:
                 track = Track.query.get(track_data['id'])
                 if track and track.race_id == race_id:
@@ -290,12 +290,12 @@ def update_race(race_id):
             "status": "error",
             "message": str(e)
         }), 500
-    
+
 @race_management_bp.route('/race/<int:race_id>/delete', methods=['DELETE'])
 def delete_race(race_id):
     try:
         race = Race.query.get(race_id)
-        
+
         if not race:
             return jsonify({
                 "status": "error",
@@ -304,21 +304,21 @@ def delete_race(race_id):
 
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
-        
+
         Registration.query.filter(Registration.track_id.in_(track_ids)).delete(synchronize_session=False)
-        
+
         Category.query.filter(Category.track_id.in_(track_ids)).delete(synchronize_session=False)
-        
+
         Track.query.filter_by(race_id=race_id).delete(synchronize_session=False)
-        
+
         if race.results_table_name:
             drop_table_query = text(f"DROP TABLE IF EXISTS {race.results_table_name}")
             db.session.execute(drop_table_query)
-        
+
         db.session.delete(race)
-        
+
         db.session.commit()
-        
+
         return jsonify({
             "status": "success",
             "message": "Race deleted successfully"
@@ -337,7 +337,7 @@ def get_tracks():
     race_id = request.args.get('race_id', type=int)
     if not race_id:
         return jsonify({'error': 'Race ID is required'}), 400
-    
+
     try:
         tracks = Track.query.filter_by(race_id=race_id).all()
         tracks_list = []
@@ -350,7 +350,7 @@ def get_tracks():
         return jsonify({'tracks': tracks_list}), 200
     except Exception as e:
         return jsonify({'error': 'Error fetching tracks'}), 500
-    
+
 @race_management_bp.route('/race/<int:race_id>', methods=['GET'])
 def get_race_detail(race_id):
     try:
@@ -358,27 +358,27 @@ def get_race_detail(race_id):
             race = session.get(Race, race_id)
         if not race:
             return jsonify({'error': 'Race not found'}), 404
-            
+
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
-        
+
         registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
-        
+
         participant_details = []
 
         category_number_counters = {}
-        
+
         plus_start_time = race.interval_time
-        
+
         for registration in registrations:
             user = Users.query.get(registration.user_id)
             track = Track.query.get(registration.track_id)
-            
+
             category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
                                     filter(Category.min_age <= (datetime.now().year - user.year), 
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
-            
+
             if not (user and category and track):
                 continue
 
@@ -388,7 +388,7 @@ def get_race_detail(race_id):
                 category_number_counters[category_gender_key] = 0
 
             category_number_counters[category_gender_key] += 1
-            
+
             user_number = category.min_number + category_number_counters[category_gender_key] - 1
 
             participant_details.append({
@@ -399,17 +399,17 @@ def get_race_detail(race_id):
                 'user_id': user.id,
                 'track_id': track.id
             })
-        
+
         sorted_participants = sorted(
             participant_details, 
             key=lambda x: (x['category_id'], x['number'])
         )
-        
+
         final_participant_details = []
         for idx, participant in enumerate(sorted_participants):
             user = Users.query.get(participant['user_id'])
             track = Track.query.get(participant['track_id'])
-            
+
             category = Category.query.filter_by(
                 gender=participant['gender'], 
                 track_id=participant['track_id']
@@ -417,25 +417,25 @@ def get_race_detail(race_id):
                 Category.min_age <= (datetime.now().year - user.year), 
                 Category.max_age >= (datetime.now().year - user.year)
             ).first()
-            
+
             if race.start == 'I':
                 plus_seconds = (
                     plus_start_time.hour * 3600 +
                     plus_start_time.minute * 60 +
                     plus_start_time.second
                 )
-                
+
                 total_seconds = (
                     track.expected_start_time.hour * 3600 +
                     track.expected_start_time.minute * 60 +
                     track.expected_start_time.second +
                     (plus_seconds * (idx+1))
                 )
-                
+
                 hours = total_seconds // 3600
                 minutes = (total_seconds % 3600) // 60
                 seconds = total_seconds % 60
-                
+
                 actual_start = time(hour=hours, minute=minutes, second=seconds)
             else:
                 actual_start = track.expected_start_time
@@ -449,7 +449,7 @@ def get_race_detail(race_id):
                 'track': track.name,
                 'start_time': actual_start.strftime('%H:%M:%S')
             })
-        
+
         race_detail = {
             'id': race.id,
             'name': race.name,
@@ -459,7 +459,7 @@ def get_race_detail(race_id):
             'participants': final_participant_details
         }
         return jsonify({'race': race_detail}), 200
-        
+
     except Exception as e:
         return jsonify({'error': f'Error fetching race details: {str(e)}'}), 500
 
@@ -481,7 +481,7 @@ def get_categories():
         return jsonify({'categories': categories_list}), 200
     except Exception as e:
         return jsonify({'error': f'Error fetching categories: {str(e)}'}), 500
-    
+
 @race_management_bp.route('/set_track_start_time', methods=['POST'])
 def set_track_start_time():
     try:
@@ -492,7 +492,7 @@ def set_track_start_time():
 
         if not all([race_id, track_id]):
             return jsonify({'error': 'Missing required parameters'}), 400
-        
+
         track = Track.query.filter_by(id=track_id).first()
 
         if not track:
@@ -521,35 +521,35 @@ def set_track_start_time():
             'success': False,
             'error': str(e)
         }), 500
-    
+
 @race_management_bp.route('/confirm_lineup', methods=['POST'])
 def confirm_lineup():
     try:
         data = request.json
         race_id = data.get('race_id')
-        
+
         race = Race.query.get(race_id)
         if not race:
             return jsonify({'error': 'Race not found'}), 404
-        
+
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
-        
+
         registrations = Registration.query.filter(Registration.track_id.in_(track_ids)).all()
-        
+
         participant_details = []
 
         category_number_counters = {}
-        
+
         for registration in registrations:
             user = Users.query.get(registration.user_id)
             track = Track.query.get(registration.track_id)
-            
+
             category = Category.query.filter_by(gender=user.gender, track_id=registration.track_id).\
                                     filter(Category.min_age <= (datetime.now().year - user.year), 
                                         Category.max_age >= (datetime.now().year - user.year)).\
                                     first()
-            
+
             if not (user and category and track):
                 continue
 
@@ -559,7 +559,7 @@ def confirm_lineup():
                 category_number_counters[category_gender_key] = 0
 
             category_number_counters[category_gender_key] += 1
-            
+
             user_number = category.min_number + category_number_counters[category_gender_key] - 1
 
             participant_details.append({
@@ -573,46 +573,46 @@ def confirm_lineup():
                 'user': user,
                 'track': track
             })
-        
+
         sorted_participants = sorted(
             participant_details, 
             key=lambda x: (x['category_id'], x['number'])
         )
-        
+
         for idx, participant in enumerate(sorted_participants):
             registration = Registration.query.get(participant['registration_id'])
-            
+
             if race.start == 'I':
                 plus_start_time = race.interval_time
-                
+
                 plus_seconds = (
                     plus_start_time.hour * 3600 +
                     plus_start_time.minute * 60 +
                     plus_start_time.second
                 )
-                
+
                 total_seconds = (
                     plus_seconds * (idx+1)
                 )
-                
+
                 hours = total_seconds // 3600
                 minutes = (total_seconds % 3600) // 60
                 seconds = total_seconds % 60
-                
+
                 actual_start = time(hour=hours, minute=minutes, second=seconds)
             else:
                 actual_start = time(hour=0, minute=0, second=0)
 
             registration.number = participant['number']
             registration.user_start_time = actual_start
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'message': 'Lineup confirmed successfully', 
             'tracks': [{'id': track.id, 'name': track.name} for track in tracks]
         }), 200
-    
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error confirming lineup: {str(e)}'}), 500
