@@ -1,4 +1,4 @@
-# login.py
+# database/login.py
 from . import db
 
 class Login(db.Model):

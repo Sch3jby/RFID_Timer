@@ -1,6 +1,13 @@
+// components/Home.js
 import React from "react";
 import { useTranslation } from '../contexts/LanguageContext';
 import video from '../styles/other/video2.mp4'
+
+/**
+ * Home page component.
+ * Displays a video background landing page.
+ * @returns Rendered home page
+ */
 
 function Home() {
   const { t } = useTranslation();

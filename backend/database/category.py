@@ -1,4 +1,4 @@
-# category.py
+# database/category.py
 from . import db
 
 class Category(db.Model):

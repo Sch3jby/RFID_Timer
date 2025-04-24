@@ -1,8 +1,15 @@
+// components/RFIDReader.js
 import React, { useState, useEffect } from "react";
 import { useTranslation } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 import RaceManagement from './RaceManagement';
+
+/**
+ * RFID reader management page showing available races.
+ * Displays race list for organizers and allows creating new races.
+ * @returns Rendered RFID reader management page
+ */
 
 function RFIDReader() {
   const { t } = useTranslation();

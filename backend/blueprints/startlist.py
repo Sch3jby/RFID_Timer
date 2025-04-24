@@ -10,6 +10,17 @@ startlist_bp = Blueprint('startlist', __name__)
 
 @startlist_bp.route('/race/<int:race_id>/startlist', methods=['GET'])
 def get_race_startlist(race_id):
+    """
+    Get the start list for a race.
+    Includes participant details and assigned start times/numbers.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with start list and HTTP status code
+    """
+
     try:
         tracks = Track.query.filter_by(race_id=race_id).all()
         track_ids = [track.id for track in tracks]
@@ -45,6 +56,16 @@ def get_race_startlist(race_id):
 
 @startlist_bp.route('/race/<int:race_id>/startlist/update/user', methods=['POST'])
 def update_startlist_user(race_id):
+    """
+    Update user information in the start list.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with update status and HTTP status code
+    """
+
     try:
         data = request.json
         user = Users.query.get(data['user_id'])
@@ -65,6 +86,17 @@ def update_startlist_user(race_id):
 
 @startlist_bp.route('/race/<int:race_id>/startlist/update/registration', methods=['POST'])
 def update_startlist_registration(race_id):
+    """
+    Update registration information in the start list.
+    Can modify assigned number, track, or start time.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with update status and HTTP status code
+    """
+
     try:
         data = request.json
         registration = Registration.query.get(data['registration_id'])
@@ -89,6 +121,18 @@ def update_startlist_registration(race_id):
 
 @startlist_bp.route('/race/<int:race_id>/startlist/delete/<int:registration_id>', methods=['DELETE'])
 def delete_registration(race_id, registration_id):
+    """
+    Delete a registration from the start list.
+    Removes both registration and associated user.
+    
+    Args:
+        race_id (int): ID of the race
+        registration_id (int): ID of the registration to delete
+        
+    Returns:
+        tuple: JSON response with deletion status and HTTP status code
+    """
+
     try:
         registration = Registration.query.get(registration_id)
 

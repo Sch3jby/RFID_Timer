@@ -1,7 +1,14 @@
+// components/Login.js
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
+
+/**
+ * Login form component.
+ * Handles user authentication and token storage.
+ * @returns Rendered login form
+ */
 
 function Login() {
   const [email, setEmail] = useState('');

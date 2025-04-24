@@ -1,4 +1,4 @@
-// RaceDetail.js
+// components/RaceDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
@@ -6,6 +6,13 @@ import { useTranslation } from '../contexts/LanguageContext';
 import StartList from './StartList';
 import ResultList from './ResultList';
 import logo from '../styles/other/stopwatch.png';
+
+/**
+ * Race detail page showing information about a specific race.
+ * Displays race metadata, description, and tabs for startlist/results.
+ * 
+ * @returns Rendered race detail page
+ */
 
 function RaceDetail() {
   const { t } = useTranslation();

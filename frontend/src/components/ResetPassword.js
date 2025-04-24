@@ -1,7 +1,14 @@
+// components/ResetPassword.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
+
+/**
+ * Password reset form component.
+ * Validates token from URL and allows setting a new password.
+ * @returns Rendered password reset form
+ */
 
 function ResetPassword() {
   const [password, setPassword] = useState('');

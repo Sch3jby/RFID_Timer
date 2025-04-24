@@ -1,6 +1,15 @@
+// contexts/ProtectedRegistration.js
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
+
+/**
+ * Route protection component for authenticated user routes.
+ * Checks authentication status and redirects unauthenticated users.
+ * 
+ * @param {React.ReactNode} children - Protected route content
+ * @returns Protected route that verifies authentication
+ */
 
 const ProtectedRegistration = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);

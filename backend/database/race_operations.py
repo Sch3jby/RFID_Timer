@@ -1,12 +1,17 @@
-# race_operations.py
+# database/race_operations.py
 from flask import current_app
 from sqlalchemy import text
 from database.race import db, Race
 
 def create_race_results_table(race_id):
     """
-    Dynamically create a results table for a specific race with extended tracking
+    Dynamically create a results table for a specific race with extended tracking.
+    Creates a table with runner numbers, timestamps, and lap information.
+    
+    Args:
+        race_id (int): ID of the race
     """
+
     table_name = f'race_results_{race_id}'
     
     # SQL to create dynamic results table with additional columns
@@ -41,7 +46,8 @@ def create_race_results_table(race_id):
 
 def setup_all_race_results_tables():
     """
-    Create results tables for all existing races
+    Create results tables for all existing races.
+    Iterates through all races and ensures they have results tables.
     """
     races = Race.query.all()
     for race in races:

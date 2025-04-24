@@ -1,6 +1,15 @@
-// StartList.js
-import React, { useState, useEffect } from 'react';  // Added useEffect import
+// components/StartList.js
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
+
+/**
+ * Component for displaying race start list.
+ * Supports searching and sorting participants.
+ * 
+ * @param {Array} participants - List of race participants
+ * @param {number} raceId - ID of the race
+ * @returns Rendered start list with sorting and filtering
+ */
 
 function StartList({ participants, raceId }) {
   const { t } = useTranslation();
@@ -8,7 +17,6 @@ function StartList({ participants, raceId }) {
   const [sortColumn, setSortColumn] = useState('start_time');
   const [sortDirection, setSortDirection] = useState('asc');
 
-  // Moved the useEffect hook inside the component
   useEffect(() => {
     const handleBeforePrint = () => {
       const dateElements = document.querySelectorAll('.results-page');

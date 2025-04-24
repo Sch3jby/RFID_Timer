@@ -1,5 +1,15 @@
+// components/ResultEditor.js
 import React, { useState, useEffect } from 'react';
 import axios from '../api/axiosConfig';
+
+/**
+ * Editor component for race results.
+ * Allows editing and managing race results and lap times.
+ * 
+ * @param {number} raceId - ID of the race being edited
+ * @param {function} onClose - Callback to close the editor
+ * @returns Rendered results editor interface
+ */
 
 const ResultEditor = ({ raceId, onClose }) => {
   const [results, setResults] = useState([]);

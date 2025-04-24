@@ -1,5 +1,14 @@
+// components/LapTimes.js
 import React from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
+
+/**
+ * Component for displaying lap times in a table.
+ * 
+ * @param {Array} lapTimes - Array of lap time data
+ * @param {boolean} loading - Loading state indicator
+ * @returns Rendered lap times table
+ */
 
 const LapTimes = ({ lapTimes, loading }) => {
   const { t } = useTranslation();

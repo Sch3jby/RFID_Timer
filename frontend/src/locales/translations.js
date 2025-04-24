@@ -1,4 +1,4 @@
-
+// locales/translations.js
 export const translations = {
     cs: {
       nav: {

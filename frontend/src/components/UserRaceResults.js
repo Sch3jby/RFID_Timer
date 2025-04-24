@@ -1,3 +1,4 @@
+// components/UserRaceResults.js
 import React, { useState, useEffect } from 'react';
 import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -9,6 +10,14 @@ const formatRaceTime = (raceTime, status) => {
   }
   return raceTime;
 };
+
+/**
+ * Component showing a specific user's race results.
+ * Displays race performance and lap times for authenticated user.
+ * 
+ * @param {number} raceId - ID of the race to display results for
+ * @returns Rendered user-specific race results
+ */
 
 const UserRaceResults = ({ raceId }) => {
   const { t } = useTranslation();

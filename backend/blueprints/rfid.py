@@ -46,7 +46,17 @@ alien = AlienRFID(hostname, port)
 
 
 def parse_tags(data):
-    """Parse tag data from RFID reader response"""
+    """
+    Parse tag data from RFID reader response.
+    Extracts tag IDs, timestamps and other information.
+    
+    Args:
+        data (str): Raw tag data from RFID reader
+        
+    Returns:
+        list: Processed tag objects
+    """
+
     pattern = r"Tag:([\w\s]+), Disc:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Last:(\d{4}/\d{2}/\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}), Count:(\d+), Ant:(\d+), Proto:(\d+)"
     tags_found = []
 
@@ -77,7 +87,19 @@ def parse_tags(data):
     return tags_found
 
 def store_tags_to_database(tag_id, number, last_seen_time):
-    """Store tag data in the database"""
+    """
+    Store tag data in the database.
+    Creates new BackUpTag entry.
+    
+    Args:
+        tag_id (str): RFID tag identifier
+        number (int): Runner's bib number
+        last_seen_time (str): Timestamp of last tag reading
+        
+    Returns:
+        BackUpTag: Created database entry or None if error
+    """
+
     try:
         new_tag = BackUpTag(
             tag_id=tag_id,
@@ -97,6 +119,14 @@ def store_tags_to_database(tag_id, number, last_seen_time):
 
 @rfid_bp.route('/connect', methods=['POST'])
 def connect_reader():
+    """
+    Connect to the RFID reader via telnet.
+    Disconnects if already connected.
+    
+    Returns:
+        tuple: JSON response with connection status and HTTP status code
+    """
+
     try:
         if alien.connected:
             alien.disconnect()
@@ -123,6 +153,14 @@ def connect_reader():
 
 @rfid_bp.route('/fetch_taglist', methods=['GET'])
 def fetch_taglist():
+    """
+    Fetch list of tags from connected RFID reader.
+    Parses and stores received tags in database.
+    
+    Returns:
+        tuple: JSON response with tag list and HTTP status code
+    """
+
     try:
         if not alien.connected:
             return jsonify({"status": "error", "message": "Not connected to RFID reader"})
@@ -139,7 +177,13 @@ def fetch_taglist():
 
 @rfid_bp.route('/tags', methods=['GET'])
 def get_tags():
-    """Get all stored tags from database"""
+    """
+    Get all stored tags from database.
+    
+    Returns:
+        tuple: JSON response with tags list and HTTP status code
+    """
+
     try:
         tags = BackUpTag.query.all()
         tags_list = []

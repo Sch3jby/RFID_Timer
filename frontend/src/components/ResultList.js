@@ -1,3 +1,4 @@
+// components/ResultList.js
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import LapTimes from './LapTimes';
@@ -65,6 +66,14 @@ const ResultRow = ({ result, raceId, isExpanded, onToggle }) => {
     </>
   );
 };
+
+/**
+ * Component for displaying race results.
+ * Supports grouping by category or track, searching, and viewing lap times.
+ * 
+ * @param {number} raceId - ID of the race to display results for
+ * @returns Rendered results list with grouping and filtering
+ */
 
 const ResultList = ({ raceId }) => {
   const { t } = useTranslation();

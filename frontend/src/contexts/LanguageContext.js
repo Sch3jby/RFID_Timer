@@ -1,5 +1,14 @@
+// contexts/LanguageContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { translations } from '../locales/translations';
+
+/**
+ * Language context provider for application translations.
+ * Manages language state and provides translation function.
+ * 
+ * @param {React.ReactNode} children - Child components that will have access to language context
+ * @returns Language context provider with translation capabilities
+ */
 
 const LanguageContext = createContext();
 
@@ -32,6 +41,12 @@ export function LanguageProvider({ children }) {
     </LanguageContext.Provider>
   );
 }
+
+/**
+ * Hook for accessing language context and translations.
+ * Provides language state, toggle function, and translation function.
+ * @returns {Object} Language context with language state and translation functions
+ */
 
 export function useTranslation() {
   const context = useContext(LanguageContext);

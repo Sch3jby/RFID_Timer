@@ -1,6 +1,15 @@
+// contexts/ProtectedAdmin.js
 import React, { useState, useEffect } from 'react';
 import axios from '../api/axiosConfig';
 import { Navigate, useNavigate } from 'react-router-dom';
+
+/**
+ * Route protection component for admin-only routes.
+ * Checks user authorization and redirects unauthorized users.
+ * 
+ * @param {React.ReactNode} children - Protected route content
+ * @returns Protected route that verifies authorization
+ */
 
 const ProtectedAdmin = ({ children }) => {
   const [isAuthorized, setIsAuthorized] = useState(null);

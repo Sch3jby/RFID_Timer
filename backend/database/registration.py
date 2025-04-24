@@ -1,4 +1,4 @@
-# registration.py
+# database/registration.py
 from . import db
 from datetime import time
 
