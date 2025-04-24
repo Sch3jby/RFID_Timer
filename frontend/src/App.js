@@ -21,6 +21,12 @@ import ProtectedRegistration from './contexts/ProtectedRegistration';
 
 import './styles/Main.css';
 
+/**
+ * Main application component that sets up routing and language context.
+ * Defines the application routes and protects admin and registration routes.
+ * @returns Application with routing setup
+ */
+
 function App() {
   return (
     <LanguageProvider>

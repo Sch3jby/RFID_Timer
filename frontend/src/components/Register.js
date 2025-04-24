@@ -1,7 +1,14 @@
+// components/Register.js
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
+
+/**
+ * User registration form.
+ * Handles account creation with validation.
+ * @returns Rendered registration form
+ */
 
 function Register() {
   const [nickname, setNickname] = useState('');

@@ -1,15 +1,20 @@
+// components/AboutUs.js
 import React from 'react';
 import profilepicture from '../styles/other/profilepicture.png';
 import { useTranslation } from "../contexts/LanguageContext";
+
+/**
+ * About Us page component displaying information about the developer.
+ * Includes profile picture, quote, contact information, bio and location map.
+ * @returns Rendered About Us page
+ */
 
 const AboutUs = () => {
   const { t } = useTranslation();
   
   return (
     <div className="about-us-container">
-      {/* Horní sekce s fotkou a citací */}
       <div className="top-section">
-        {/* Čtvercová profilová fotka */}
         <div className="profile-image-container">
           <img 
             src={profilepicture} 
@@ -17,18 +22,15 @@ const AboutUs = () => {
             className="profile-image"
           />
         </div>
-        
-        {/* Citace vedle fotky */}
+
         <div className="quote-container">
           <div className="quote">
             "{t('about.quote')}"
           </div>
         </div>
       </div>
-      
-      {/* Informační sekce pod fotkou a citací */}
+
       <div className="info-section">
-        {/* Jméno a kontakt */}
         <div className="personal-info">
           <h1 className="name">{t('about.name')}</h1>
           <div className="contact-info">
@@ -40,13 +42,11 @@ const AboutUs = () => {
             </p>
           </div>
           
-          {/* Krátký popis */}
           <p className="bio">
             {t('about.bio')}
           </p>
         </div>
         
-        {/* Mapa sídla - Liberec */}
         <div className="location-section">
           <h2 className="location-title">{t('about.location')}</h2>
           <div className="map-container">

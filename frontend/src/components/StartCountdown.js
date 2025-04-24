@@ -1,12 +1,22 @@
+// components/StartCountdown.js
 import React, { useState, useEffect } from 'react';
 import axios from '../api/axiosConfig';
+
+/**
+ * Component displaying upcoming runner starts with visual indicators.
+ * Shows color-coded countdown for upcoming starts.
+ * 
+ * @param {number} raceId - ID of the race
+ * @param {number} trackId - ID of the track
+ * @param {boolean} isRunning - Whether countdown is active
+ * @returns Rendered start countdown display
+ */
 
 const StartCountdown = ({ raceId, trackId, isRunning }) => {
   const [runners, setRunners] = useState([]);
   const [startTimestamp, setStartTimestamp] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState({});
 
-  // Fetch runners when component mounts
   useEffect(() => {
     const fetchStartList = async () => {
       try {
@@ -33,7 +43,6 @@ const StartCountdown = ({ raceId, trackId, isRunning }) => {
     fetchStartList();
   }, [raceId, trackId]);
 
-  // Handle start/stop
   useEffect(() => {
     if (isRunning) {
       setStartTimestamp(new Date());
@@ -43,12 +52,10 @@ const StartCountdown = ({ raceId, trackId, isRunning }) => {
     }
   }, [isRunning]);
 
-  // Calculate color based on remaining time
   const getColorStyle = (seconds) => {
     if (seconds > 30) {
-      return { backgroundColor: '#ffcdd2' }; // červená pro čas > 30s
+      return { backgroundColor: '#ffcdd2' };
     } else {
-      // Plynulý přechod ze žluté do zelené pro čas < 30s
       const greenIntensity = Math.floor(1* 255);
       const redIntensity = Math.floor((seconds / 30) * 255);
       return {
@@ -57,7 +64,6 @@ const StartCountdown = ({ raceId, trackId, isRunning }) => {
     }
   };
 
-  // Check for expired times and update remaining times
   useEffect(() => {
     if (!isRunning || !startTimestamp) return;
 
@@ -73,7 +79,6 @@ const StartCountdown = ({ raceId, trackId, isRunning }) => {
         })
       );
 
-      // Update remaining time for each runner
       const newTimeRemaining = {};
       runners.forEach(runner => {
         const [hours, minutes, seconds] = runner.startTime.split(':').map(Number);
@@ -84,7 +89,7 @@ const StartCountdown = ({ raceId, trackId, isRunning }) => {
         }
       });
       setTimeRemaining(newTimeRemaining);
-    }, 100); // Update more frequently for smoother color transition
+    }, 100);
 
     return () => clearInterval(interval);
   }, [isRunning, startTimestamp, runners]);

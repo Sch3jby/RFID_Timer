@@ -6,6 +6,14 @@ from datetime import timedelta
 from database.race_operations import setup_all_race_results_tables
 
 def create_app():
+    """
+    Creates and initializes a Flask application with necessary configurations and extensions.
+    Sets up database connection, JWT authentication, mail service, and registers all blueprints.
+    
+    Returns:
+        Flask: Configured Flask application instance
+    """
+
     # Initialize Flask application
     app = Flask(__name__, static_folder="static", template_folder="templates")
     
@@ -67,6 +75,14 @@ def create_app():
     return app
 
 def init_db(app):
+    """
+    Initializes the database for the application.
+    Creates all tables and sets up race results tables.
+    
+    Args:
+        app (Flask): Flask application instance
+    """
+
     with app.app_context():
         db.create_all()
         setup_all_race_results_tables()

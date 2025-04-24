@@ -1,3 +1,4 @@
+// components/RaceManagement.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
@@ -31,6 +32,14 @@ const emptyCategory = {
   max_number: 999,
   gender: 'M'
 };
+
+/**
+ * Race management component for creating and editing races.
+ * Handles complex race configuration with tracks and categories.
+ * 
+ * @param {function} onBack - Callback for navigation back 
+ * @returns Rendered race management interface
+ */
 
 const RaceManagement = ({ onBack }) => {
   const { t } = useTranslation();

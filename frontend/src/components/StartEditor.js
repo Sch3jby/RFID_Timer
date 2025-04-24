@@ -1,5 +1,15 @@
+// components/StartEditor.js
 import React, { useState, useEffect } from 'react';
 import axios from '../api/axiosConfig';
+
+/**
+ * Editor component for race start list.
+ * Allows editing participant information, numbers, and start times.
+ * 
+ * @param {number} raceId - ID of the race being edited
+ * @param {function} onClose - Callback to close the editor
+ * @returns Rendered start list editor interface
+ */
 
 const StartEditor = ({ raceId, onClose }) => {
   const [startList, setStartList] = useState([]);
@@ -7,7 +17,6 @@ const StartEditor = ({ raceId, onClose }) => {
   const [error, setError] = useState(null);
   const [tracks, setTracks] = useState([]);
 
-  // Editing states
   const [editingRegistration, setEditingRegistration] = useState(null);
   const [editedfirstname, setEditedfirstname] = useState('');
   const [editedSurname, setEditedSurname] = useState('');
@@ -19,15 +28,12 @@ const StartEditor = ({ raceId, onClose }) => {
 
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Fetch start list and tracks
   const fetchStartList = async () => {
     try {
       setLoading(true);
-      // Using relative paths instead of hardcoded localhost URLs
       const response = await axios.get(`/api/race/${raceId}/startlist`);
       setStartList(response.data.startList || []);
 
-      // Fetch available tracks for this race
       const tracksResponse = await axios.get(`/api/tracks?race_id=${raceId}`);
       setTracks(tracksResponse.data.tracks);
 
@@ -45,13 +51,11 @@ const StartEditor = ({ raceId, onClose }) => {
     fetchStartList();
   }, [raceId]);
 
-  // Validation functions
   const validateTime = (timeStr) => {
     const regex = /^([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
     return regex.test(timeStr);
   };
 
-  // Handle edit click for a registration
   const handleEditClick = (registration) => {
     setEditingRegistration(registration);
     setEditedfirstname(registration.firstname);
@@ -63,7 +67,6 @@ const StartEditor = ({ raceId, onClose }) => {
     setEditedYear(registration.year || '');
   };
 
-  // Save edited registration
   const handleSaveEdit = async () => {
     if (!editingRegistration) return;
 
@@ -73,7 +76,6 @@ const StartEditor = ({ raceId, onClose }) => {
         registration_id: editingRegistration.registration_id
       };
 
-      // Check and add updates
       if (editedNumber !== (editingRegistration.number || '')) {
         updates.number = editedNumber === '' ? null : parseInt(editedNumber);
       }
@@ -90,7 +92,6 @@ const StartEditor = ({ raceId, onClose }) => {
         updates.user_start_time = editedStartTime;
       }
 
-      // Update user details with relative paths
       await axios.post(`/api/race/${raceId}/startlist/update/user`, {
         user_id: editingRegistration.user_id,
         firstname: editedfirstname,
@@ -99,13 +100,11 @@ const StartEditor = ({ raceId, onClose }) => {
         year: editedYear
       });
 
-      // Update registration details
       await axios.post(`/api/race/${raceId}/startlist/update/registration`, updates);
 
       setSuccessMessage('Changes saved successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
       
-      // Refresh data after save
       await fetchStartList();
       setEditingRegistration(null);
       setError(null);

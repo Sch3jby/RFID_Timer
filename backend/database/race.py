@@ -1,4 +1,4 @@
-# race.py
+# database/race.py
 from . import db
     
 class Race(db.Model):

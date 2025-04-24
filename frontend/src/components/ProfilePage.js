@@ -1,8 +1,15 @@
+// components/ProfilePage.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from '../api/axiosConfig';
 import { useTranslation } from "../contexts/LanguageContext";
 import UserRaceResults from "./UserRaceResults";
+
+/**
+ * User profile page showing user information and race registrations.
+ * Displays user data, registration history, and race results.
+ * @returns Rendered profile page
+ */
 
 function ProfilePage() {
   const { t } = useTranslation();
@@ -28,11 +35,9 @@ function ProfilePage() {
           }
         });
         
-        // Axios automaticky parsuje JSON odpověď
         setUserData(response.data.user);
         setRegistrations(response.data.registrations);
       } catch (err) {
-        // Kontrola statusu 401 pro neautorizovaný přístup
         if (err.response?.status === 401) {
           localStorage.removeItem('access_token');
           navigate('/login');

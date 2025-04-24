@@ -13,7 +13,20 @@ from database.user import Users
 results_bp = Blueprint('results', __name__)
 
 def parse_time_with_ms(time_str):
-    """Parse time string with optional milliseconds"""
+    """
+    Parse time string with optional milliseconds.
+    Converts string time format to Python time object.
+    
+    Args:
+        time_str (str): Time string in format HH:MM:SS or HH:MM:SS.ms
+        
+    Returns:
+        time: Python time object
+        
+    Raises:
+        ValueError: If time format is invalid
+    """
+
     if '.' in time_str:
         time_part, ms_part = time_str.split('.')
         ms_part = ms_part.ljust(3, '0')[:3]
@@ -27,6 +40,14 @@ def parse_time_with_ms(time_str):
 
 @results_bp.route('/store_results', methods=['POST'])
 def store_results():
+    """
+    Store RFID tag readings as race results.
+    Processes tag data, validates against registrations and lap times.
+    
+    Returns:
+        tuple: JSON response with stored results status and HTTP status code
+    """
+
     try:
         data = request.json
         tags_raw = data.get('tags', [])
@@ -185,6 +206,14 @@ def store_results():
 
 @results_bp.route('/manual_result_store', methods=['POST'])
 def manual_result_store():
+    """
+    Manually add race result for a participant.
+    Validates against existing laps and minimum lap duration.
+    
+    Returns:
+        tuple: JSON response with manual result status and HTTP status code
+    """
+
     try:
         data = request.json
         number = data.get('number')
@@ -342,6 +371,17 @@ def manual_result_store():
 
 @results_bp.route('/race/<int:race_id>/results', methods=['GET'])
 def get_race_results(race_id):
+    """
+    Retrieve race results with rankings by track and category.
+    Calculates positions, race times, and time behind leaders.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with formatted results and HTTP status code
+    """
+
     try:
         table_name = f'race_results_{race_id}'
 
@@ -555,6 +595,16 @@ def get_race_results(race_id):
 
 @results_bp.route('/race/<int:race_id>/results/by-category', methods=['GET'])
 def get_race_results_by_category(race_id):
+    """
+    Retrieve race results grouped and ranked by category.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with category-based results and HTTP status code
+    """
+
     try:
         table_name = f'race_results_{race_id}'
 
@@ -740,6 +790,16 @@ def get_race_results_by_category(race_id):
 
 @results_bp.route('/race/<int:race_id>/results/by-track', methods=['GET'])
 def get_race_results_by_track(race_id):
+    """
+    Retrieve race results grouped and ranked by track.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with track-based results and HTTP status code
+    """
+
     try:
         table_name = f'race_results_{race_id}'
 
@@ -924,6 +984,18 @@ def get_race_results_by_track(race_id):
 
 @results_bp.route('/race/<int:race_id>/racer/<int:number>/laps', methods=['GET'])
 def get_runner_laps(race_id, number):
+    """
+    Get all lap times for a specific runner.
+    Calculates individual lap times and cumulative race time.
+    
+    Args:
+        race_id (int): ID of the race
+        number (int): Runner's bib number
+        
+    Returns:
+        tuple: JSON response with lap details and HTTP status code
+    """
+
     try:
         table_name = f'race_results_{race_id}'
 
@@ -990,6 +1062,17 @@ def get_runner_laps(race_id, number):
 
 @results_bp.route('/race/<int:race_id>/result/update', methods=['POST'])
 def update_race_result(race_id):
+    """
+    Update race result for a participant.
+    Can update time, status, or last seen time.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with update status and HTTP status code
+    """
+
     try:
         data = request.get_json()
         number = data.get('number')
@@ -1108,6 +1191,17 @@ def update_race_result(race_id):
 
 @results_bp.route('/race/<int:race_id>/lap/update', methods=['POST'])
 def update_lap_time(race_id):
+    """
+    Update time for a specific lap.
+    Recalculates subsequent lap times to maintain consistency.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with update status and HTTP status code
+    """
+
     try:
         data = request.get_json()
         number = data.get('number')
@@ -1309,6 +1403,17 @@ def update_lap_time(race_id):
 
 @results_bp.route('/race/<int:race_id>/lap/delete', methods=['POST'])
 def delete_lap(race_id):
+    """
+    Delete a lap record and updates subsequent laps.
+    Maintains lap sequence and timing consistency.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with deletion status and HTTP status code
+    """
+
     try:
         data = request.get_json()
         number = data.get('number')
@@ -1435,6 +1540,17 @@ def delete_lap(race_id):
 
 @results_bp.route('/race/<int:race_id>/lap/add', methods=['POST'])
 def add_manual_lap(race_id):
+    """
+    Manually add a lap for a participant.
+    Validates lap timing and sequence.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with added lap status and HTTP status code
+    """
+
     try:
         data = request.json
         number = data.get('number')
@@ -1580,6 +1696,18 @@ def add_manual_lap(race_id):
 
 @results_bp.route('/race/<race_id>/results/by-email/<email>', methods=['GET'])
 def get_race_results_by_email(race_id, email):
+    """
+    Get race results for a specific participant by email.
+    Includes position, time, and performance against category/track leaders.
+    
+    Args:
+        race_id (int): ID of the race
+        email (str): Participant's email
+        
+    Returns:
+        tuple: JSON response with participant's results and HTTP status code
+    """
+
     try:
         user = db.session.query(Users).filter_by(email=email).first()
         if not user:

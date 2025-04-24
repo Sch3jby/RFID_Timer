@@ -1,7 +1,14 @@
+// components/ForgotPassword.js
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
+
+/**
+ * Forgot password form that sends a password reset email.
+ * Handles password reset request and displays success/error states.
+ * @returns Rendered forgot password form
+ */
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');

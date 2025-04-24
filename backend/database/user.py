@@ -1,4 +1,4 @@
-# users.py
+# database/user.py
 from . import db
 
 class Users(db.Model):

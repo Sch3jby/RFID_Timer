@@ -1,8 +1,14 @@
+// components/Calendar.js
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 
+/**
+ * Race calendar page displaying all available races.
+ * Fetches race data from API and supports searching/filtering races.
+ * @returns Rendered calendar page with race listings
+ */
 
 function Calendar() {
   const { t } = useTranslation();

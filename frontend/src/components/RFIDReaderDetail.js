@@ -1,3 +1,4 @@
+// components/RFIDReaderDetail.js
 import React, { useState, useEffect } from "react";
 import axios from '../api/axiosConfig';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -5,6 +6,12 @@ import { useTranslation } from '../contexts/LanguageContext';
 import Stopwatch from './Stopwatch.js';
 import Editor from './Editor';
 import StartCountdown from './StartCountdown';
+
+/**
+ * RFID reader interface for a specific race.
+ * Provides real-time tag processing, manual entry, and race monitoring.
+ * @returns Rendered RFID reader control interface for a race
+ */
 
 function RFIDReaderDetail() {
   const { raceId } = useParams();

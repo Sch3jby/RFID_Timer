@@ -18,7 +18,17 @@ reset_requests = {}
 auth_bp = Blueprint('auth', __name__)
 
 def check_rate_limit(email):
-    """Check if email has exceeded rate limit for password reset requests."""
+    """
+    Check if email has exceeded rate limit for password reset requests.
+    Limits to 3 requests per hour for each email address.
+    
+    Args:
+        email (str): Email address to check
+        
+    Returns:
+        bool: True if within rate limits, False otherwise
+    """
+
     now = datetime.utcnow()
     if email in reset_requests:
         requests = [t for t in reset_requests[email] 
@@ -33,9 +43,16 @@ def check_rate_limit(email):
 
 def validate_password(password):
     """
-    Validate password strength.
-    Returns (bool, str) tuple - (is_valid, error_message)
+    Validate password strength against security requirements.
+    Checks for minimum length, uppercase, lowercase, and digit requirements.
+    
+    Args:
+        password (str): Password string to validate
+        
+    Returns:
+        tuple: (is_valid, error_message)
     """
+
     if len(password) < 8:
         return False, "Password must be at least 8 characters long"
     if not re.search(r"[A-Z]", password):
@@ -47,15 +64,30 @@ def validate_password(password):
     return True, ""
 
 def generate_reset_token(user_id):
-    """Generate a timed token for password reset."""
+    """
+    Generate a timed token for password reset.
+    Uses URLSafeTimedSerializer with application secret key.
+    
+    Args:
+        user_id (str): User ID to encode in the token
+        
+    Returns:
+        str: Signed reset token
+    """
+
     serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     return serializer.dumps(user_id, salt='password-reset-salt')
 
 def send_password_reset_email(email, reset_token):
     """
     Send password reset email with the reset token.
-    Includes HTML styling and company branding.
+    Includes both plain text and HTML formatted email with reset link.
+    
+    Args:
+        email (str): Recipient's email address
+        reset_token (str): Password reset token
     """
+
     reset_url = f"http://localhost:3000/reset-password?token={reset_token}"
 
     msg = Message(
@@ -115,7 +147,18 @@ The link will expire in 30 minutes.
     mail.send(msg)
 
 def verify_reset_token(token, expiration=1800):
-    """Verify the reset token and return the user_id if valid."""
+    """
+    Verify the reset token and return the user_id if valid.
+    Token expires after specified time (default 30 minutes).
+    
+    Args:
+        token (str): Reset token to verify
+        expiration (int, optional): Token expiration time in seconds. Defaults to 1800.
+        
+    Returns:
+        str: User ID if token is valid, None otherwise
+    """
+
     serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     try:
         user_id = serializer.loads(
@@ -129,6 +172,14 @@ def verify_reset_token(token, expiration=1800):
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    """
+    Handle user registration requests.
+    Validates input, checks for existing users, and creates new user account.
+    
+    Returns:
+        tuple: JSON response with registration status and HTTP status code
+    """
+
     data = request.get_json()
     password = data.get('password')
 
@@ -159,6 +210,14 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """
+    Handle user login requests.
+    Validates credentials and returns access token for authenticated users.
+    
+    Returns:
+        tuple: JSON response with login status, user data, and HTTP status code
+    """
+
     data = request.get_json()
 
     if not data.get('email') or not data.get('password'):
@@ -184,6 +243,14 @@ def login():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
+    """
+    Retrieve the current authenticated user's information.
+    Requires valid JWT token.
+    
+    Returns:
+        tuple: JSON response with user details and HTTP status code
+    """
+
     user_id = get_jwt_identity()
     user = Login.query.get(user_id)
 
@@ -199,7 +266,14 @@ def get_current_user():
 
 @auth_bp.route('/forgot-password', methods=['POST'])
 def forgot_password():
-    """Handle forgot password request."""
+    """
+    Handle forgot password request.
+    Checks rate limits and sends password reset email if user exists.
+    
+    Returns:
+        tuple: JSON response indicating email was sent and HTTP status code
+    """
+
     data = request.get_json()
     email = data.get('email')
 
@@ -225,7 +299,14 @@ def forgot_password():
 
 @auth_bp.route('/reset-password', methods=['POST'])
 def reset_password():
-    """Handle password reset."""
+    """
+    Handle password reset.
+    Validates token and updates user's password if token is valid.
+    
+    Returns:
+        tuple: JSON response with reset status and HTTP status code
+    """
+
     data = request.get_json()
     token = data.get('token')
     new_password = data.get('password')
@@ -258,6 +339,14 @@ def reset_password():
 @auth_bp.route('/me/registrations', methods=['GET'])
 @jwt_required()
 def get_user_registrations():
+    """
+    Retrieve all race registrations for the authenticated user.
+    Matches login email with user registrations.
+    
+    Returns:
+        tuple: JSON response with user details, registrations and HTTP status code
+    """
+
     user_id = get_jwt_identity()
 
     try:

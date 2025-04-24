@@ -1,9 +1,17 @@
+// components/Navigation.js
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from '../api/axiosConfig';
 import { useTranslation } from "../contexts/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import logo from '../styles/other/stopwatch.png'
+
+/**
+ * Main navigation component.
+ * Displays navigation links based on user role and authentication status.
+ * Handles responsive menu behavior and scrolling effects.
+ * @returns Rendered navigation with links and user controls
+ */
 
 function Navigation() {
   const location = useLocation();
@@ -50,16 +58,13 @@ function Navigation() {
     fetchUserData();
   }, [isLoggedIn, navigate, location]);
   
-  // Scroll event handler for hiding/showing navbar
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
       if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        // Scrolling down
         setIsNavHidden(true);
       } else {
-        // Scrolling up
         setIsNavHidden(false);
       }
       
@@ -90,7 +95,6 @@ function Navigation() {
     setIsMenuOpen(!isMenuOpen);
   };
   
-  // Close mobile menu when changing pages
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);

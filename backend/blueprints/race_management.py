@@ -13,6 +13,13 @@ race_management_bp = Blueprint('race_management', __name__)
 
 @race_management_bp.route('/races', methods=['GET'])
 def get_races():
+    """
+    Retrieve all races with their tracks and categories.
+    
+    Returns:
+        tuple: JSON response with complete race information and HTTP status code
+    """
+
     try:
         races = Race.query.all()
         return jsonify({
@@ -55,6 +62,15 @@ def get_races():
 
 @race_management_bp.route('/race/add', methods=['POST'])
 def add_race():
+    """
+    Create a new race with associated tracks and categories.
+    Automatically generates IDs based on race date.
+    Creates results table for the race.
+    
+    Returns:
+        tuple: JSON response with created race ID and HTTP status code
+    """
+
     try:
         data = request.json
 
@@ -183,6 +199,17 @@ def add_race():
 
 @race_management_bp.route('/race/<int:race_id>/update', methods=['PUT'])
 def update_race(race_id):
+    """
+    Update an existing race and its associated tracks and categories.
+    Preserves race ID when updating.
+    
+    Args:
+        race_id (int): ID of the race to update
+        
+    Returns:
+        tuple: JSON response with update status and HTTP status code
+    """
+
     try:
         data = request.json
         race = Race.query.get(race_id)
@@ -293,6 +320,17 @@ def update_race(race_id):
 
 @race_management_bp.route('/race/<int:race_id>/delete', methods=['DELETE'])
 def delete_race(race_id):
+    """
+    Delete a race and all associated data.
+    Removes tracks, categories, registrations, and results table.
+    
+    Args:
+        race_id (int): ID of the race to delete
+        
+    Returns:
+        tuple: JSON response with deletion status and HTTP status code
+    """
+
     try:
         race = Race.query.get(race_id)
 
@@ -334,6 +372,13 @@ def delete_race(race_id):
 
 @race_management_bp.route('/tracks', methods=['GET'])
 def get_tracks():
+    """
+    Get all tracks for a specific race.
+    
+    Returns:
+        tuple: JSON response with track information and HTTP status code
+    """
+
     race_id = request.args.get('race_id', type=int)
     if not race_id:
         return jsonify({'error': 'Race ID is required'}), 400
@@ -353,6 +398,17 @@ def get_tracks():
 
 @race_management_bp.route('/race/<int:race_id>', methods=['GET'])
 def get_race_detail(race_id):
+    """
+    Get detailed information about a race including participants.
+    Calculates start times for participants based on race start type.
+    
+    Args:
+        race_id (int): ID of the race
+        
+    Returns:
+        tuple: JSON response with race and participant details and HTTP status code
+    """
+
     try:
         with db.session() as session:
             race = session.get(Race, race_id)
@@ -465,7 +521,13 @@ def get_race_detail(race_id):
 
 @race_management_bp.route('/categories', methods=['GET'])
 def get_categories():
-    """Get all categories from database"""
+    """
+    Get all categories from database.
+    
+    Returns:
+        tuple: JSON response with category information and HTTP status code
+    """
+
     try:
         categories = Category.query.all()
         categories_list = []
@@ -484,6 +546,14 @@ def get_categories():
 
 @race_management_bp.route('/set_track_start_time', methods=['POST'])
 def set_track_start_time():
+    """
+    Set the actual start time for a track.
+    Can set specific time or automatic time (current time + 1 hour).
+    
+    Returns:
+        tuple: JSON response with set start time and HTTP status code
+    """
+
     try:
         data = request.json
         race_id = data.get('race_id')
@@ -524,6 +594,14 @@ def set_track_start_time():
 
 @race_management_bp.route('/confirm_lineup', methods=['POST'])
 def confirm_lineup():
+    """
+    Confirm race lineup by assigning numbers and start times.
+    Organizes participants by category and gender.
+    
+    Returns:
+        tuple: JSON response with confirmation, track list and HTTP status code
+    """
+
     try:
         data = request.json
         race_id = data.get('race_id')

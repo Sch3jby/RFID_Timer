@@ -12,6 +12,15 @@ registration_bp = Blueprint('registration', __name__)
 
 @registration_bp.route('/registration', methods=['POST'])
 def registration():
+    """
+    Handle participant registration for a race.
+    Creates user and registration records after validating input.
+    Checks age eligibility and category assignment.
+    
+    Returns:
+        tuple: JSON response with registration status and HTTP status code
+    """
+
     try:
         data = request.json
         firstname = data.get('firstname')

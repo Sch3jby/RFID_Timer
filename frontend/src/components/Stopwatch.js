@@ -1,4 +1,14 @@
+// components/Stopwatch.js
 import React, { useState, useEffect } from 'react';
+
+/**
+ * Timer component for tracking elapsed time.
+ * Displays formatted time and handles stop/reset functionality.
+ * 
+ * @param {boolean} isRunning - Whether the timer is active
+ * @param {boolean} shouldReset - Whether the timer should reset
+ * @returns Rendered stopwatch display
+ */
 
 const Stopwatch = ({ isRunning, shouldReset }) => {
   const [time, setTime] = useState(0);
@@ -6,7 +16,6 @@ const Stopwatch = ({ isRunning, shouldReset }) => {
   useEffect(() => {
     let intervalId;
 
-    // Reset time when shouldReset is true
     if (shouldReset) {
       setTime(0);
     }

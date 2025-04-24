@@ -1,7 +1,14 @@
+// components/RegistrationForm.js
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
 import { useTranslation } from '../contexts/LanguageContext';
+
+/**
+ * Form for registering participants in races.
+ * Handles race selection, track selection, and participant information.
+ * @returns Rendered registration form for race participants
+ */
 
 function RegistrationForm() {
   const { t } = useTranslation();
