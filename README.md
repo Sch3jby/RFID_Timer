@@ -55,7 +55,7 @@ Built with a modern technology stack:
 ```bash
 # Clone the repository
 git clone https://github.com/Sch3jby/RFID_Timer.git
-cd checkpoint
+cd RFID_Timer
 
 # Start the development environment
 docker-compose up -d
