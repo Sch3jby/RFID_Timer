@@ -2,8 +2,6 @@
 
 <p align="center">
   <img src="docs/logo.png" alt="CheckPoint Logo" width="200"/>
-  <br>
-  <em>Reliable, affordable timing solution for sporting events</em>
 </p>
 
 ## 📋 Overview
