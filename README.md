@@ -36,10 +36,6 @@ We highly recommend reviewing the user manual before deploying the system for yo
 
 ## 🏗️ System Architecture
 
-<p align="center">
-  <img src="docs/architecture.png" alt="System Architecture Diagram" width="600"/>
-</p>
-
 Built with a modern technology stack:
 
 | Component | Technology |
