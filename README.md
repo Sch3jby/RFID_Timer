@@ -1,155 +1,149 @@
 # CheckPoint - RFID Sports Timing System
 
-![CheckPoint Logo](docs/logo.png)
+<p align="center">
+  <img src="docs/logo.png" alt="CheckPoint Logo" width="200"/>
+  <br>
+  <em>Reliable, affordable timing solution for sporting events</em>
+</p>
 
-## About the Project
+## 📋 Overview
 
-CheckPoint is a comprehensive web-based RFID timing system designed for sporting events. The application provides a full-featured race management platform for organizers and participants alike. Created as part of a bachelor's thesis at the Technical University of Liberec by Jan Schejbal, the system aims to offer a reliable and affordable solution for timing sports events.
+CheckPoint is a comprehensive web-based RFID timing system designed for sporting events, developed as a bachelor's thesis at the Technical University of Liberec. The system offers a complete solution for race organizers and participants, combining easy-to-use interfaces with powerful timing functionality.
 
-## Key Features
+## 📚 User Manual
 
-- **Race Management**: Create, edit, and manage races with customizable tracks and categories
-- **RFID Integration**: Connect with RFID readers to automatically track participant times
-- **User Registration**: Allow participants to register for events through the platform
-- **Real-time Results**: View race results in real-time with automatic timing calculations
-- **Multilingual Support**: Full support for Czech and English languages
-- **Responsive Design**: Works on desktop and mobile devices
+**A complete user guide is available in [docs/technicka_dokumentace.pdf](docs/technicka_dokumentace.pdf)**
 
-## System Architecture
+This document provides detailed instructions on:
+- Setting up the system for your event
+- Creating and configuring races
+- Managing participant registrations
+- Using the RFID reader integration
+- Processing results and generating reports
+- Troubleshooting common issues
 
-The project is built with a modern tech stack:
+We highly recommend reviewing the user manual before deploying the system for your event.
 
-- **Frontend**: React.js with responsive CSS styling
-- **Backend**: Python Flask with RESTful API
-- **Database**: PostgreSQL
-- **Deployment**: Docker containers with Nginx
+## ✨ Key Features
 
-## Installation
+- **🏁 Race Management** - Create, edit, and manage races with custom tracks and categories
+- **📡 RFID Integration** - Connect with RFID readers for automatic participant tracking
+- **👥 User Registration** - Simple registration process for participants
+- **⏱️ Real-time Results** - Live timing and results calculation
+- **🌐 Multilingual** - Full support for Czech and English languages
+- **📱 Responsive Design** - Works seamlessly on desktop and mobile devices
+- **🔧 Customizable** - Configurable for various event types and competition formats
+
+## 🏗️ System Architecture
+
+<p align="center">
+  <img src="docs/architecture.png" alt="System Architecture Diagram" width="600"/>
+</p>
+
+Built with a modern technology stack:
+
+| Component | Technology |
+|-----------|------------|
+| Frontend  | React.js   |
+| Backend   | Python Flask |
+| Database  | PostgreSQL |
+| Deployment| Docker + Nginx |
+
+## 🚀 Installation
 
 ### Prerequisites
 
 - Docker and Docker Compose
 - Git
 
-### Setup Instructions
+### Development Environment
 
-1. Clone the repository
-   ```
-   git clone https://github.com/yourusername/checkpoint.git
-   cd checkpoint
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/checkpoint.git
+cd checkpoint
 
-2. Development environment setup
-   ```
-   docker-compose up -d
-   ```
+# Start the development environment
+docker-compose up -d
 
-3. Production environment setup
-   ```
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
+# Access the applications:
+# - Frontend: http://localhost:3000
+# - Backend API: http://localhost:5001
+# - Database Admin: http://localhost:8080
+```
 
-The application will be accessible at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5001
-- Database Admin: http://localhost:8080
+### Production Environment
 
-## Testing
+```bash
+# Deploy with production configuration
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 🧪 Testing
 
 The project includes comprehensive test coverage for both frontend and backend components.
 
 ### Backend Tests
 
-![Backend Test Results](docs/backendtests.png)
+<p align="center">
+  <img src="docs/backendtests.png" alt="Backend Test Results" width="600"/>
+</p>
 
-Run backend tests with:
-```
+```bash
 cd backend
 pytest
 ```
 
 ### Frontend Tests
 
-![Frontend Test Results](docs/frontendtests.png)
+<p align="center">
+  <img src="docs/frontendtests.png" alt="Frontend Test Results" width="600"/>
+</p>
 
-Run frontend tests with:
-```
+```bash
 cd frontend
 npm test
 ```
 
-## Project Structure
+## 📁 Project Structure
 
-### Backend
+```
+checkpoint/
+├── backend/
+│   ├── app.py              # Main application entry point
+│   ├── blueprints/         # API endpoints by feature
+│   │   ├── auth.py         # Authentication services
+│   │   ├── registration.py # Race registration
+│   │   ├── results.py      # Results processing
+│   │   └── rfid.py         # RFID reader integration
+│   └── database/           # Data models
+├── frontend/
+│   ├── public/             # Static assets
+│   └── src/
+│       ├── components/     # React components
+│       ├── contexts/       # Context providers
+│       └── styles/         # CSS styling
+└── docker-compose.yml      # Docker configuration
+```
 
-The backend is organized into several key components:
-
-- **app.py**: Main application entry point
-- **blueprints/**: API endpoints organized by feature
-  - **auth.py**: Authentication endpoints
-  - **registration.py**: Race registration
-  - **race_management.py**: Race administration
-  - **results.py**: Race results processing
-  - **rfid.py**: RFID reader integration
-  - **startlist.py**: Start list management
-- **database/**: Data models and database operations
-- **extensions.py**: Flask extensions configuration
-
-### Frontend
-
-The frontend follows a component-based architecture:
-
-- **components/**: UI components
-  - **RFIDReader.js**: RFID reader management interface
-  - **RaceDetail.js**: Race information display
-  - **ResultList.js**: Results visualization
-  - **StartList.js**: Start list management
-  - **Editor.js**: Results and start list editor
-- **contexts/**: React context providers
-  - **LanguageContext.js**: Multilingual support
-  - **ProtectedAdmin.js**: Admin route protection
-- **styles/**: CSS styling
-
-## API Documentation
-
-The API provides endpoints for all race management features:
-
-- **Authentication**
-  - POST `/api/login`: User login
-  - POST `/api/register`: User registration
-  - GET `/api/me`: Current user information
-  
-- **Race Management**
-  - GET `/api/races`: List all races
-  - POST `/api/race/add`: Create new race
-  - PUT `/api/race/{id}/update`: Update race
-  - GET `/api/race/{id}`: Get race details
-  
-- **RFID Integration**
-  - POST `/api/connect`: Connect to RFID reader
-  - GET `/api/fetch_taglist`: Fetch tag readings
-  - POST `/api/store_results`: Store RFID results
-
-For detailed API documentation, refer to the [technical documentation](docs/technicka_dokumentace.pdf).
-
-## User Roles
+## 👥 User Roles
 
 The system supports two primary user roles:
 
-1. **Organizers**: Can create and manage races, access RFID reader functionality, and edit results
-2. **Participants**: Can register for races and view results
+1. **Organizers** - Full system access including race creation, RFID management, and results editing
+2. **Participants** - Registration access and results viewing capabilities
 
-## License
+## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgments
+## 👏 Acknowledgments
 
 - Technical University of Liberec
 - Thesis supervisor: [Supervisor Name]
 - All beta testers and contributors
 
-## Contact
+## 📞 Contact
 
 Jan Schejbal - jan.schejbal@tul.cz
 
