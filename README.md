@@ -1,7 +1,7 @@
 # CheckPoint - RFID Sports Timing System
 
 <p align="center">
-  <img src="docs/logo.png" alt="CheckPoint Logo" width="200"/>
+  <img src="docs/logo.png" alt="CheckPoint Logo" width="350"/>
 </p>
 
 ## 📋 Overview
