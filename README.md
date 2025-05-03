@@ -136,4 +136,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Jan Schejbal - jan.schejbal@tul.cz
 
-Project Repository: [https://github.com/Sch3jby/checkpoint](https://github.com/Sch3jby/checkpoint)
+Project Repository: [[https://github.com/Sch3jby/checkpoint](https://github.com/Sch3jby/RFID_Timer)]
