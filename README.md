@@ -10,7 +10,7 @@ CheckPoint is a comprehensive web-based RFID timing system designed for sporting
 
 ## 📚 User Manual
 
-**A complete user guide is available in [docs/technicka_dokumentace.pdf](docs/technicka_dokumentace.pdf)**
+**A complete user guide is available in [USER MANUAL](docs/technicka_dokumentace.pdf)**
 
 This document provides detailed instructions on:
 - Setting up the system for your event
@@ -136,4 +136,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Jan Schejbal - jan.schejbal@tul.cz
 
-Project Repository: [[https://github.com/Sch3jby/checkpoint](https://github.com/Sch3jby/RFID_Timer)]
+Project Repository: [[https://github.com/Sch3jby/RFID_Timer](https://github.com/Sch3jby/RFID_Timer)]
