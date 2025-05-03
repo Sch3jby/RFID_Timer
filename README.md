@@ -133,14 +133,9 @@ The system supports two primary user roles:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 👏 Acknowledgments
-
-- Technical University of Liberec
-- Thesis supervisor: [Supervisor Name]
-- All beta testers and contributors
 
 ## 📞 Contact
 
 Jan Schejbal - jan.schejbal@tul.cz
 
-Project Repository: [https://github.com/yourusername/checkpoint](https://github.com/yourusername/checkpoint)
+Project Repository: [https://github.com/Sch3jby/checkpoint](https://github.com/Sch3jby/checkpoint)
